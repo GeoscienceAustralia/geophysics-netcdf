@@ -20,15 +20,6 @@ const char* NcException::what() const throw()
   return message.c_str();
 }
 
-std::string NcException::what_string() const throw()
-{
-	std::ostringstream oss;
-	oss << lineNumber;
-	string message(exceptionName + ": " + complaint + "\nfile: " + fileName + "  line:" + oss.str());
-	return message;
-}
-
-
 // Thrown if the specified netCDF ID does not refer to an open netCDF dataset. 
 NcBadId::NcBadId(const string& complaint,const char* file,int line) :
   NcException("NcBadId",complaint,file,line) { }
