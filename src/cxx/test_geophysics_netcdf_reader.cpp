@@ -28,14 +28,14 @@ class cGeophysicsNcFile : public NcFile{
 	
 private:
 
-	std::vector<int> line_index_start;
-	std::vector<int> line_index_count;
+	std::vector<size_t> line_index_start;
+	std::vector<size_t> line_index_count;
 	
 	bool setLineIndex(){
 
 		bool status;
-		size_t ns = getDim("sample").getSize();
-		status = getVar("index_lines", line_index_start);
+		size_t ns = getDim(dim_name_sample).getSize();
+		status = getVar(var_name_line_index_start, line_index_start);
 		line_index_start.pop_back();
 
 		size_t nl = nlines();
@@ -50,6 +50,13 @@ private:
 
 public:
 
+	const std::string dim_name_sample = "sample";
+	const std::string dim_name_line = "line";
+	const std::string var_name_line_index_start = "index_lines";
+	const std::string att_name_standard_name = "my_standard_name";
+	const std::string att_name_line_number = "line_number";
+	const std::string att_name_flight_number = "flight_number";
+
 	cGeophysicsNcFile(const std::string& ncpath, const FileMode& filemode)
 		: NcFile(ncpath, filemode)
 	{
@@ -58,14 +65,40 @@ public:
 
 	size_t nlines(){ return line_index_start.size(); }
 
+	bool getVarByAttribute(const std::string& attribute_name, const std::string& attribute_value, NcVar& var){
+		
+		std::multimap<string, NcVar> vars = getVars();		
+		for (auto vit = vars.begin(); vit != vars.end(); vit++){
+			std::map<std::string, NcVarAtt> atts = vit->second.getAtts();
+			for (auto ait = atts.begin(); ait != atts.end(); ait++){
+				std::string attname = ait->second.getName();
+				if (attname == attribute_name){
+					std::string attvalue;
+					ait->second.getValues(attvalue);
+					if (attvalue == attribute_value){
+						var = vit->second;						
+						return true;
+					}
+				}
+			}			
+		}
+		return false;
+	}
+
 	template<typename T>
 	bool getLineNumbers(std::vector<T>& vals){
-		return getVar("LINE", vals);
+		NcVar var;
+		bool status = getVarByAttribute(att_name_standard_name, att_name_line_number,var);		
+		if (status) return getVar(var.getName(), vals);		
+		return false;		
 	}
 
 	template<typename T>
 	bool getFlightNumbers(std::vector<T>& vals){
-		return getVar("flight", vals);
+		NcVar var;
+		bool status = getVarByAttribute(att_name_standard_name, att_name_flight_number, var);
+		if(status) return getVar(var.getName(), vals);
+		return false;
 	}
 
 	template<typename T>
@@ -115,33 +148,20 @@ int main(int argc, char** argv)
 	try
 	{
 		//std::string ncpath = argv[1];
-		//std::string ncpath = "http://dapds00.nci.org.au/thredds/dodsC/uc0/rr2_dev/rcb547/magrad_tests_indexed_v2/GSQP1029MAG.nc";
-		std::string ncpath   = "http://dapds00.nci.org.au/thredds/dodsC/uc0/rr2_dev/rcb547/magrad_tests_indexed_v2/P583MAG.nc";
-		//std::string ncpath = "Z:\\projects\\intrepid2netcdf\\ncfiles\\P583MAG.nc";
+		std::string ncpath = "http://dapds00.nci.org.au/thredds/dodsC/uc0/rr2_dev/rcb547/magrad_tests_indexed_v2/GSQP1029MAG.nc";
+		//std::string ncpath   = "http://dapds00.nci.org.au/thredds/dodsC/uc0/rr2_dev/rcb547/magrad_tests_indexed_v2/P583MAG.nc";
+		
 
 		cGeophysicsNcFile ncfile(ncpath, NcFile::read);
 		
-		//int ndims = ncfile.getDimCount();
-		//std::multimap<string, NcDim> dims = ncfile.getDims();
-		//NcDim dim_line = dims.find("line")->second;
-		//NcDim dim_line_index = dims.find("line_index")->second;		
-		//auto it = dims.find("sample");
-		//if (it != dims.end()){
-		//	NcDim d = dims.find("sample")->second;
-		//	size_t dimname = d.getSize();
-		//}
-
 		std::vector<int> linenumber;
 		ncfile.getLineNumbers(linenumber);
 
 		std::vector<int> flightnumber;
 		ncfile.getFlightNumbers(flightnumber);
 
-		std::vector<double> datavector;
-		ncfile.getVar("mag_microLevelled",datavector);
-		
 		std::vector<double> v1,v2,v3;
-		for (size_t i = 0; i < ncfile.nlines(); i=i+10){			
+		for (size_t i = 0; i < ncfile.nlines(); i=i+100){			
 			double t1 = gettime();			
 			ncfile.getVarByLineIndex("mag_microLevelled", v1, i);
 			ncfile.getVarByLineIndex("latitude_GDA94", v2, i);

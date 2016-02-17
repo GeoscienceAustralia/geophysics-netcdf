@@ -17,7 +17,12 @@ const char* NcException::what() const throw()
   std::ostringstream oss;
   oss << lineNumber;
   string message(exceptionName+": "+complaint+"\nfile: "+fileName+"  line:"+oss.str());
-  return message.c_str();
+  //return message.c_str();
+
+  //Returning message.c_str() is not good because message goes out of scope
+  //Temporary fix but this will leak 512 bytes - hopefully it won't matter if the program is going to end anyway
+  char* msg = new char[512];  
+  return strcpy(msg, message.c_str());  
 }
 
 // Thrown if the specified netCDF ID does not refer to an open netCDF dataset. 
