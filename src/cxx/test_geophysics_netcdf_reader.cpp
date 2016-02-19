@@ -10,9 +10,6 @@ Author: Ross C. Brodie, Geoscience Australia.
 #include <netcdf>
 #include <vector>
 #include <limits>
-using namespace std;
-using namespace netCDF;
-using namespace netCDF::exceptions;
 
 #define USEGLOBALSTACKTRACE
 #ifdef USEGLOBALSTACKTRACE
@@ -20,122 +17,12 @@ using namespace netCDF::exceptions;
 cStackTrace globalstacktrace;
 #endif
 
+using namespace netCDF;
+using namespace netCDF::exceptions;
+#include "geophysicsncfile.h"
 #include "general_utils.h"
 #include "file_utils.h"
 #include "blocklanguage.h"
-
-class cGeophysicsNcFile : public NcFile{
-	
-private:
-
-	std::vector<size_t> line_index_start;
-	std::vector<size_t> line_index_count;
-	
-	bool setLineIndex(){
-
-		bool status;
-		size_t ns = getDim(dim_name_sample).getSize();
-		status = getVar(var_name_line_index_start, line_index_start);
-		line_index_start.pop_back();
-
-		size_t nl = nlines();
-		line_index_count.resize(nl);
-		for (size_t i = 0; i < nl-1; i++){
-			line_index_count[i] = line_index_start[i + 1] - line_index_start[i];
-		}	
-		line_index_count[nl-1] = ns - line_index_start[nl-1];
-		return true;
-
-	}
-
-public:
-
-	const std::string dim_name_sample = "sample";
-	const std::string dim_name_line = "line";
-	const std::string var_name_line_index_start = "index_lines";
-	const std::string att_name_standard_name = "my_standard_name";
-	const std::string att_name_line_number = "line_number";
-	const std::string att_name_flight_number = "flight_number";
-
-	cGeophysicsNcFile(const std::string& ncpath, const FileMode& filemode)
-		: NcFile(ncpath, filemode)
-	{
-		setLineIndex();
-	};
-
-	size_t nlines(){ return line_index_start.size(); }
-
-	bool getVarByAttribute(const std::string& attribute_name, const std::string& attribute_value, NcVar& var){
-		
-		std::multimap<string, NcVar> vars = getVars();		
-		for (auto vit = vars.begin(); vit != vars.end(); vit++){
-			std::map<std::string, NcVarAtt> atts = vit->second.getAtts();
-			for (auto ait = atts.begin(); ait != atts.end(); ait++){
-				std::string attname = ait->second.getName();
-				if (attname == attribute_name){
-					std::string attvalue;
-					ait->second.getValues(attvalue);
-					if (attvalue == attribute_value){
-						var = vit->second;						
-						return true;
-					}
-				}
-			}			
-		}
-		return false;
-	}
-
-	template<typename T>
-	bool getLineNumbers(std::vector<T>& vals){
-		NcVar var;
-		bool status = getVarByAttribute(att_name_standard_name, att_name_line_number,var);		
-		if (status) return getVar(var.getName(), vals);		
-		return false;		
-	}
-
-	template<typename T>
-	bool getFlightNumbers(std::vector<T>& vals){
-		NcVar var;
-		bool status = getVarByAttribute(att_name_standard_name, att_name_flight_number, var);
-		if(status) return getVar(var.getName(), vals);
-		return false;
-	}
-
-	template<typename T>
-	bool getVar(const std::string& varname, std::vector<T>& vals){
-		NcVar var = NcFile::getVar(varname);
-		std::vector<NcDim> dims = var.getDims();
-		size_t ne = 1;
-		for (size_t i = 0; i < dims.size(); i++) ne *= dims[i].getSize();		
-		vals.resize(ne);
-		var.getVar(vals.data());
-		return true;
-	}
-
-	template<typename T>
-	bool getVarByLineIndex(const std::string& varname, std::vector<T>& vals, const size_t& lineindex){
-		NcVar var = NcFile::getVar(varname);
-		std::vector<NcDim> dims = var.getDims();
-
-		std::vector<size_t> start(1);
-		std::vector<size_t> count(1);
-		start[0] = line_index_start[lineindex];
-		count[0] = line_index_count[lineindex];
-
-		size_t ne = count[0];
-		for (size_t i = 1; i < dims.size(); i++){
-			ne *= dims[i].getSize();
-		}
-		vals.resize(ne);				
-		var.getVar(start, count, vals.data());
-		return true;
-	}
-
-	
-
-	
-	
-};
 
 int main(int argc, char** argv)
 {
@@ -176,13 +63,13 @@ int main(int argc, char** argv)
 	catch (NcException& e)
 	{
 		_GSTPRINT_
-		std::cout << e.what() << endl;
+		std::cout << e.what() << std::endl;
 		return 1;
 	}
 	catch (std::exception& e)
 	{
 		_GSTPRINT_
-		std::cout << e.what() << endl;
+		std::cout << e.what() << std::endl;
 		return 1;
 	}
 	std::printf("Success\n");

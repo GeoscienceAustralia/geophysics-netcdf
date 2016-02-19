@@ -198,6 +198,7 @@
     <ClInclude Include="..\..\src\c++\general_utils.h" />
     <ClInclude Include="..\..\src\c++\geometry3d.h" />
     <ClInclude Include="..\..\src\c++\stacktrace.h" />
+    <ClInclude Include="..\..\src\cxx\geophysicsncfile.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

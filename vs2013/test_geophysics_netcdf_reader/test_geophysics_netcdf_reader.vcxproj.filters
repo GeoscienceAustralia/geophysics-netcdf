@@ -131,5 +131,8 @@
     <ClInclude Include="..\..\src\c++\stacktrace.h">
       <Filter>Source Files\Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\src\cxx\geophysicsncfile.h">
+      <Filter>Source Files\Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>
