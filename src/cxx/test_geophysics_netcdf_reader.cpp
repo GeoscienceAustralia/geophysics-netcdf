@@ -19,45 +19,64 @@ cStackTrace globalstacktrace;
 
 using namespace netCDF;
 using namespace netCDF::exceptions;
-#include "geophysicsncfile.h"
+
 #include "general_utils.h"
 #include "file_utils.h"
-#include "blocklanguage.h"
+#include "vector_utils.h"
+#include "geophysicsncfile.h"
 
+bool test_read(){
+
+	//std::string ncpath = argv[1];
+	//std::string ncpath = "http://dapds00.nci.org.au/thredds/dodsC/uc0/rr2_dev/rcb547/magrad_tests_indexed_v2/GSQP1029MAG.nc";
+	//std::string ncpath   = "http://dapds00.nci.org.au/thredds/dodsC/uc0/rr2_dev/rcb547/magrad_tests_indexed_v2/P583MAG.nc";
+	std::string ncpath = "z:\\projects\\intrepid2netcdf\\ncfiles\\P583MAG.nc";
+
+	cGeophysicsNcFile ncfile(ncpath, NcFile::read);
+
+	std::vector<int> linenumber;
+	ncfile.getLineNumbers(linenumber);
+
+	size_t lnum = linenumber[20];
+	size_t index = ncfile.getLineIndex(lnum);
+	std::vector<double> v0;
+	bool status = ncfile.getVarByLineNumber("mag_microLevelled", 2440, v0);
+
+	std::vector<std::vector<double>> v00;
+	status = ncfile.getVarByLineNumber("mag_microLevelled", 2440, v00);
+
+	std::vector<size_t> flightnumber;
+	ncfile.getFlightNumbers(flightnumber);
+
+	std::vector<double> v1, v2, v3;
+	for (size_t i = 0; i < ncfile.nlines(); i++){
+		double t1 = gettime();
+		ncfile.getVarByLineIndex("mag_microLevelled", i, v1);
+		ncfile.getVarByLineIndex("latitude_GDA94", i, v2);
+		ncfile.getVarByLineIndex("longitude_GDA94", i, v3);
+		double t2 = gettime();
+		printf("%lu nsamples=%lu time=%lf\n", i, v1.size(), t2 - t1);
+	}
+	//prompttocontinue();	
+	return true;
+}
+
+bool test_create(){
+	std::string ncpath = "z:\\projects\\intrepid2netcdf\\ncfiles\\test.nc";
+	deletefile(ncpath);
+	std::vector<size_t> linenumbers = { 100, 200, 300, 400 };
+	std::vector<size_t> nsamples = { 10, 20, 30, 40 };;
+	cGeophysicsNcFile ncfile(ncpath, linenumbers, nsamples);
+	return true;
+};
 int main(int argc, char** argv)
 {
 	_GSTITEM_
-	//if (argc != 2){
-	//	printf("Usage: %s nc_file_path\n", argv[0]);
-	//	return 1;
-	//}
-
+	
 	try
 	{
-		//std::string ncpath = argv[1];
-		std::string ncpath = "http://dapds00.nci.org.au/thredds/dodsC/uc0/rr2_dev/rcb547/magrad_tests_indexed_v2/GSQP1029MAG.nc";
-		//std::string ncpath   = "http://dapds00.nci.org.au/thredds/dodsC/uc0/rr2_dev/rcb547/magrad_tests_indexed_v2/P583MAG.nc";
-		
-
-		cGeophysicsNcFile ncfile(ncpath, NcFile::read);
-		
-		std::vector<int> linenumber;
-		ncfile.getLineNumbers(linenumber);
-
-		std::vector<int> flightnumber;
-		ncfile.getFlightNumbers(flightnumber);
-
-		std::vector<double> v1,v2,v3;
-		for (size_t i = 0; i < ncfile.nlines(); i=i+100){			
-			double t1 = gettime();			
-			ncfile.getVarByLineIndex("mag_microLevelled", v1, i);
-			ncfile.getVarByLineIndex("latitude_GDA94", v2, i);
-			ncfile.getVarByLineIndex("longitude_GDA94", v3, i);
-			double t2 = gettime();
-			printf("%lu nsamples=%lu time=%lf\n", i, v1.size(), t2 - t1);
-		}
-		prompttocontinue();
-		
+		//test_read();
+		test_create();
 	}
 
 	catch (NcException& e)
