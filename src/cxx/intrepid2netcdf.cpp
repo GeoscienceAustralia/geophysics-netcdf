@@ -432,6 +432,10 @@ public:
 		if (sfname.size() == 0){
 			sfname = D.fieldnamelike("project");
 		}
+
+		if (sfname.size() == 0){
+			sfname = D.fieldnamelike("geoscience_australia_project_number");
+		}
 		
 		if (sfname.size() > 0){
 			hassurvey = true;
