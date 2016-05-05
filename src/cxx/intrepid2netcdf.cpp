@@ -24,6 +24,137 @@ using namespace netCDF::exceptions;
 #include "blocklanguage.h"
 #include "intrepid.h"
 
+class cCSVFile{
+
+	public:
+		std::vector<std::string> header;
+		std::vector<std::vector<std::string>> records;
+
+		cCSVFile(){ }
+
+		cCSVFile(const std::string csvfile){
+
+			FILE* fp = fileopen(csvfile, "r");
+
+			std::string str;
+			std::vector<std::string> tokens;
+
+			//Read header line
+			filegetline(fp, str);
+			split(str, ',', tokens);
+			header = tokens;
+			size_t nfields = header.size();			
+
+			//Read remaining lines
+			size_t k = 1;
+			while (filegetline(fp, str)){
+				k++;
+				tokens.resize(0);
+				split(str, ',', tokens);
+				if (tokens.size() == nfields - 1){
+					tokens.push_back("");
+				}
+
+				if (tokens.size() != nfields){
+					std::printf("Error: On line %lu of file %s\n", k, csvfile.c_str());
+					std::printf("Error: The number of header items (%lu) does not match the number of data items (%lu)\n", nfields, tokens.size());
+				}
+
+				for (size_t i = 0; i < tokens.size(); i++){
+					tokens[i] = trim(tokens[i]);
+					tokens[i] = stripquotes(tokens[i]);
+				}
+				records.push_back(tokens);
+			}
+			fclose(fp);
+		}
+
+		bool addfield(const std::string fname){
+			header.push_back(fname);
+			for (size_t i = 0; i < records.size(); i++){
+				const std::string empty;
+				records[i].push_back(empty);
+			}
+			return true;
+		}
+
+		bool setfield(const std::string fname, const std::string value, const size_t recindex){
+			int k = findkeyindex(fname);
+			if (k < 0)return false;
+			records[recindex][(size_t)k] = value;
+			return true;
+		}
+
+		bool setfield(const std::string fname, const std::string value){
+			int k = findkeyindex(fname);
+			if (k < 0)return false;
+			if (records.size() == 0){
+				records.resize(1);
+				records[0].resize(header.size());
+			}
+
+			for (size_t i = 0; i < records.size(); i++){
+				records[i][(size_t)k] = value;
+			}
+			return true;
+		}
+
+		int findkeyindex(const std::string& fname){
+			for (size_t i = 0; i < header.size(); i++){
+				if (header[i] == fname){
+					return (int)i;
+				}
+			}
+			return -1;
+		}
+
+		std::vector<size_t> findmatchingrecords(const size_t keyindex, const int value){
+			std::vector<size_t> indices;
+			for (size_t i = 0; i < records.size(); i++){
+				int n = atoi(records[i][keyindex].c_str());
+				if (n == value){
+					indices.push_back(i);
+				}
+			}
+			return indices;
+		}
+
+		std::vector<size_t> findmatchingrecords(const std::string key, const int value)	{
+			int keyindex = findkeyindex(key);
+			if (keyindex < 0){
+				std::vector<size_t> indices;
+				return indices;
+			}
+			return findmatchingrecords((size_t)keyindex, value);
+		}
+
+		std::vector<size_t> findmatchingrecords(const size_t keyindex, const std::string value){
+			std::vector<size_t> indices;
+			for (size_t i = 0; i < records.size(); i++){
+				if (!strcasecmp(records[i][keyindex],value)){
+					indices.push_back(i);
+				}
+			}
+			return indices;
+		}
+
+		std::vector<size_t> findmatchingrecords(const std::string key, const std::string value)	{
+			int keyindex = findkeyindex(key);
+			if (keyindex < 0){
+				std::vector<size_t> indices;
+				return indices;
+			}
+			return findmatchingrecords((size_t)keyindex, value);
+		}
+
+		void printrecord(const size_t n){
+			for (size_t mi = 0; mi < header.size(); mi++){
+				std::printf("%s: %s\n", header[mi].c_str(), records[n][mi].c_str());
+			}
+			std::printf("\n");
+		}
+	};
+
 class cMetaDataTable{
 
 public:
@@ -41,7 +172,7 @@ public:
 
 		//Read header line
 		filegetline(fp, str);
-		split(str, '\t', tokens);
+		split(str, '\t', tokens);		
 		header = tokens;
 		size_t nfields = header.size();
 
@@ -350,8 +481,10 @@ public:
 	std::vector<cVariable> Variables;	
 	cMetaDataTable  A;	
 	cMetaDataRecord M;
+	cCSVFile V;	
 	std::string IntrepidDatbasesDir;	
 	std::string NetCDFOutputDir;
+	
 
 	cIntrepidConverter(const std::string& controlfile){
 		_GSTITEM_
@@ -371,6 +504,7 @@ public:
 		M = cMetaDataRecord(B, "Metadata");
 		std::string argusfile = B.getstringvalue("ArgusMetaData");
 		A = cMetaDataTable(argusfile, 1);
+		V = cCSVFile(B.getstringvalue("VocabularyFile"));
 
 		IntrepidDatbasesDir = B.getstringvalue("IntrepidDatabasesPath");
 		NetCDFOutputDir     = B.getstringvalue("NetCDFOutputDir");
@@ -414,8 +548,8 @@ public:
 			populate_metadata(R,projectnumber);
 			
 			NcFile ncFile(NCPath, NcFile::replace);
-			add_lineindex_new(ncFile, D);
-			add_groupbyline_variables(ncFile, D);
+			add_lineindex_old(ncFile, D);
+			add_groupbyline_variables(ncFile, D);			
 			add_line_startend_points(ncFile, D);
 			add_sample_variables(ncFile,D);
 			add_global_metadata(ncFile, R);
@@ -533,23 +667,23 @@ public:
 		return -1;
 	};
 
-	void field_add_variable(ILField& F, NcFile& ncFile, NcVar& var, std::vector<NcDim> dims)
+	void field_add_variable(ILField& F, NcFile& ncFile, const std::string& varname, NcVar& var, std::vector<NcDim> dims)
 	{
 		_GSTITEM_
 		if (F.datatype().isbyte()){
-			var = ncFile.addVar(F.Name, ncUbyte, dims);			
+			var = ncFile.addVar(varname, ncUbyte, dims);			
 		}
 		else if (F.datatype().isshort()){
-			var = ncFile.addVar(F.Name, ncShort, dims);			
+			var = ncFile.addVar(varname, ncShort, dims);			
 		}
 		else if (F.datatype().isint()){
-			var = ncFile.addVar(F.Name, ncInt, dims);			
+			var = ncFile.addVar(varname, ncInt, dims);			
 		}
 		else if (F.datatype().isfloat()){
-			var = ncFile.addVar(F.Name, ncFloat, dims);			
+			var = ncFile.addVar(varname, ncFloat, dims);			
 		}
 		else if (F.datatype().isdouble()){
-			var = ncFile.addVar(F.Name, ncDouble, dims);			
+			var = ncFile.addVar(varname, ncDouble, dims);			
 		}
 		else{
 			std::string msg = "Error: Unknown Intrepid data type\n";
@@ -593,28 +727,28 @@ public:
 		NcDim  dim_sample = ncFile.addDim("sample", nsamples);
 
 		NcVar vifirst = ncFile.addVar("index_first_sample", ncInt, dim_line);
-		vifirst.putAtt("my_standard_name", "index_first_sample");
+		vifirst.putAtt("standard_name", "index_first_sample");
 		vifirst.putAtt("long_name", "zero based index of the first sample in the line");
 		vifirst.putAtt("units", "1");
 		vifirst.putAtt("_FillValue", ncInt, IDatatype::intnull());
 
-		NcVar vilast = ncFile.addVar("index_last_sample", ncInt, dim_line);
-		vilast.putAtt("my_standard_name", "index_last_sample");
-		vilast.putAtt("long_name", "zero based index of the last sample in the line");
-		vilast.putAtt("units", "1");
-		vilast.putAtt("_FillValue", ncInt, IDatatype::intnull());
+		//NcVar vilast = ncFile.addVar("index_last_sample", ncInt, dim_line);
+		//vilast.putAtt("standard_name", "index_last_sample");
+		//vilast.putAtt("long_name", "zero based index of the last sample in the line");
+		//vilast.putAtt("units", "1");
+		//vilast.putAtt("_FillValue", ncInt, IDatatype::intnull());
 
 		NcVar vicount = ncFile.addVar("index_count", ncInt, dim_line);
-		vicount.putAtt("my_standard_name", "index_count");
+		vicount.putAtt("standard_name", "index_count");
 		vicount.putAtt("long_name", "number of samples in the line");
 		vicount.putAtt("units", "1");
 		vicount.putAtt("_FillValue", ncInt, IDatatype::intnull());
 
-		NcVar visequence = ncFile.addVar("index_sequence", ncInt, dim_sample);
-		visequence.putAtt("my_standard_name", "index_sequence");
-		visequence.putAtt("long_name", "zero based index/sequence number of the line");
-		visequence.putAtt("units", "1");
-		visequence.putAtt("_FillValue", ncInt, IDatatype::intnull());
+		//NcVar visequence = ncFile.addVar("index_sequence", ncInt, dim_sample);
+		//visequence.putAtt("standard_name", "index_sequence");
+		//visequence.putAtt("long_name", "zero based index/sequence number of the line");
+		//visequence.putAtt("units", "1");
+		//visequence.putAtt("_FillValue", ncInt, IDatatype::intnull());
 
 		std::vector<int> ifirst(nlines);
 		std::vector<int> ilast(nlines);
@@ -631,9 +765,9 @@ public:
 			startindex += icount[li];
 		}
 		vifirst.putVar(ifirst.data());
-		vilast.putVar(ilast.data());
+		//vilast.putVar(ilast.data());
 		vicount.putVar(icount.data());
-		visequence.putVar(isequence.data());
+		//visequence.putVar(isequence.data());
 		return true;
 	}
 
@@ -649,7 +783,7 @@ public:
 		NcDim  dim_line_index = ncFile.addDim("line_index", nlines+1);
 
 		NcVar vifirst = ncFile.addVar("index_lines", ncInt, dim_line_index);
-		vifirst.putAtt("my_standard_name", "index_lines");
+		vifirst.putAtt("standard_name", "index_lines");
 		vifirst.putAtt("long_name", "zero based index of the first sample in the line, and then one past the end of the last line");
 		vifirst.putAtt("units", "1");
 		vifirst.putAtt("_FillValue", ncInt, IDatatype::intnull());
@@ -683,27 +817,27 @@ public:
 		NcDim  dim_line = ncFile.getDim("line");
 
 		NcVar vx1 = ncFile.addVar("longitude_first", ncDouble, dim_line);
-		vx1.putAtt("my_standard_name", "longitude_first");
+		vx1.putAtt("standard_name", "longitude_first");
 		vx1.putAtt("long_name", "first non-null longitude coordinate in the line");
-		vx1.putAtt("units", "degrees");
+		vx1.putAtt("units", "degree_east");
 		vx1.putAtt("_FillValue", ncDouble, preferred_double_fillvalue());
 
 		NcVar vx2 = ncFile.addVar("longitude_last", ncDouble, dim_line);
-		vx2.putAtt("my_standard_name", "longitude_last");
+		vx2.putAtt("standard_name", "longitude_last");
 		vx2.putAtt("long_name", "last non-null longitude coordinate in the line");
-		vx2.putAtt("units", "degrees");
+		vx2.putAtt("units", "degree_east");
 		vx2.putAtt("_FillValue", ncDouble, preferred_double_fillvalue());
 
 		NcVar vy1 = ncFile.addVar("latitude_first", ncDouble, dim_line);
-		vy1.putAtt("my_standard_name", "latitude_first");
+		vy1.putAtt("standard_name", "latitude_first");
 		vy1.putAtt("long_name", "first non-null latitude coordinate in the line");
-		vy1.putAtt("units", "degrees");
+		vy1.putAtt("units", "degree_north");
 		vy1.putAtt("_FillValue", ncDouble, preferred_double_fillvalue());
 
 		NcVar vy2 = ncFile.addVar("latitude_last", ncDouble, dim_line);
-		vy2.putAtt("my_standard_name", "latitude_last");
+		vy2.putAtt("standard_name", "latitude_last");
 		vy2.putAtt("long_name", "last non-null latitude coordinate in the line");
-		vy2.putAtt("units", "degrees");
+		vy2.putAtt("units", "degree_north");
 		vy2.putAtt("_FillValue", ncDouble, preferred_double_fillvalue());
 
 		IDatatype dt = fx.datatype();
@@ -745,23 +879,46 @@ public:
 		size_t nlines   = D.nlines();				
 		NcDim  dim_line = ncFile.getDim("line");
 
+		int i_field = V.findkeyindex("field_name");
+		int i_ignore = V.findkeyindex("ignore");
+		int i_standard_name = V.findkeyindex("standard_name");
+		int i_long_name = V.findkeyindex("long_name");
+		int i_units = V.findkeyindex("units");
+
 		size_t fi = 0;
 		for (auto it = D.Fields.begin(); it != D.Fields.end(); ++it){
 			fi++;
 			ILField& F = *it;
 			//message(flog,"Processing field %lu %s %s\n", fi, F.Name.c_str(), F.datatype().name().c_str());
-			if (F.isgroupbyline() == false)continue;
+			if (F.isgroupbyline() == false) continue;
 
-			int vindex = findvariableindex(F.Name);
-			if (vindex < 0){
+			//int vindex = findvariableindex(F.Name);
+			//if (vindex < 0){
+			//	message(flog, "Error: Could not find a standard variable for field %s\n", F.Name.c_str());
+			//	continue;
+			//}
+
+			//size_t vi = (size_t)vindex;			
+			//std::string standard_name = Variables[vi].standardname;
+			//std::string long_name = Variables[vi].longname;
+			//std::string units = Variables[vi].units;
+			
+			std::vector<size_t> recs = V.findmatchingrecords(i_field, F.Name);
+			if (recs.size() == 0){
 				message(flog, "Error: Could not find a standard variable for field %s\n", F.Name.c_str());
 				continue;
 			}
 
-			size_t vi = (size_t)vindex;
-			std::string standard_name = Variables[vi].standardname;
-			std::string long_name = Variables[vi].longname;
-			std::string units = Variables[vi].units;
+			size_t vi = recs[0];
+			std::string standard_name = V.records[vi][i_standard_name];
+			std::string long_name = V.records[vi][i_long_name];
+			std::string units = V.records[vi][i_units];
+			std::string ignore = V.records[vi][i_ignore];
+
+
+			//std::string varname = F.Name;			
+			std::string varname = standard_name;
+			if (ignore == "ignore")continue;
 
 			std::vector<NcDim> dims;
 			dims.push_back(dim_line);
@@ -771,10 +928,11 @@ public:
 				dims.push_back(dim_band);
 			}
 
-			NcVar var;
-			field_add_variable(F, ncFile, var, dims);
 			
-			var.putAtt("my_standard_name", standard_name);
+			NcVar var;
+			field_add_variable(F, ncFile, varname, var, dims);
+			
+			var.putAtt("standard_name", standard_name);
 			if (long_name != cBlock::ud_string())var.putAtt("long_name", long_name);			
 			var.putAtt("units", units);
 			field_set_fillvalue(F, var);
@@ -805,29 +963,54 @@ public:
 		size_t nlines = D.nlines();		
 		NcDim  dim_sample = ncFile.getDim("sample");
 		
+		int i_field         = V.findkeyindex("field_name");
+		int i_ignore        = V.findkeyindex("ignore");
+		int i_standard_name = V.findkeyindex("standard_name");
+		int i_long_name     = V.findkeyindex("long_name");
+		int i_units         = V.findkeyindex("units");
+
 		size_t fi = 0;
 		for (auto it = D.Fields.begin(); it != D.Fields.end(); ++it){
 			fi++;
 			ILField& F = *it;
+			message(flog, "field %s\n", F.Name.c_str());
 
-			if (!strcasecmp(F.Name, "longitude_agd84")){ continue; }
-			if (!strcasecmp(F.Name, "latitude_agd84"))continue;
-			if (!strcasecmp(F.Name,"longitude_agd66")){continue;}
-			if (!strcasecmp(F.Name,"latitude_agd66"))continue;
-			if (!strcasecmp(F.Name,"longitude_wgs84"))continue;
-			if (!strcasecmp(F.Name,"latitude_wgs84"))continue;
 			if (F.isgroupbyline() == true)continue;
 
-			int vindex = findvariableindex(F.Name);
-			if (vindex < 0){
+			//if (!strcasecmp(F.Name, "longitude_agd84")){ continue; }
+			//if (!strcasecmp(F.Name, "latitude_agd84"))continue;
+			//if (!strcasecmp(F.Name,"longitude_agd66")){continue;}
+			//if (!strcasecmp(F.Name,"latitude_agd66"))continue;
+			//if (!strcasecmp(F.Name,"longitude_wgs84"))continue;
+			//if (!strcasecmp(F.Name,"latitude_wgs84"))continue;
+			
+
+			//int vindex = findvariableindex(F.Name);
+			//if (vindex < 0){
+			//	message(flog, "Error: Could not find a standard variable for field %s\n", F.Name.c_str());
+			//	continue;
+			//}
+
+			//size_t vi = (size_t)vindex;
+			//std::string standard_name = Variables[vi].standardname;
+			//std::string long_name = Variables[vi].longname;
+			//std::string units = Variables[vi].units;
+			
+			std::vector<size_t> recs = V.findmatchingrecords(i_field, F.Name);
+			if (recs.size() == 0){
 				message(flog, "Error: Could not find a standard variable for field %s\n", F.Name.c_str());
 				continue;
-			}
+			}	
 
-			size_t vi = (size_t)vindex;
-			std::string standard_name = Variables[vi].standardname;
-			std::string long_name = Variables[vi].longname;
-			std::string units = Variables[vi].units;
+			size_t vi = recs[0];			
+			std::string standard_name = V.records[vi][i_standard_name];
+			std::string long_name     = V.records[vi][i_long_name];
+			std::string units         = V.records[vi][i_units];
+			std::string ignore        = V.records[vi][i_ignore];
+			
+			//std::string varname       = F.Name;
+			std::string varname = standard_name;
+			if (ignore == "ignore") continue;
 
 			std::vector<NcDim> dims;
 			dims.push_back(dim_sample);
@@ -838,16 +1021,16 @@ public:
 			}
 
 			NcVar var;
-			field_add_variable(F, ncFile, var, dims);
+			field_add_variable(F, ncFile, varname, var, dims);
 
-			if (standard_name != cBlock::ud_string()){				
-				if (standard_name == "latitude" || standard_name == "longitude" ){
-					var.putAtt("standard_name", standard_name);
-				}
-				var.putAtt("my_standard_name", standard_name);
+			if (standard_name != ""){				
+				//if (standard_name == "latitude" || standard_name == "longitude" ){
+				//	var.putAtt("standard_name", standard_name);
+				//}
+				var.putAtt("standard_name", standard_name);
 			}
 			
-			if (long_name != cBlock::ud_string()){
+			if (long_name != ""){
 				var.putAtt("long_name", long_name);
 			}
 
@@ -857,6 +1040,8 @@ public:
 			//Set the fill value for undefined values
 			field_set_fillvalue(F, var);
 			
+			continue;
+
 			size_t startindex = 0;			
 			for (size_t li = 0; li < nlines; li++){
 				ILSegment& S = F.Segments[li];
@@ -879,7 +1064,9 @@ public:
 				
 				var.putVar(startp, countp, S.pvoid());
 				startindex += S.nsamples();
-			}				
+			}	
+
+
 		}		
 		return true;
 	}
@@ -944,7 +1131,7 @@ public:
 				cStats<double> st = D.fieldstats(fn);
 				ncFile.putAtt("geospatial_lon_min", ncDouble, st.min);
 				ncFile.putAtt("geospatial_lon_max", ncDouble, st.max);
-				ncFile.putAtt("geospatial_lon_units", "degrees_east");
+				ncFile.putAtt("geospatial_lon_units", "degree_east");
 				ncFile.putAtt("geospatial_lon_resolution", "point");
 				if (i == 0)datum = "GDA94";
 				else if (i == 0)datum = "WGS84";
@@ -966,7 +1153,7 @@ public:
 				cStats<double> st = D.fieldstats(fn);
 				ncFile.putAtt("geospatial_lat_min", ncDouble, st.min);
 				ncFile.putAtt("geospatial_lat_max", ncDouble, st.max);
-				ncFile.putAtt("geospatial_lat_units", "degrees_north");
+				ncFile.putAtt("geospatial_lat_units", "degree_north");
 				ncFile.putAtt("geospatial_lat_resolution", "point");
 				break;
 			}
@@ -1042,7 +1229,7 @@ public:
 };
 
 int main(int argc, char** argv)
-{
+{	
 	_GSTITEM_
 	if (argc != 2){
 		printf("Usage: %s control_file_name\n", argv[0]);
@@ -1053,7 +1240,8 @@ int main(int argc, char** argv)
 	{
 		std::string controlfile = argv[1];
 		cIntrepidConverter C(controlfile);
-		C.process_databases();		
+		C.process_databases();	
+		prompttocontinue();
 	}
 
 	catch (NcException& e)

@@ -1282,8 +1282,7 @@ public:
 		_GSTITEM_
 		ILField& F = *getfield(fieldname);
 		vector<double> v;
-		v.reserve(nsamples());
-		size_t k = 0;
+		v.reserve(nsamples());		
 		for (size_t li = 0; li < nlines(); li++){
 			ILSegment& S = F.Segments[li];			
 			S.readbuffer();	
@@ -1291,12 +1290,10 @@ public:
 			for (size_t si = 0; si < nsamples; si++){				
 				double val = S.d(si);
 				if (IDatatype::isnull(val)==false){
-					v.push_back(val);
-					k++;
+					v.push_back(val);					
 				}				
 			}
-		}		
-		
+		}				
 		cStats<double> stats(v);
 		return stats;		
 	}
