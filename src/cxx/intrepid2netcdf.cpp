@@ -477,14 +477,15 @@ class cIntrepidConverter{
 
 public:
 	std::string LogFile;
-	FILE* flog;	
-	std::vector<cVariable> Variables;	
+	FILE* flog;		
 	cMetaDataTable  A;	
 	cMetaDataRecord M;
 	cCSVFile V;	
 	std::string IntrepidDatbasesDir;	
 	std::string NetCDFOutputDir;
-	
+	bool DummyRun;
+	size_t DatabaseStart = 0;
+	size_t DatabaseSubsample = 1;
 
 	cIntrepidConverter(const std::string& controlfile){
 		_GSTITEM_
@@ -495,17 +496,20 @@ public:
 		message(flog, "Program starting at %s\n", timestamp().c_str());
 		B.write(flog);
 
-		std::vector<cBlock> bv = B.findblocks("Variable");
-		for (size_t i = 0; i < bv.size(); i++){
-			cVariable v(bv[i]);
-			Variables.push_back(v);
-		}
+		//std::vector<cBlock> bv = B.findblocks("Variable");
+		//for (size_t i = 0; i < bv.size(); i++){
+		//	cVariable v(bv[i]);
+		//	Variables.push_back(v);
+		//}
 
 		M = cMetaDataRecord(B, "Metadata");
 		std::string argusfile = B.getstringvalue("ArgusMetaData");
 		A = cMetaDataTable(argusfile, 1);
 		V = cCSVFile(B.getstringvalue("VocabularyFile"));
-
+		DummyRun = B.getboolvalue("DummyRun");
+		DatabaseStart     = B.getsizetvalue("DatabaseStart");
+		DatabaseSubsample = B.getsizetvalue("DatabaseSubsample");
+		
 		IntrepidDatbasesDir = B.getstringvalue("IntrepidDatabasesPath");
 		NetCDFOutputDir     = B.getstringvalue("NetCDFOutputDir");
 		fixseparator(IntrepidDatbasesDir);
@@ -522,20 +526,19 @@ public:
 	bool process_databases(){
 
 		std::vector<std::string> dlist = getfilelist(IntrepidDatbasesDir, ".DIR");
-		for (size_t di = 0; di < dlist.size(); di++){		
+		for (size_t di = DatabaseStart - 1; di < dlist.size(); di = di + DatabaseSubsample){
 			IDBPath = ILDataset::dbdirpath(dlist[di]);
 			IDBName = ILDataset::dbname(dlist[di]);
 			NCPath  = NetCDFOutputDir + IDBName + ".nc";
 
-			if (di%100 !=0 && IDBName != "GSQP1029MAG"){
-				continue;
-			}
-
-			message(flog, "\nConverting database %lu of %lu: %s\n", di, dlist.size(), dlist[di].c_str());
+			//if (di % 10 != 0 && IDBName != "GSQP1029MAG"){
+			//if (di%10 != 0) continue;
+			
+			message(flog, "\nConverting database %lu of %lu: %s\n", di+1, dlist.size(), dlist[di].c_str());
 			
 			bool datasetexists = exists(IDBPath);
 			if (datasetexists == false){
-				message(flog, "Warning 0: Database %lu does not exist: %s\n", di, IDBPath.c_str());
+				message(flog, "Warning: Database %lu does not exist: %s\n", di, IDBPath.c_str());
 				continue;
 			}
 
@@ -654,6 +657,7 @@ public:
 		return true;
 	};
 
+	/*
 	int findvariableindex(const std::string& fieldname)
 	{
 		_GSTITEM_
@@ -665,7 +669,7 @@ public:
 			}
 		}
 		return -1;
-	};
+	};*/
 
 	void field_add_variable(ILField& F, NcFile& ncFile, const std::string& varname, NcVar& var, std::vector<NcDim> dims)
 	{
@@ -880,7 +884,7 @@ public:
 		NcDim  dim_line = ncFile.getDim("line");
 
 		int i_field = V.findkeyindex("field_name");
-		int i_ignore = V.findkeyindex("ignore");
+		int i_convert = V.findkeyindex("convert");
 		int i_standard_name = V.findkeyindex("standard_name");
 		int i_long_name = V.findkeyindex("long_name");
 		int i_units = V.findkeyindex("units");
@@ -892,34 +896,25 @@ public:
 			//message(flog,"Processing field %lu %s %s\n", fi, F.Name.c_str(), F.datatype().name().c_str());
 			if (F.isgroupbyline() == false) continue;
 
-			//int vindex = findvariableindex(F.Name);
-			//if (vindex < 0){
-			//	message(flog, "Error: Could not find a standard variable for field %s\n", F.Name.c_str());
-			//	continue;
-			//}
-
-			//size_t vi = (size_t)vindex;			
-			//std::string standard_name = Variables[vi].standardname;
-			//std::string long_name = Variables[vi].longname;
-			//std::string units = Variables[vi].units;
-			
 			std::vector<size_t> recs = V.findmatchingrecords(i_field, F.Name);
 			if (recs.size() == 0){
-				message(flog, "Error: Could not find a standard variable for field %s\n", F.Name.c_str());
+				message(flog, "Warning: skipping field %s: could not find a match in the vocabulary file\n", F.Name.c_str());
 				continue;
 			}
-
+						
 			size_t vi = recs[0];
+			std::string convert = V.records[vi][i_convert];
+			if (convert == "no"){
+				message(flog, "Ignoring field %s\n", F.Name.c_str());
+				continue;
+			}
+			message(flog, "Converting field %s\n", F.Name.c_str());
+
 			std::string standard_name = V.records[vi][i_standard_name];
 			std::string long_name = V.records[vi][i_long_name];
-			std::string units = V.records[vi][i_units];
-			std::string ignore = V.records[vi][i_ignore];
-
-
-			//std::string varname = F.Name;			
+			std::string units = V.records[vi][i_units];						
 			std::string varname = standard_name;
-			if (ignore == "ignore")continue;
-
+			
 			std::vector<NcDim> dims;
 			dims.push_back(dim_line);
 			if (F.nbands() > 1){
@@ -928,12 +923,11 @@ public:
 				dims.push_back(dim_band);
 			}
 
-			
 			NcVar var;
-			field_add_variable(F, ncFile, varname, var, dims);
-			
+			field_add_variable(F, ncFile, varname, var, dims);			
 			var.putAtt("standard_name", standard_name);
-			if (long_name != cBlock::ud_string())var.putAtt("long_name", long_name);			
+			if (long_name.length()>0) var.putAtt("long_name", long_name);
+			var.putAtt("original_intrepid_database_name", F.Name);
 			var.putAtt("units", units);
 			field_set_fillvalue(F, var);
 			
@@ -964,7 +958,7 @@ public:
 		NcDim  dim_sample = ncFile.getDim("sample");
 		
 		int i_field         = V.findkeyindex("field_name");
-		int i_ignore        = V.findkeyindex("ignore");
+		int i_convert       = V.findkeyindex("convert");
 		int i_standard_name = V.findkeyindex("standard_name");
 		int i_long_name     = V.findkeyindex("long_name");
 		int i_units         = V.findkeyindex("units");
@@ -972,46 +966,33 @@ public:
 		size_t fi = 0;
 		for (auto it = D.Fields.begin(); it != D.Fields.end(); ++it){
 			fi++;
-			ILField& F = *it;
-			message(flog, "field %s\n", F.Name.c_str());
-
+			ILField& F = *it;			
 			if (F.isgroupbyline() == true)continue;
-
-			//if (!strcasecmp(F.Name, "longitude_agd84")){ continue; }
-			//if (!strcasecmp(F.Name, "latitude_agd84"))continue;
-			//if (!strcasecmp(F.Name,"longitude_agd66")){continue;}
-			//if (!strcasecmp(F.Name,"latitude_agd66"))continue;
-			//if (!strcasecmp(F.Name,"longitude_wgs84"))continue;
-			//if (!strcasecmp(F.Name,"latitude_wgs84"))continue;
-			
-
-			//int vindex = findvariableindex(F.Name);
-			//if (vindex < 0){
-			//	message(flog, "Error: Could not find a standard variable for field %s\n", F.Name.c_str());
-			//	continue;
-			//}
-
-			//size_t vi = (size_t)vindex;
-			//std::string standard_name = Variables[vi].standardname;
-			//std::string long_name = Variables[vi].longname;
-			//std::string units = Variables[vi].units;
-			
-			std::vector<size_t> recs = V.findmatchingrecords(i_field, F.Name);
-			if (recs.size() == 0){
-				message(flog, "Error: Could not find a standard variable for field %s\n", F.Name.c_str());
+				
+			if (F.datatype().name() == "UNKNOWN"){
+				message(flog, "Warning: skipping field %s: unsupported Intrepid datatype\n", F.Name.c_str());
 				continue;
-			}	
+			}
 
-			size_t vi = recs[0];			
+			std::vector<size_t> recs = V.findmatchingrecords(i_field, F.Name);
+			if (recs.size() == 0){				
+				message(flog, "Warning: skipping field %s: could not find a match in the vocabulary file\n", F.Name.c_str());
+				continue;
+			}				
+			
+			size_t vi = recs[0];
+			std::string convert = V.records[vi][i_convert];
+			if (convert == "no"){
+				message(flog, "Ignoring field %s\n", F.Name.c_str());
+				continue;
+			}
+			message(flog, "Converting field %s\n", F.Name.c_str());
+
 			std::string standard_name = V.records[vi][i_standard_name];
 			std::string long_name     = V.records[vi][i_long_name];
-			std::string units         = V.records[vi][i_units];
-			std::string ignore        = V.records[vi][i_ignore];
+			std::string units         = V.records[vi][i_units];						
+			std::string varname       = standard_name;
 			
-			//std::string varname       = F.Name;
-			std::string varname = standard_name;
-			if (ignore == "ignore") continue;
-
 			std::vector<NcDim> dims;
 			dims.push_back(dim_sample);
 			if (F.nbands() > 1){
@@ -1022,25 +1003,12 @@ public:
 
 			NcVar var;
 			field_add_variable(F, ncFile, varname, var, dims);
-
-			if (standard_name != ""){				
-				//if (standard_name == "latitude" || standard_name == "longitude" ){
-				//	var.putAtt("standard_name", standard_name);
-				//}
-				var.putAtt("standard_name", standard_name);
-			}
-			
-			if (long_name != ""){
-				var.putAtt("long_name", long_name);
-			}
-
-			//Add the units
-			var.putAtt("units", units);						
-
-			//Set the fill value for undefined values
-			field_set_fillvalue(F, var);
-			
-			continue;
+			var.putAtt("standard_name", standard_name);
+			if (long_name.length()>0) var.putAtt("long_name", long_name);
+			var.putAtt("original_intrepid_database_name", F.Name);			
+			var.putAtt("units", units);									
+			field_set_fillvalue(F, var);			
+			if (DummyRun) continue;
 
 			size_t startindex = 0;			
 			for (size_t li = 0; li < nlines; li++){
