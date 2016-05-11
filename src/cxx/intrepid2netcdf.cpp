@@ -551,7 +551,7 @@ public:
 			populate_metadata(R,projectnumber);
 			
 			NcFile ncFile(NCPath, NcFile::replace);
-			add_lineindex_old(ncFile, D);
+			add_lineindex(ncFile, D);
 			add_groupbyline_variables(ncFile, D);			
 			add_line_startend_points(ncFile, D);
 			add_sample_variables(ncFile,D);
@@ -721,7 +721,7 @@ public:
 		}
 	}
 
-	bool add_lineindex_old(NcFile& ncFile, ILDataset& D)
+	bool add_lineindex(NcFile& ncFile, ILDataset& D)
 	{
 		_GSTITEM_
 		size_t nlines = D.nlines();
@@ -732,27 +732,15 @@ public:
 
 		NcVar vifirst = ncFile.addVar("index_first_sample", ncInt, dim_line);
 		vifirst.putAtt("standard_name", "index_first_sample");
-		vifirst.putAtt("long_name", "zero based index of the first sample in the line");
+		vifirst.putAtt("description", "zero based index of the first sample in the line");
 		vifirst.putAtt("units", "1");
 		vifirst.putAtt("_FillValue", ncInt, IDatatype::intnull());
 
-		//NcVar vilast = ncFile.addVar("index_last_sample", ncInt, dim_line);
-		//vilast.putAtt("standard_name", "index_last_sample");
-		//vilast.putAtt("long_name", "zero based index of the last sample in the line");
-		//vilast.putAtt("units", "1");
-		//vilast.putAtt("_FillValue", ncInt, IDatatype::intnull());
-
 		NcVar vicount = ncFile.addVar("index_count", ncInt, dim_line);
 		vicount.putAtt("standard_name", "index_count");
-		vicount.putAtt("long_name", "number of samples in the line");
+		vicount.putAtt("description", "number of samples in the line");
 		vicount.putAtt("units", "1");
 		vicount.putAtt("_FillValue", ncInt, IDatatype::intnull());
-
-		//NcVar visequence = ncFile.addVar("index_sequence", ncInt, dim_sample);
-		//visequence.putAtt("standard_name", "index_sequence");
-		//visequence.putAtt("long_name", "zero based index/sequence number of the line");
-		//visequence.putAtt("units", "1");
-		//visequence.putAtt("_FillValue", ncInt, IDatatype::intnull());
 
 		std::vector<int> ifirst(nlines);
 		std::vector<int> ilast(nlines);
@@ -768,14 +756,12 @@ public:
 			}
 			startindex += icount[li];
 		}
-		vifirst.putVar(ifirst.data());
-		//vilast.putVar(ilast.data());
-		vicount.putVar(icount.data());
-		//visequence.putVar(isequence.data());
+		vifirst.putVar(ifirst.data());		
+		vicount.putVar(icount.data());		
 		return true;
 	}
 
-	bool add_lineindex_new(NcFile& ncFile, ILDataset& D)
+	bool add_lineindex_unused(NcFile& ncFile, ILDataset& D)
 	{
 		_GSTITEM_
 		size_t nlines = D.nlines();
@@ -788,7 +774,7 @@ public:
 
 		NcVar vifirst = ncFile.addVar("index_lines", ncInt, dim_line_index);
 		vifirst.putAtt("standard_name", "index_lines");
-		vifirst.putAtt("long_name", "zero based index of the first sample in the line, and then one past the end of the last line");
+		vifirst.putAtt("description", "zero based index of the first sample in the line, and then one past the end of the last line");
 		vifirst.putAtt("units", "1");
 		vifirst.putAtt("_FillValue", ncInt, IDatatype::intnull());
 
@@ -822,25 +808,25 @@ public:
 
 		NcVar vx1 = ncFile.addVar("longitude_first", ncDouble, dim_line);
 		vx1.putAtt("standard_name", "longitude_first");
-		vx1.putAtt("long_name", "first non-null longitude coordinate in the line");
+		vx1.putAtt("description", "first non-null longitude coordinate in the line");
 		vx1.putAtt("units", "degree_east");
 		vx1.putAtt("_FillValue", ncDouble, preferred_double_fillvalue());
 
 		NcVar vx2 = ncFile.addVar("longitude_last", ncDouble, dim_line);
 		vx2.putAtt("standard_name", "longitude_last");
-		vx2.putAtt("long_name", "last non-null longitude coordinate in the line");
+		vx2.putAtt("description", "last non-null longitude coordinate in the line");
 		vx2.putAtt("units", "degree_east");
 		vx2.putAtt("_FillValue", ncDouble, preferred_double_fillvalue());
 
 		NcVar vy1 = ncFile.addVar("latitude_first", ncDouble, dim_line);
 		vy1.putAtt("standard_name", "latitude_first");
-		vy1.putAtt("long_name", "first non-null latitude coordinate in the line");
+		vy1.putAtt("description", "first non-null latitude coordinate in the line");
 		vy1.putAtt("units", "degree_north");
 		vy1.putAtt("_FillValue", ncDouble, preferred_double_fillvalue());
 
 		NcVar vy2 = ncFile.addVar("latitude_last", ncDouble, dim_line);
 		vy2.putAtt("standard_name", "latitude_last");
-		vy2.putAtt("long_name", "last non-null latitude coordinate in the line");
+		vy2.putAtt("description", "last non-null latitude coordinate in the line");
 		vy2.putAtt("units", "degree_north");
 		vy2.putAtt("_FillValue", ncDouble, preferred_double_fillvalue());
 
@@ -885,8 +871,8 @@ public:
 
 		int i_field = V.findkeyindex("field_name");
 		int i_convert = V.findkeyindex("convert");
+		int i_variable_name = V.findkeyindex("variable_name");
 		int i_standard_name = V.findkeyindex("standard_name");
-		int i_long_name = V.findkeyindex("long_name");
 		int i_units = V.findkeyindex("units");
 
 		size_t fi = 0;
@@ -910,11 +896,10 @@ public:
 			}
 			message(flog, "Converting field %s\n", F.Name.c_str());
 
+			std::string variable_name = V.records[vi][i_variable_name];
 			std::string standard_name = V.records[vi][i_standard_name];
-			std::string long_name = V.records[vi][i_long_name];
-			std::string units = V.records[vi][i_units];						
-			std::string varname = standard_name;
-			
+			std::string units         = V.records[vi][i_units];						
+						
 			std::vector<NcDim> dims;
 			dims.push_back(dim_line);
 			if (F.nbands() > 1){
@@ -924,10 +909,9 @@ public:
 			}
 
 			NcVar var;
-			field_add_variable(F, ncFile, varname, var, dims);			
-			var.putAtt("standard_name", standard_name);
-			if (long_name.length()>0) var.putAtt("long_name", long_name);
-			var.putAtt("original_intrepid_database_name", F.Name);
+			field_add_variable(F, ncFile, variable_name, var, dims);
+			var.putAtt("standard_name", standard_name);			
+			var.putAtt("original_database_name", F.Name);
 			var.putAtt("units", units);
 			field_set_fillvalue(F, var);
 			
@@ -959,8 +943,8 @@ public:
 		
 		int i_field         = V.findkeyindex("field_name");
 		int i_convert       = V.findkeyindex("convert");
+		int i_variable_name = V.findkeyindex("variable_name");
 		int i_standard_name = V.findkeyindex("standard_name");
-		int i_long_name     = V.findkeyindex("long_name");
 		int i_units         = V.findkeyindex("units");
 
 		size_t fi = 0;
@@ -988,10 +972,10 @@ public:
 			}
 			message(flog, "Converting field %s\n", F.Name.c_str());
 
+			std::string variable_name = V.records[vi][i_variable_name];
 			std::string standard_name = V.records[vi][i_standard_name];
-			std::string long_name     = V.records[vi][i_long_name];
 			std::string units         = V.records[vi][i_units];						
-			std::string varname       = standard_name;
+			
 			
 			std::vector<NcDim> dims;
 			dims.push_back(dim_sample);
@@ -1002,10 +986,9 @@ public:
 			}
 
 			NcVar var;
-			field_add_variable(F, ncFile, varname, var, dims);
+			field_add_variable(F, ncFile, variable_name, var, dims);
 			var.putAtt("standard_name", standard_name);
-			if (long_name.length()>0) var.putAtt("long_name", long_name);
-			var.putAtt("original_intrepid_database_name", F.Name);			
+			var.putAtt("original_database_name", F.Name);		
 			var.putAtt("units", units);									
 			field_set_fillvalue(F, var);			
 			if (DummyRun) continue;
@@ -1033,8 +1016,6 @@ public:
 				var.putVar(startp, countp, S.pvoid());
 				startindex += S.nsamples();
 			}	
-
-
 		}		
 		return true;
 	}
@@ -1208,8 +1189,7 @@ int main(int argc, char** argv)
 	{
 		std::string controlfile = argv[1];
 		cIntrepidConverter C(controlfile);
-		C.process_databases();	
-		prompttocontinue();
+		C.process_databases();			
 	}
 
 	catch (NcException& e)
