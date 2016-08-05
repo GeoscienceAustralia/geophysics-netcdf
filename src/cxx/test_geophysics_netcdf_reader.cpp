@@ -62,11 +62,11 @@ bool test_read(){
 }
 
 bool test_create(){
-	std::string ncpath = "z:\\projects\\intrepid2netcdf\\ncfiles\\test.nc";
+	std::string ncpath = "z:\\projects\\intrepid2netcdf\\ncfiles\\test_reader.nc";
 	deletefile(ncpath);
 	std::vector<size_t> linenumbers = { 100, 200, 300, 400 };
 	std::vector<size_t> nsamples = { 10, 20, 30, 40 };;
-	cGeophysicsNcFile ncfile(ncpath, linenumbers, nsamples);
+	cGeophysicsNcFile   ncfile(ncpath, linenumbers, nsamples);
 	return true;
 };
 int main(int argc, char** argv)

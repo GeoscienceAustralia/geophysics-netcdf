@@ -62,6 +62,7 @@ private:
 		addSampleVarAll("fiducial", fid);
 		fid *= 2;
 		addSampleVarAll("fiducial2", fid);
+		addSampleVar("fiducial3",ncDouble, 2);
 		
 
 		std::vector<NcDim>  emdims = { dim_sample, dim_window };
@@ -77,6 +78,18 @@ private:
 	NcType nctype(short dummy){ return ncShort; }
 	NcType nctype(int dummy){ return ncInt; }
 	NcType nctype(double dummy){ return ncDouble; }
+
+	bool addSampleVar(const std::string& name, const NcType& type, const size_t nbands = 1){
+
+		NcVar var = getVar(name);
+		if (var.isNull()){						
+			NcDim dim = addDim("fred", nbands);			
+			std::vector<NcDim> dims = { dim_sample, dim };
+			var = addVar(name, type, dims);
+			return true;
+		}
+		return false;
+	}
 
 	template<typename T>
 	bool addSampleVarAll(const std::string& name, std::vector<T> vals){
