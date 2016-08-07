@@ -62,11 +62,60 @@ bool test_read(){
 }
 
 bool test_create(){
-	std::string ncpath = "z:\\projects\\intrepid2netcdf\\ncfiles\\test_reader.nc";
+	std::string ncpath = "test.nc";
 	deletefile(ncpath);
-	std::vector<size_t> linenumbers = { 100, 200, 300, 400 };
-	std::vector<size_t> nsamples = { 10, 20, 30, 40 };;
-	cGeophysicsNcFile   ncfile(ncpath, linenumbers, nsamples);
+	std::vector<size_t> linenumbers  = { 100, 200, 300, 400 };
+	std::vector<size_t> linensamples = { 10,   20,  30,  40 };
+		
+	cGeophysicsNcFile   nc(ncpath, linenumbers, linensamples);
+	size_t nwindows = 45;
+	size_t nlayers  = 30;
+	size_t nrxcomponents = 3;
+
+	size_t ntotalsamples = nc.ntotalsamples();
+	std::vector<int> fid     = increment(ntotalsamples,0,1);
+	std::vector<int> layers  = increment(nlayers, 0, 1);
+	std::vector<int> windows = increment(nwindows, 0, 1);
+	std::vector<int> rxcomponents = increment(nrxcomponents, 0, 1);	
+
+	NcDim dim_rxcomponent = nc.addDimAndVar("rxcomponents", rxcomponents);
+	NcDim dim_window = nc.addDimAndVar("windows", windows);	
+	NcDim dim_layer  = nc.addDimAndVar("layers", layers);
+	
+
+	NcVar vfid = nc.addSampleVar("fiducial", ncInt);
+	NcVar vx   = nc.addSampleVar("easting",  ncDouble);
+	NcVar vy   = nc.addSampleVar("northing", ncDouble);	
+	NcVar vconductivity = nc.addSampleVar("conductivity", ncDouble, dim_layer);
+	NcVar vthickness    = nc.addSampleVar("thickness", ncDouble, dim_layer);
+	
+	std::vector<NcDim> emdims = { dim_rxcomponent, dim_window };
+	NcVar vem = nc.addSampleVar("em", ncDouble, emdims);
+		
+	const size_t n = ntotalsamples*nrxcomponents*nwindows;
+	std::vector<double> em = increment(n,0.0,1.0);	
+	nc.putSampleVarAll(vfid, fid);
+	nc.putSampleVarAll(vem, em);
+
+	for (size_t li = 0; li < nc.nlines(); li++){
+		size_t nls = nc.nlinesamples(li);
+		std::vector<double> x = increment(nls,500000.0,10.0);
+		std::vector<double> y = increment(nls,6500000.0,10.0);
+		
+		nc.putSampleVarLine(vx, x, li);
+		nc.putSampleVarLine(vy, y, li);
+		
+		for (size_t bi = 0; bi < nlayers; bi++){
+			std::vector<double> c(nls, li*10+bi);
+			nc.putSampleVarLine(vconductivity, c, li, bi);
+		}
+
+		for (size_t bi = 0; bi < nlayers; bi++){
+			std::vector<double> t(nls, li * 100 + bi);
+			nc.putSampleVarLine(vthickness, t, li, bi);
+		}
+		
+	}		
 	return true;
 };
 int main(int argc, char** argv)
