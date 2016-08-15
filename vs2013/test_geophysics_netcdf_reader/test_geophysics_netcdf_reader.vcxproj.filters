@@ -108,6 +108,9 @@
     <ClCompile Include="..\..\third_party\netcdf-cxx4-4.2\cxx4\ncVlenType.cpp">
       <Filter>Source Files\netcdfcxx</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\src\cxx\geophysics_netcdf.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\src\c++\blocklanguage.h">

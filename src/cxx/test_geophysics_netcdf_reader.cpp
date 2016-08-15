@@ -23,20 +23,20 @@ using namespace netCDF::exceptions;
 #include "general_utils.h"
 #include "file_utils.h"
 #include "vector_utils.h"
-#include "geophysicsncfile.h"
+#include "geophysics_netcdf.h"
 
-bool test_read(){
+
+bool test_read1(){
 
 	//std::string ncpath = argv[1];
 	//std::string ncpath = "http://dapds00.nci.org.au/thredds/dodsC/uc0/rr2_dev/rcb547/magrad_tests_indexed_v2/GSQP1029MAG.nc";
-	//std::string ncpath   = "http://dapds00.nci.org.au/thredds/dodsC/uc0/rr2_dev/rcb547/magrad_tests_indexed_v2/P583MAG.nc";
-	std::string ncpath = "z:\\projects\\intrepid2netcdf\\ncfiles\\P583MAG.nc";
+	std::string ncpath   = "http://dapds00.nci.org.au/thredds/dodsC/uc0/rr2_dev/rcb547/magrad_tests_indexed_v2/P583MAG.nc";
 
 	cGeophysicsNcFile ncfile(ncpath, NcFile::read);
 
 	std::vector<int> linenumber;
 	ncfile.getLineNumbers(linenumber);
-
+	
 	size_t lnum = linenumber[20];
 	size_t index = ncfile.getLineIndex(lnum);
 	std::vector<double> v0;
@@ -56,8 +56,34 @@ bool test_read(){
 		ncfile.getVarByLineIndex("longitude_GDA94", i, v3);
 		double t2 = gettime();
 		printf("%lu nsamples=%lu time=%lf\n", i, v1.size(), t2 - t1);
+	}	
+	return true;
+}
+
+bool test_read2(){
+
+	std::string ncpath = "test.nc";
+
+	cGeophysicsNcFile ncfile(ncpath, NcFile::read);
+
+	std::vector<int> linenumber;
+	ncfile.getLineNumbers(linenumber);
+
+	size_t lnum = linenumber[3];
+	size_t index = ncfile.getLineIndex(lnum);
+	std::vector<double> v0;
+	bool status;
+
+	status = ncfile.getVarByLineNumber("easting", 300, v0);
+	status = ncfile.getVarByLineNumber("northing", 300, v0);
+
+	std::vector<size_t> flightnumber;
+	ncfile.getFlightNumbers(flightnumber);
+
+	std::vector<double> v1, v2, v3;
+	for (size_t i = 0; i < ncfile.nlines(); i++){		
+		ncfile.getVarByLineIndex("fiducial", i, v1);						
 	}
-	//prompttocontinue();	
 	return true;
 }
 
@@ -66,7 +92,8 @@ bool test_create(){
 	deletefile(ncpath);
 	std::vector<size_t> linenumbers  = { 100, 200, 300, 400 };
 	std::vector<size_t> linensamples = { 10,   20,  30,  40 };
-		
+	std::vector<size_t> flightnumbers = {11, 22, 33, 44 };
+
 	cGeophysicsNcFile   nc(ncpath, linenumbers, linensamples);
 	size_t nwindows = 45;
 	size_t nlayers  = 30;
@@ -77,55 +104,68 @@ bool test_create(){
 	std::vector<int> layers  = increment(nlayers, 0, 1);
 	std::vector<int> windows = increment(nwindows, 0, 1);
 	std::vector<int> rxcomponents = increment(nrxcomponents, 0, 1);	
+	
+	NcDim dim_rxcomponent = nc.addDimVar("rxcomponents", rxcomponents);
+	NcDim dim_window = nc.addDimVar("windows", windows);	
+	NcDim dim_layer  = nc.addDimVar("layers", layers);
+	
+	cSampleVar vfid = nc.addSampleVar("fiducial", ncInt);
+	vfid.add_standard_name("fiducial");
+	vfid.add_units("1");
+	vfid.add_fillvalue(34);
 
-	NcDim dim_rxcomponent = nc.addDimAndVar("rxcomponents", rxcomponents);
-	NcDim dim_window = nc.addDimAndVar("windows", windows);	
-	NcDim dim_layer  = nc.addDimAndVar("layers", layers);
+
+	cSampleVar vx   = nc.addSampleVar("easting",  ncDouble);
+	vx.add_standard_name("X");
+	vx.add_units("m");
 	
 
-	NcVar vfid = nc.addSampleVar("fiducial", ncInt);
-	NcVar vx   = nc.addSampleVar("easting",  ncDouble);
-	NcVar vy   = nc.addSampleVar("northing", ncDouble);	
-	NcVar vconductivity = nc.addSampleVar("conductivity", ncDouble, dim_layer);
-	NcVar vthickness    = nc.addSampleVar("thickness", ncDouble, dim_layer);
-	
+	cSampleVar vy   = nc.addSampleVar("northing", ncDouble);	
+	cSampleVar vconductivity = nc.addSampleVar("conductivity", ncDouble, dim_layer);
+	cSampleVar vthickness    = nc.addSampleVar("thickness", ncDouble, dim_layer);
+		
+	cLineVar vflight = nc.addLineVar("flight", ncInt);
+	vflight.putAll(flightnumbers);
+
 	std::vector<NcDim> emdims = { dim_rxcomponent, dim_window };
-	NcVar vem = nc.addSampleVar("em", ncDouble, emdims);
+	cSampleVar vem = nc.addSampleVar("em", ncDouble, emdims);
 		
 	const size_t n = ntotalsamples*nrxcomponents*nwindows;
-	std::vector<double> em = increment(n,0.0,1.0);	
-	nc.putSampleVarAll(vfid, fid);
-	nc.putSampleVarAll(vem, em);
+	std::vector<double> em = increment(n,0.0,1.0);		
+	vfid.putAll(fid);
+	vem.putAll(em);
 
 	for (size_t li = 0; li < nc.nlines(); li++){
 		size_t nls = nc.nlinesamples(li);
 		std::vector<double> x = increment(nls,500000.0,10.0);
 		std::vector<double> y = increment(nls,6500000.0,10.0);
 		
-		nc.putSampleVarLine(vx, x, li);
-		nc.putSampleVarLine(vy, y, li);
+		vx.putLine(x, li);
+		vy.putLine(y, li);
 		
 		for (size_t bi = 0; bi < nlayers; bi++){
 			std::vector<double> c(nls, li*10+bi);
-			nc.putSampleVarLine(vconductivity, c, li, bi);
+			vconductivity.putLine(c, li, bi);
 		}
 
 		for (size_t bi = 0; bi < nlayers; bi++){
 			std::vector<double> t(nls, li * 100 + bi);
-			nc.putSampleVarLine(vthickness, t, li, bi);
+			vthickness.putLine(t, li, bi);
 		}
 		
 	}		
 	return true;
 };
+
+
 int main(int argc, char** argv)
 {
 	_GSTITEM_
 	
 	try
-	{
-		//test_read();
+	{		
 		test_create();
+		test_read2();
 	}
 
 	catch (NcException& e)

@@ -84,6 +84,7 @@
   <ItemGroup>
     <ClCompile Include="..\..\src\cxx\file_utils.cpp" />
     <ClCompile Include="..\..\src\cxx\general_utils.cpp" />
+    <ClCompile Include="..\..\src\cxx\geophysics_netcdf.cpp" />
     <ClCompile Include="..\..\src\cxx\test_geophysics_netcdf_reader.cpp" />
     <ClCompile Include="..\..\third_party\netcdf-cxx4-4.2\cxx4\ncAtt.cpp">
       <WarningLevel Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Level1</WarningLevel>
