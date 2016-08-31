@@ -157,7 +157,6 @@ bool test_create(){
 	return true;
 };
 
-
 int main(int argc, char** argv)
 {
 	_GSTITEM_

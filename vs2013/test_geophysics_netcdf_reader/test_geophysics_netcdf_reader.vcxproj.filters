@@ -16,9 +16,6 @@
     <Filter Include="Source Files\Header Files">
       <UniqueIdentifier>{be228866-ce85-4cc6-8dec-dfada7bbe7f9}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Source Files\netcdfcxx">
-      <UniqueIdentifier>{c77c8703-2604-43a5-8bea-4df9a02cf1a0}</UniqueIdentifier>
-    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\..\src\cxx\file_utils.cpp">
@@ -29,84 +26,6 @@
     </ClCompile>
     <ClCompile Include="..\..\src\cxx\test_geophysics_netcdf_reader.cpp">
       <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\third_party\netcdf-cxx4-4.2\cxx4\ncAtt.cpp">
-      <Filter>Source Files\netcdfcxx</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\third_party\netcdf-cxx4-4.2\cxx4\ncByte.cpp">
-      <Filter>Source Files\netcdfcxx</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\third_party\netcdf-cxx4-4.2\cxx4\ncChar.cpp">
-      <Filter>Source Files\netcdfcxx</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\third_party\netcdf-cxx4-4.2\cxx4\ncCheck.cpp">
-      <Filter>Source Files\netcdfcxx</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\third_party\netcdf-cxx4-4.2\cxx4\ncCompoundType.cpp">
-      <Filter>Source Files\netcdfcxx</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\third_party\netcdf-cxx4-4.2\cxx4\ncDim.cpp">
-      <Filter>Source Files\netcdfcxx</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\third_party\netcdf-cxx4-4.2\cxx4\ncDouble.cpp">
-      <Filter>Source Files\netcdfcxx</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\third_party\netcdf-cxx4-4.2\cxx4\ncEnumType.cpp">
-      <Filter>Source Files\netcdfcxx</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\third_party\netcdf-cxx4-4.2\cxx4\ncException.cpp">
-      <Filter>Source Files\netcdfcxx</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\third_party\netcdf-cxx4-4.2\cxx4\ncFile.cpp">
-      <Filter>Source Files\netcdfcxx</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\third_party\netcdf-cxx4-4.2\cxx4\ncFloat.cpp">
-      <Filter>Source Files\netcdfcxx</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\third_party\netcdf-cxx4-4.2\cxx4\ncGroup.cpp">
-      <Filter>Source Files\netcdfcxx</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\third_party\netcdf-cxx4-4.2\cxx4\ncGroupAtt.cpp">
-      <Filter>Source Files\netcdfcxx</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\third_party\netcdf-cxx4-4.2\cxx4\ncInt.cpp">
-      <Filter>Source Files\netcdfcxx</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\third_party\netcdf-cxx4-4.2\cxx4\ncInt64.cpp">
-      <Filter>Source Files\netcdfcxx</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\third_party\netcdf-cxx4-4.2\cxx4\ncOpaqueType.cpp">
-      <Filter>Source Files\netcdfcxx</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\third_party\netcdf-cxx4-4.2\cxx4\ncShort.cpp">
-      <Filter>Source Files\netcdfcxx</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\third_party\netcdf-cxx4-4.2\cxx4\ncString.cpp">
-      <Filter>Source Files\netcdfcxx</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\third_party\netcdf-cxx4-4.2\cxx4\ncType.cpp">
-      <Filter>Source Files\netcdfcxx</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\third_party\netcdf-cxx4-4.2\cxx4\ncUbyte.cpp">
-      <Filter>Source Files\netcdfcxx</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\third_party\netcdf-cxx4-4.2\cxx4\ncUint.cpp">
-      <Filter>Source Files\netcdfcxx</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\third_party\netcdf-cxx4-4.2\cxx4\ncUint64.cpp">
-      <Filter>Source Files\netcdfcxx</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\third_party\netcdf-cxx4-4.2\cxx4\ncUshort.cpp">
-      <Filter>Source Files\netcdfcxx</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\third_party\netcdf-cxx4-4.2\cxx4\ncVar.cpp">
-      <Filter>Source Files\netcdfcxx</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\third_party\netcdf-cxx4-4.2\cxx4\ncVarAtt.cpp">
-      <Filter>Source Files\netcdfcxx</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\third_party\netcdf-cxx4-4.2\cxx4\ncVlenType.cpp">
-      <Filter>Source Files\netcdfcxx</Filter>
     </ClCompile>
     <ClCompile Include="..\..\src\cxx\geophysics_netcdf.cpp">
       <Filter>Source Files</Filter>

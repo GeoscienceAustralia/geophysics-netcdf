@@ -4,7 +4,7 @@
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup>
-    <LibraryPath>$(LibraryPath)</LibraryPath>
+    <LibraryPath>Z:\code\repos\geophysics-netcdf\vs2013\libnetcdfcxx\$(Platform)\$(Configuration);$(LibraryPath)</LibraryPath>
     <IncludePath>Z:\code\third_party\netcdf-cxx4-4.2\cxx4;$(IncludePath)</IncludePath>
     <_PropertySheetDisplayName>netcdf4-cxx</_PropertySheetDisplayName>
   </PropertyGroup>
@@ -13,7 +13,7 @@
       <PreprocessorDefinitions>%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
     <Link>
-      <AdditionalDependencies>%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>libnetcdfcxx.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup />

@@ -536,6 +536,44 @@ public:
 		}
 	}
 
+	
+	template <typename T>
+	bool getband(std::vector<T>& v, size_t band=0)
+	{
+		size_t ns = nsamples();
+		if (isgroupbyline()) ns = 1;		
+		v.resize(ns);
+		
+		switch (datatype().etype()){
+		case dtFLOAT: 			
+			for (size_t i = 0; i< ns; i++){				
+				v[i] = (T)fdata(i, band);
+			}		
+			return true; break;
+		case dtDOUBLE: 
+			for (size_t i = 0; i< ns; i++){				
+				v[i] = (T)ddata(i, band);
+			}
+			return true; break;			
+		case dtSHORT:
+			for (size_t i = 0; i< ns; i++){				
+				v[i] = (T)sdata(i, band);					
+			}
+			return true; break;
+		case dtINT:
+			for (size_t i = 0; i< ns; i++){				
+				v[i] = (T)idata(i, band);
+			}
+			return true; break;
+		case dtBYTE:
+			for (size_t i = 0; i< ns; i++){				
+				v[i] = (T)cdata(i, band);
+			}			
+			return true; break;
+		default: printf("ILSegment::i() Unknown type"); return false;
+		}
+	}
+
 	size_t nbands() const;
 	size_t nsamples() const;
 	size_t startindex() const;
@@ -566,6 +604,31 @@ public:
 		}
 	}
 	
+	void change_nullvalue(const float& newnullvalue){
+		_GSTITEM_
+		if (datatype().isfloat()){
+			float* fp = (float*)pvoid();
+			for (size_t k = 0; k < nstored(); k++){
+				if (datatype().isnull(fp[k])){
+					fp[k] = newnullvalue;
+				}
+			}
+		}
+	}
+
+	void change_nullvalue(const double& newnullvalue){
+
+		if (datatype().isdouble()){
+			double* fp = (double*)pvoid();
+			for (size_t k = 0; k < nstored(); k++){
+				if (datatype().isnull(fp[k])){
+					fp[k] = newnullvalue;
+				}
+			}
+		}
+
+	}
+
 	/*
 	template<typename T>
 	bool write(const std::vector<std::vector<T>>& array)
@@ -595,7 +658,7 @@ public:
 	std::string Name;
 		
 	std::vector<ILSegment> Segments;
-	IDatatype datatype(){ return Header.datatype; }
+	IDatatype datatype() const { return Header.datatype; }
 	size_t nbands(){ return Header.nbands; };
 	size_t nlines() const;			
 	FILE* filepointer() { return pFile; }	
@@ -724,6 +787,8 @@ public:
 	}
 
 	size_t groupbyindex(int value);
+
+	size_t get_data();
 
 };
 
@@ -905,6 +970,14 @@ public:
 	}
 	size_t startindex(const size_t segindex){ return indextable[segindex].start; }
 	
+	std::vector<size_t> linesamplecount(){
+		std::vector<size_t> count(nlines());
+		for (size_t i = 0; i < nlines(); i++){
+			count[i] = indextable[i].ns;
+		}
+		return count;
+	}
+
 	static std::string strippath(const std::string& path)
 	{
 		_GSTITEM_
@@ -1172,6 +1245,27 @@ public:
 		fX.close();
 		fY.close();
 	}
+	
+	template <typename T>
+	bool getlinenumbers(std::vector<T>& v){
+		ILField& f = *getsurveyinfofield("LineNumber");		
+		bool status = getgroupbydata(f,v);
+		return status;
+	}
+
+	template <typename T> 
+	bool getgroupbydata(const ILField& f, std::vector<T>& v, const int band=0){
+		v.resize(nlines());
+		for (size_t li = 0; li < nlines(); li++){
+			ILSegment S = f.Segments[li];
+			S.readbuffer();
+			std::vector<T> b;
+			bool status = S.getband(b,band);
+			v[li] = b[0];
+		}
+		return true;
+	}
+
 	double distancetobestfitline(cPnt p, size_t i)
 	{
 		_GSTITEM_
@@ -1180,6 +1274,7 @@ public:
 		double d = c.distance(p);
 		return d;
 	}
+
 	size_t nearestbestfitline(cPnt p)
 	{
 		_GSTITEM_
@@ -1297,7 +1392,60 @@ public:
 		cStats<double> stats(v);
 		return stats;		
 	}
+	
+	template<typename T>
+	void getdata(const std::string& fieldname, std::vector<T> v){
+		_GSTITEM_
 
+		ILField& F = *getfield(fieldname);		
+		v.reserve(nsamples());
+		for (size_t li = 0; li < nlines(); li++){
+			ILSegment& S = F.Segments[li];
+			S.readbuffer();
+			F.datatype();
+			size_t nsamples = S.nsamples();
+			for (size_t si = 0; si < nsamples; si++){
+				T val = S.d(si);
+				v.push_back(val);				
+			}
+		}		
+	}
+
+	bool get_line_start_end_points(std::vector<double>& x1, std::vector<double>& x2, std::vector<double>& y1, std::vector<double>& y2)
+	{
+		_GSTITEM_
+		ILField& fx = getsurveyinfofield_ref("X");
+		ILField& fy = getsurveyinfofield_ref("Y");
+
+		size_t nl = nlines();
+
+		IDatatype dt = fx.datatype();
+		
+		x1.resize(nl);
+		y1.resize(nl);
+		x2.resize(nl);
+		y2.resize(nl);
+		
+		for (size_t li = 0; li < nl; li++){
+			ILSegment& sx = fx.Segments[li];
+			ILSegment& sy = fy.Segments[li];
+			sx.readbuffer();
+			sy.readbuffer();
+			size_t ns = sx.nsamples();
+			for (size_t k = 0; k<ns; k++){
+				x1[li] = sx.d(k);
+				y1[li] = sy.d(k);
+				if (dt.isnull(x1[li]) == false && dt.isnull(y1[li]) == false)break;
+			}
+
+			for (size_t k = ns - 1; k != 0; k--){
+				x2[li] = sx.d(k);
+				y2[li] = sy.d(k);
+				if (dt.isnull(x2[li]) == false && dt.isnull(y2[li]) == false)break;
+			}
+		}		
+		return true;
+	}
 };
 
 
@@ -1399,8 +1547,6 @@ bool ILSegment::writebuffer()
 	}
 	return true;
 }
-
-
 
 ///////////////////////////////////////////////////////////////////
 std::string ILField::datasetpath()
@@ -1528,7 +1674,5 @@ size_t ILField::groupbyindex(int value)
 	}
 	return nullindex();
 }
-
-
 
 #endif

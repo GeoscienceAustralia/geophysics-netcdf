@@ -24,450 +24,11 @@ using namespace netCDF::exceptions;
 #include "blocklanguage.h"
 #include "intrepid.h"
 
-class cCSVFile{
-
-	public:
-		std::vector<std::string> header;
-		std::vector<std::vector<std::string>> records;
-
-		cCSVFile(){ }
-
-		cCSVFile(const std::string csvfile){
-
-			FILE* fp = fileopen(csvfile, "r");
-
-			std::string str;
-			std::vector<std::string> tokens;
-
-			//Read header line
-			filegetline(fp, str);
-			split(str, ',', tokens);
-			header = tokens;
-			size_t nfields = header.size();			
-
-			//Read remaining lines
-			size_t k = 1;
-			while (filegetline(fp, str)){
-				k++;
-				tokens.resize(0);
-				split(str, ',', tokens);
-				if (tokens.size() == nfields - 1){
-					tokens.push_back("");
-				}
-
-				if (tokens.size() != nfields){
-					std::printf("Error: On line %lu of file %s\n", k, csvfile.c_str());
-					std::printf("Error: The number of header items (%lu) does not match the number of data items (%lu)\n", nfields, tokens.size());
-				}
-
-				for (size_t i = 0; i < tokens.size(); i++){
-					tokens[i] = trim(tokens[i]);
-					tokens[i] = stripquotes(tokens[i]);
-				}
-				records.push_back(tokens);
-			}
-			fclose(fp);
-		}
-
-		bool addfield(const std::string fname){
-			header.push_back(fname);
-			for (size_t i = 0; i < records.size(); i++){
-				const std::string empty;
-				records[i].push_back(empty);
-			}
-			return true;
-		}
-
-		bool setfield(const std::string fname, const std::string value, const size_t recindex){
-			int k = findkeyindex(fname);
-			if (k < 0)return false;
-			records[recindex][(size_t)k] = value;
-			return true;
-		}
-
-		bool setfield(const std::string fname, const std::string value){
-			int k = findkeyindex(fname);
-			if (k < 0)return false;
-			if (records.size() == 0){
-				records.resize(1);
-				records[0].resize(header.size());
-			}
-
-			for (size_t i = 0; i < records.size(); i++){
-				records[i][(size_t)k] = value;
-			}
-			return true;
-		}
-
-		int findkeyindex(const std::string& fname){
-			for (size_t i = 0; i < header.size(); i++){
-				if (header[i] == fname){
-					return (int)i;
-				}
-			}
-			return -1;
-		}
-
-		std::vector<size_t> findmatchingrecords(const size_t keyindex, const int value){
-			std::vector<size_t> indices;
-			for (size_t i = 0; i < records.size(); i++){
-				int n = atoi(records[i][keyindex].c_str());
-				if (n == value){
-					indices.push_back(i);
-				}
-			}
-			return indices;
-		}
-
-		std::vector<size_t> findmatchingrecords(const std::string key, const int value)	{
-			int keyindex = findkeyindex(key);
-			if (keyindex < 0){
-				std::vector<size_t> indices;
-				return indices;
-			}
-			return findmatchingrecords((size_t)keyindex, value);
-		}
-
-		std::vector<size_t> findmatchingrecords(const size_t keyindex, const std::string value){
-			std::vector<size_t> indices;
-			for (size_t i = 0; i < records.size(); i++){
-				if (!strcasecmp(records[i][keyindex],value)){
-					indices.push_back(i);
-				}
-			}
-			return indices;
-		}
-
-		std::vector<size_t> findmatchingrecords(const std::string key, const std::string value)	{
-			int keyindex = findkeyindex(key);
-			if (keyindex < 0){
-				std::vector<size_t> indices;
-				return indices;
-			}
-			return findmatchingrecords((size_t)keyindex, value);
-		}
-
-		void printrecord(const size_t n){
-			for (size_t mi = 0; mi < header.size(); mi++){
-				std::printf("%s: %s\n", header[mi].c_str(), records[n][mi].c_str());
-			}
-			std::printf("\n");
-		}
-	};
-
-class cMetaDataTable{
-
-public:
-	std::vector<std::string> header;
-	std::vector<std::vector<std::string>> records;
-
-	cMetaDataTable(){ }
-
-	cMetaDataTable(const std::string metadatafile, size_t nskip){
-
-		FILE* fp = fileopen(metadatafile, "r");
-
-		std::string str;
-		std::vector<std::string> tokens;
-
-		//Read header line
-		filegetline(fp, str);
-		split(str, '\t', tokens);		
-		header = tokens;
-		size_t nfields = header.size();
-
-		//Skip lines after header
-		for (size_t i = 0; i < nskip; i++){
-			filegetline(fp, str);
-		}
-
-		//Read remaining lines
-		size_t k = 1 + nskip;
-		while (filegetline(fp, str)){
-			k++;
-			tokens.resize(0);
-			split(str, '\t', tokens);
-			if (tokens.size() == nfields - 1){
-				tokens.push_back("");
-			}
-
-			if (tokens.size() != nfields){
-				std::printf("Error: On line %lu of file %s\n", k, metadatafile.c_str());
-				std::printf("Error: The number of header items (%lu) does not match the number of data items (%lu)\n", nfields, tokens.size());
-			}
-
-			for (size_t i = 0; i < tokens.size(); i++){
-				tokens[i] = trim(tokens[i]);
-				tokens[i] = stripquotes(tokens[i]);
-			}
-			records.push_back(tokens);
-		}
-		fclose(fp);
-	}
-
-	cMetaDataTable(const cBlock& b, const std::string& id){
-		std::vector<std::vector<std::string>> g = b.getblockleftright(id);
-		for (size_t i = 0; i < g.size(); i++){
-			addfield(g[i][0]);
-			setfield(g[i][0], g[i][1]);
-		}	
-	}
-
-	bool addfield(const std::string fname){
-		header.push_back(fname);
-		for (size_t i = 0; i < records.size(); i++){
-			const std::string empty;
-			records[i].push_back(empty);
-		}
-		return true;
-	}
-
-	bool setfield(const std::string fname, const std::string value, const size_t recindex){
-		int k = findkeyindex(fname);
-		if (k < 0)return false;
-		records[recindex][(size_t)k] = value;
-		return true;		
-	}
-
-	bool setfield(const std::string fname, const std::string value){
-		int k = findkeyindex(fname);
-		if (k < 0)return false;
-		if (records.size() == 0){
-			records.resize(1);
-			records[0].resize(header.size());
-		}
-
-		for (size_t i = 0; i < records.size(); i++){
-			records[i][(size_t)k] = value;
-		}
-		return true;
-	}
-
-	int findkeyindex(const std::string& fname){
-		for (size_t i = 0; i < header.size(); i++){
-			if (header[i] == fname){
-				return (int)i;
-			}
-		}
-		return -1;
-	}
-
-	std::vector<size_t> findmatchingrecords(const size_t keyindex, const int value){
-		std::vector<size_t> indices;
-		for (size_t i = 0; i < records.size(); i++){
-			int n = atoi(records[i][keyindex].c_str());
-			if (n == value){
-				indices.push_back(i);
-			}
-		}
-		return indices;
-	}
-
-	std::vector<size_t> findmatchingrecords(const std::string key, const int value)	{
-		int keyindex = findkeyindex(key);
-		if (keyindex < 0){
-			std::vector<size_t> indices;
-			return indices;
-		}
-		return findmatchingrecords((size_t)keyindex, value);
-	}
-
-	void printrecord(const size_t n){
-		for (size_t mi = 0; mi < header.size(); mi++){
-			std::printf("%s: %s\n", header[mi].c_str(), records[n][mi].c_str());
-		}
-		std::printf("\n");
-	}
-};
-
-class cMetaDataRecord{
-
-	public:
-	std::vector<std::string> header;
-	std::vector<std::string> values;
-
-	cMetaDataRecord(){};
-
-	cMetaDataRecord(const cBlock& b, const std::string& id){
-		cMetaDataTable T(b, id);
-		header = T.header;
-		values = T.records[0];
-	}
-
-	int findkeyindex(const std::string& fname){
-		for (size_t i = 0; i < header.size(); i++){
-			if (header[i] == fname){
-				return (int)i;
-			}
-		}
-		return -1;
-	}
-
-	void print(){
-		for (size_t mi = 0; mi < header.size(); mi++){
-			std::printf("%s: %s\n", header[mi].c_str(), values[mi].c_str());
-		}
-		std::printf("\n");
-	}
-};
-
-class cVariable{
-
-	ILDataset* pDataset;
-
-public:	
-	std::string standardname;
-	std::string longname;
-	std::string aliaskey;
-	std::string aliasvalue;
-	std::vector<std::string> likelyfieldnames;
-	std::vector<std::string> fieldnames;
-	std::vector<std::string> requiredbythemes;
-	std::string units;
-
-	cVariable(cBlock b){
-		standardname = b.getstringvalue("StandardName");
-		longname = b.getstringvalue("LongName");		
-		aliaskey = b.getstringvalue("SurveyInfoAlias");
-		std::string s = b.getstringvalue("LikelyNames");
-		likelyfieldnames = tokenize(s);
-		units = b.getstringvalue("Units");
-	}
-
-	size_t setdataset(ILDataset* pDa){
-		
-		pDataset = pDa;
-		fieldnames.resize(0);
-		if (aliaskey.size() > 0 && aliaskey != cBlock::ud_string()){
-			aliasvalue = pDataset->surveyinfofieldname(aliaskey);
-			if (aliasvalue.size() > 0){
-				fieldnames.push_back(aliasvalue);
-			}
-		}
-
-		for (size_t i = 0; i < likelyfieldnames.size(); i++){
-			std::string s = pDataset->fieldnamelike(likelyfieldnames[i]);
-			if (s.size()>0){
-				bool alreadyhavefield = false;
-				for (size_t j = 0; j<fieldnames.size(); j++){
-					if (s == fieldnames[j]){
-						alreadyhavefield = true;
-					}
-					break;
-				}
-				if (alreadyhavefield==false){
-					fieldnames.push_back(s);
-				}
-			}
-		}
-		return fieldnames.size();
-	}
-
-	bool hasaliaskey(){
-		if (aliaskey == cBlock::ud_string()){
-			return false;
-		}
-		return true;
-	}
-
-	bool aliasfieldexists(){
-		if (hasaliaskey()){
-			std::string s = pDataset->fieldnamelike(aliasvalue);
-			if (s.size() > 0){
-				return true;
-			}
-		}
-		return false;
-	}
-
-	bool reportproblems(){
-
-		bool status = true;
-		if (hasaliaskey()){
-			if (pDataset->hassurveyinfoid(aliaskey)){
-				if (aliasfieldexists() == false){
-					std::printf("Warning 3: %s\n", standardname.c_str());
-					std::printf("\tAlias key %s is defined but field %s does not exist\n", aliaskey.c_str(), aliasvalue.c_str());
-					status = false;
-				}
-			}			
-		}		
-
-		if (fieldnames.size() > 1){
-			std::printf("Warning 4: %s\n", standardname.c_str());
-			std::printf("\tMore than one likely field was found: ");
-			for (size_t i = 0; i < fieldnames.size(); i++){
-				std::printf("%s ", fieldnames[i].c_str());
-			}
-			std::printf("\n");
-			status = false;
-		}
-		return status;
-
-	}
-
-	std::string likelyfield(){
-		return fieldnames[0];
-	}
-};
-
-class cTheme{
-
-public:
-	bool process;
-	std::string Name;
-	std::vector<std::vector<std::string>> required;
-
-	cTheme(cBlock b){
-		Name = b.getstringvalue("Name");
-		process = b.getboolvalue("Process");
-		if (process == false)return;
-
-		std::vector<std::string> v = b.getblockstrings("RequiredVariables");
-		for (size_t i = 0; i < v.size(); i++){
-			required.push_back(tokenize(v[i]));
-		}
-	};
-	
-};
-
-class cCRS{
-
-public:
-	std::string name = "";
-	std::string epsg_code = "";
-	double semi_major_axis = 0;
-	double inverse_flattening = 0;
-	bool valid = false;
-
-	cCRS(std::string datum){
-		if (datum == "GDA94"){
-			name = datum;
-			epsg_code = "EPSG:4283";
-			semi_major_axis = 6378137.0;
-			inverse_flattening = 298.257222101;
-			valid = true;
-		}
-		else if (datum == "WGS84"){
-			name = datum;
-			epsg_code = "EPSG:4326";
-			semi_major_axis = 6378137.0;
-			inverse_flattening = 298.257223563;
-			valid = true;
-		}
-		else if (datum == "AGD66"){
-			name = datum;
-			epsg_code = "EPSG:4326";
-			semi_major_axis = 6378160.0;
-			inverse_flattening = 298.25;
-			valid = true;
-		}
-		else{
-			name = datum;
-		}
-	};
-
-};
+#include "metadata.h"
+#include "crs.h"
+#include "csvfile.h"
+
+#include "geophysics_netcdf.h"
 
 class cIntrepidConverter{
 	
@@ -495,12 +56,6 @@ public:
 		flog = fileopen(LogFile, "w");
 		message(flog, "Program starting at %s\n", timestamp().c_str());
 		B.write(flog);
-
-		//std::vector<cBlock> bv = B.findblocks("Variable");
-		//for (size_t i = 0; i < bv.size(); i++){
-		//	cVariable v(bv[i]);
-		//	Variables.push_back(v);
-		//}
 
 		M = cMetaDataRecord(B, "Metadata");
 		std::string argusfile = B.getstringvalue("ArgusMetaData");
@@ -531,9 +86,6 @@ public:
 			IDBName = ILDataset::dbname(dlist[di]);
 			NCPath  = NetCDFOutputDir + IDBName + ".nc";
 
-			//if (di % 10 != 0 && IDBName != "GSQP1029MAG"){
-			//if (di%10 != 0) continue;
-			
 			message(flog, "\nConverting database %lu of %lu: %s\n", di+1, dlist.size(), dlist[di].c_str());
 			
 			bool datasetexists = exists(IDBPath);
@@ -549,12 +101,12 @@ public:
 
 			cMetaDataRecord R = M;
 			populate_metadata(R,projectnumber);
-			
-			NcFile ncFile(NCPath, NcFile::replace);
+						
+			cGeophysicsNcFile ncFile(NCPath, NcFile::replace);
 			add_lineindex(ncFile, D);
 			add_groupbyline_variables(ncFile, D);			
-			add_line_startend_points(ncFile, D);
-			add_sample_variables(ncFile,D);
+			add_indexed_variables(ncFile, D);
+			add_line_startend_points(ncFile, D);			
 			add_global_metadata(ncFile, R);
 			add_geospatial_metadata(ncFile, D);
 		}
@@ -657,63 +209,14 @@ public:
 		return true;
 	};
 
-	/*
-	int findvariableindex(const std::string& fieldname)
+	NcType nc_datatype(const ILField& F)
 	{
 		_GSTITEM_
-		for (size_t vi = 0; vi < Variables.size(); vi++){
-			for (size_t k = 0; k < Variables[vi].likelyfieldnames.size(); k++){
-				if (strcasecmp(Variables[vi].likelyfieldnames[k], fieldname) == 0){
-					return (int)vi;
-				}
-			}
-		}
-		return -1;
-	};*/
-
-	void field_add_variable(ILField& F, NcFile& ncFile, const std::string& varname, NcVar& var, std::vector<NcDim> dims)
-	{
-		_GSTITEM_
-		if (F.datatype().isbyte()){
-			var = ncFile.addVar(varname, ncUbyte, dims);			
-		}
-		else if (F.datatype().isshort()){
-			var = ncFile.addVar(varname, ncShort, dims);			
-		}
-		else if (F.datatype().isint()){
-			var = ncFile.addVar(varname, ncInt, dims);			
-		}
-		else if (F.datatype().isfloat()){
-			var = ncFile.addVar(varname, ncFloat, dims);			
-		}
-		else if (F.datatype().isdouble()){
-			var = ncFile.addVar(varname, ncDouble, dims);			
-		}
-		else{
-			std::string msg = "Error: Unknown Intrepid data type\n";
-			message(flog,msg.c_str());
-			throw(msg);
-		}
-	}
-
-	void field_set_fillvalue(ILField& F, NcVar& var)
-	{
-		_GSTITEM_
-		if (F.datatype().isbyte()){			
-			var.putAtt("_FillValue", ncUbyte, IDatatype::bytenull());
-		}
-		else if (F.datatype().isshort()){			
-			var.putAtt("_FillValue", ncShort, IDatatype::shortnull());
-		}
-		else if (F.datatype().isint()){			
-			var.putAtt("_FillValue", ncInt, IDatatype::intnull());
-		}
-		else if (F.datatype().isfloat()){			
-			var.putAtt("_FillValue", ncFloat, preferred_float_fillvalue());
-		}
-		else if (F.datatype().isdouble()){			
-			var.putAtt("_FillValue", ncDouble, preferred_double_fillvalue());
-		}
+		if (F.datatype().isbyte()) return NcType(ncUbyte);
+		else if (F.datatype().isshort()) return NcType(ncShort);
+		else if (F.datatype().isint()) return NcType(ncInt);			
+		else if (F.datatype().isfloat())return NcType(ncFloat);
+		else if (F.datatype().isdouble())return NcType(ncDouble);			
 		else{
 			std::string msg = "Error: Unknown Intrepid data type\n";
 			message(flog, msg.c_str());
@@ -721,152 +224,40 @@ public:
 		}
 	}
 
-	bool add_lineindex(NcFile& ncFile, ILDataset& D)
+	bool set_intrepid_nullvalue(cGeophysicsVar& v)
 	{
 		_GSTITEM_
-		size_t nlines = D.nlines();
-		NcDim  dim_line = ncFile.addDim("line", nlines);
+		NcType t = v.getType();
+		if (t == ncUbyte) v.add_fillvalue(IDatatype::bytenull());
+		else if (t == ncShort) v.add_fillvalue(IDatatype::shortnull());
+		else if (t == ncInt) v.add_fillvalue(IDatatype::intnull());		
+		else if (t == ncFloat) v.add_fillvalue(v.preferred_float_fillvalue());
+		else if (t == ncDouble) v.add_fillvalue(v.preferred_double_fillvalue());
+		else{
+			std::string msg = "Error: Unsupported data type\n";
+			message(flog, msg.c_str());
+			throw(msg);
+		}
+		return true;
+	}	
 
+	bool add_lineindex(cGeophysicsNcFile& ncFile, ILDataset& D)
+	{
+		_GSTITEM_						
 		size_t nsamples = D.nsamples();
-		NcDim  dim_sample = ncFile.addDim("sample", nsamples);
-
-		NcVar vifirst = ncFile.addVar("index_first_sample", ncInt, dim_line);
-		vifirst.putAtt("standard_name", "index_first_sample");
-		vifirst.putAtt("description", "zero based index of the first sample in the line");
-		vifirst.putAtt("units", "1");
-		vifirst.putAtt("_FillValue", ncInt, IDatatype::intnull());
-
-		NcVar vicount = ncFile.addVar("index_count", ncInt, dim_line);
-		vicount.putAtt("standard_name", "index_count");
-		vicount.putAtt("description", "number of samples in the line");
-		vicount.putAtt("units", "1");
-		vicount.putAtt("_FillValue", ncInt, IDatatype::intnull());
-
-		std::vector<int> ifirst(nlines);
-		std::vector<int> ilast(nlines);
-		std::vector<int> icount(nlines);
-		std::vector<int> isequence(nsamples);
-		int startindex = 0;
-		for (size_t li = 0; li < nlines; li++){
-			ifirst[li] = startindex;
-			icount[li] = (int)D.nsamplesinline(li);
-			ilast[li] = ifirst[li] + icount[li] - 1;
-			for (size_t k = (size_t)ifirst[li]; k <= (size_t)ilast[li]; k++){
-				isequence[k] = (int)li;
-			}
-			startindex += icount[li];
-		}
-		vifirst.putVar(ifirst.data());		
-		vicount.putVar(icount.data());		
+		size_t nlines   = D.nlines();
+		std::vector<size_t> count = D.linesamplecount();
+		std::vector<size_t> linenumbers;
+		D.getlinenumbers(linenumbers);
+		ncFile.InitialiseNew(linenumbers,count);		
 		return true;
 	}
-
-	bool add_lineindex_unused(NcFile& ncFile, ILDataset& D)
+	
+	bool add_groupbyline_variables(cGeophysicsNcFile& ncFile, ILDataset& D)
 	{
 		_GSTITEM_
+		if (D.valid == false)return false;
 		size_t nlines = D.nlines();
-
-		size_t nsamples = D.nsamples();
-		NcDim  dim_sample = ncFile.addDim("sample", nsamples);
-
-		NcDim  dim_line = ncFile.addDim("line", nlines);
-		NcDim  dim_line_index = ncFile.addDim("line_index", nlines+1);
-
-		NcVar vifirst = ncFile.addVar("index_lines", ncInt, dim_line_index);
-		vifirst.putAtt("standard_name", "index_lines");
-		vifirst.putAtt("description", "zero based index of the first sample in the line, and then one past the end of the last line");
-		vifirst.putAtt("units", "1");
-		vifirst.putAtt("_FillValue", ncInt, IDatatype::intnull());
-
-		std::vector<int> ifirst(nlines+1);
-		std::vector<int> ilast(nlines);
-		std::vector<int> icount(nlines);
-		std::vector<int> isequence(nsamples);
-		int startindex = 0;
-		for (size_t li = 0; li < nlines; li++){
-			ifirst[li] = startindex;
-			icount[li] = (int)D.nsamplesinline(li);
-			ilast[li]  = ifirst[li] + icount[li] - 1;
-			for (size_t k = (size_t)ifirst[li]; k <= (size_t)ilast[li]; k++){
-				isequence[k] = (int)li;
-			}
-			startindex += icount[li];
-		}
-		ifirst[nlines] = ilast[nlines-1] + 1;
-		vifirst.putVar(ifirst.data());				
-		return true;
-	}
-
-	bool add_line_startend_points(NcFile& ncFile, ILDataset& D)
-	{
-		_GSTITEM_
-		ILField& fx = D.getsurveyinfofield_ref("X");
-		ILField& fy = D.getsurveyinfofield_ref("Y");
-
-		size_t nlines = D.nlines();		
-		NcDim  dim_line = ncFile.getDim("line");
-
-		NcVar vx1 = ncFile.addVar("longitude_first", ncDouble, dim_line);
-		vx1.putAtt("standard_name", "longitude_first");
-		vx1.putAtt("description", "first non-null longitude coordinate in the line");
-		vx1.putAtt("units", "degree_east");
-		vx1.putAtt("_FillValue", ncDouble, preferred_double_fillvalue());
-
-		NcVar vx2 = ncFile.addVar("longitude_last", ncDouble, dim_line);
-		vx2.putAtt("standard_name", "longitude_last");
-		vx2.putAtt("description", "last non-null longitude coordinate in the line");
-		vx2.putAtt("units", "degree_east");
-		vx2.putAtt("_FillValue", ncDouble, preferred_double_fillvalue());
-
-		NcVar vy1 = ncFile.addVar("latitude_first", ncDouble, dim_line);
-		vy1.putAtt("standard_name", "latitude_first");
-		vy1.putAtt("description", "first non-null latitude coordinate in the line");
-		vy1.putAtt("units", "degree_north");
-		vy1.putAtt("_FillValue", ncDouble, preferred_double_fillvalue());
-
-		NcVar vy2 = ncFile.addVar("latitude_last", ncDouble, dim_line);
-		vy2.putAtt("standard_name", "latitude_last");
-		vy2.putAtt("description", "last non-null latitude coordinate in the line");
-		vy2.putAtt("units", "degree_north");
-		vy2.putAtt("_FillValue", ncDouble, preferred_double_fillvalue());
-
-		IDatatype dt = fx.datatype();
-
-		std::vector<double> x1(nlines);
-		std::vector<double> x2(nlines);
-		std::vector<double> y1(nlines);
-		std::vector<double> y2(nlines);		
-		for (size_t li = 0; li < nlines; li++){
-			ILSegment& sx = fx.Segments[li];
-			ILSegment& sy = fy.Segments[li];
-			sx.readbuffer();
-			sy.readbuffer();
-			size_t ns = sx.nsamples();			
-			for(size_t k=0; k<ns; k++){
-				x1[li] = sx.d(k);
-				y1[li] = sy.d(k);
-				if(dt.isnull(x1[li])==false && dt.isnull(y1[li])==false)break;
-			}
-
-			for (size_t k = ns-1; k!=0; k--){
-				x2[li] = sx.d(k);
-				y2[li] = sy.d(k);
-				if (dt.isnull(x2[li]) == false && dt.isnull(y2[li]) == false)break;
-			}					
-		}
-
-		vx1.putVar(x1.data());
-		vx2.putVar(x2.data());
-		vy1.putVar(y1.data());
-		vy2.putVar(y2.data());
-		return true;
-	}
-
-	bool add_groupbyline_variables(NcFile& ncFile, ILDataset& D)
-	{
-		_GSTITEM_
-		if (D.valid == false)return false;		
-		size_t nlines   = D.nlines();				
 		NcDim  dim_line = ncFile.getDim("line");
 
 		int i_field = V.findkeyindex("field_name");
@@ -887,7 +278,7 @@ public:
 				message(flog, "Warning: skipping field %s: could not find a match in the vocabulary file\n", F.Name.c_str());
 				continue;
 			}
-						
+
 			size_t vi = recs[0];
 			std::string convert = V.records[vi][i_convert];
 			if (convert == "no"){
@@ -898,22 +289,22 @@ public:
 
 			std::string variable_name = V.records[vi][i_variable_name];
 			std::string standard_name = V.records[vi][i_standard_name];
-			std::string units         = V.records[vi][i_units];						
-						
-			std::vector<NcDim> dims;
-			dims.push_back(dim_line);
+			std::string units = V.records[vi][i_units];
+
+			if (variable_name == DN_LINE)continue;
+
+			std::vector<NcDim> dims;			
 			if (F.nbands() > 1){
 				std::string dimname = "nbands_" + F.Name;
 				NcDim dim_band = ncFile.addDim(dimname, F.nbands());
 				dims.push_back(dim_band);
 			}
 
-			NcVar var;
-			field_add_variable(F, ncFile, variable_name, var, dims);
-			var.putAtt("standard_name", standard_name);			
-			var.putAtt("original_database_name", F.Name);
-			var.putAtt("units", units);
-			field_set_fillvalue(F, var);
+			cLineVar var = ncFile.addLineVar(variable_name,nc_datatype(F),dims);			
+			set_intrepid_nullvalue(var);
+			var.add_standard_name(standard_name);			
+			var.add_original_name(F.Name);
+			var.add_units(units);						
 			
 			for (size_t li = 0; li < nlines; li++){
 				ILSegment& S = F.Segments[li];
@@ -927,43 +318,42 @@ public:
 
 				//Band dimension
 				startp[1] = 0;
-				countp[1] = S.nbands();				
+				countp[1] = S.nbands();
 				var.putVar(startp, countp, S.pvoid_groupby());
-			}			
-		}		
+			}
+		}
 		return true;
 	}
 	
-	bool add_sample_variables(NcFile& ncFile, ILDataset& D)
+	bool add_indexed_variables(cGeophysicsNcFile& ncFile, ILDataset& D)
 	{
 		_GSTITEM_
 		if (D.valid == false)return false;
 		size_t nlines = D.nlines();		
-		NcDim  dim_sample = ncFile.getDim("sample");
-		
-		int i_field         = V.findkeyindex("field_name");
-		int i_convert       = V.findkeyindex("convert");
+
+		int i_field = V.findkeyindex("field_name");
+		int i_convert = V.findkeyindex("convert");
 		int i_variable_name = V.findkeyindex("variable_name");
 		int i_standard_name = V.findkeyindex("standard_name");
-		int i_units         = V.findkeyindex("units");
+		int i_units = V.findkeyindex("units");
 
 		size_t fi = 0;
 		for (auto it = D.Fields.begin(); it != D.Fields.end(); ++it){
 			fi++;
-			ILField& F = *it;			
+			ILField& F = *it;
 			if (F.isgroupbyline() == true)continue;
-				
+
 			if (F.datatype().name() == "UNKNOWN"){
 				message(flog, "Warning: skipping field %s: unsupported Intrepid datatype\n", F.Name.c_str());
 				continue;
 			}
 
 			std::vector<size_t> recs = V.findmatchingrecords(i_field, F.Name);
-			if (recs.size() == 0){				
+			if (recs.size() == 0){
 				message(flog, "Warning: skipping field %s: could not find a match in the vocabulary file\n", F.Name.c_str());
 				continue;
-			}				
-			
+			}
+
 			size_t vi = recs[0];
 			std::string convert = V.records[vi][i_convert];
 			if (convert == "no"){
@@ -974,33 +364,35 @@ public:
 
 			std::string variable_name = V.records[vi][i_variable_name];
 			std::string standard_name = V.records[vi][i_standard_name];
-			std::string units         = V.records[vi][i_units];						
-			
-			
-			std::vector<NcDim> dims;
-			dims.push_back(dim_sample);
+			std::string units = V.records[vi][i_units];
+
+			std::vector<NcDim> dims;			
 			if (F.nbands() > 1){
 				std::string dimname = "nbands_" + F.Name;
 				NcDim dim_band = ncFile.addDim(dimname, F.nbands());
 				dims.push_back(dim_band);
 			}
 
-			NcVar var;
-			field_add_variable(F, ncFile, variable_name, var, dims);
-			var.putAtt("standard_name", standard_name);
-			var.putAtt("original_database_name", F.Name);		
-			var.putAtt("units", units);									
-			field_set_fillvalue(F, var);			
+			cSampleVar var = ncFile.addSampleVar(variable_name, nc_datatype(F), dims);
+			set_intrepid_nullvalue(var);
+			var.add_standard_name(standard_name);
+			var.add_original_name(F.Name);
+			var.add_units(units);
+						
 			if (DummyRun) continue;
 
-			size_t startindex = 0;			
+			size_t startindex = 0;
 			for (size_t li = 0; li < nlines; li++){
 				ILSegment& S = F.Segments[li];
 				S.readbuffer();
 
 				//Replace the nulls with more "sensible" values
-				if (S.datatype().isfloat()) change_nulls_float(S, preferred_float_fillvalue());
-				else if (S.datatype().isdouble()) change_nulls_double(S, preferred_double_fillvalue());
+				if (S.datatype().isfloat()){
+					S.change_nullvalue(var.preferred_float_fillvalue());
+				}
+				else if (S.datatype().isdouble()){
+					S.change_nullvalue(var.preferred_double_fillvalue());
+				}
 
 				std::vector<size_t> startp(2);
 				std::vector<size_t> countp(2);
@@ -1012,15 +404,15 @@ public:
 				//Band dimension
 				startp[1] = 0;
 				countp[1] = S.nbands();
-				
+
 				var.putVar(startp, countp, S.pvoid());
 				startindex += S.nsamples();
-			}	
-		}		
+			}
+		}
 		return true;
 	}
 
-	bool add_global_metadata(NcFile& ncFile, const cMetaDataRecord& m){
+	bool add_global_metadata(cGeophysicsNcFile& ncFile, const cMetaDataRecord& m){
 		_GSTITEM_
 		for (size_t j = 0; j < m.header.size(); j++){
 			if (strcasecmp(m.header[j],"nominal_minimum_line_spacing")==0){
@@ -1054,6 +446,18 @@ public:
 		return true;
 	}
 
+	bool add_line_startend_points(cGeophysicsNcFile& ncFile, ILDataset& D)
+	{
+		_GSTITEM_
+		std::vector<double> x1;
+		std::vector<double> x2;
+		std::vector<double> y1;
+		std::vector<double> y2;
+		D.get_line_start_end_points(x1,x2,y1,y2);
+		ncFile.addLineStartEndPoints(x1, x2, y1, y2);		
+		return true;
+	}
+
 	std::string standardize_date(const std::string& indate){
 		_GSTITEM_
 		int day, month, year;
@@ -1065,8 +469,9 @@ public:
 		else return indate;
 	}
 
-	bool add_geospatial_metadata(NcFile& ncFile, ILDataset& D){
+	bool add_geospatial_metadata(cGeophysicsNcFile& ncFile, ILDataset& D){
 		_GSTITEM_
+		
 		std::string datum;
 		std::vector<std::string> n;
 		n.resize(0);
@@ -1125,56 +530,13 @@ public:
 		}
 
 		if (datum.size() > 0){
-			cCRS c(datum);									
-			
-			//NcVar varcrs = ncFile.addVar("crs", ncInt);			
-			std::vector<NcDim> dims;			
-			int varid;	
-			nc_def_var(ncFile.getId(),"crs",ncInt.getId(),0, NULL, &varid);
-			NcVar varcrs(ncFile,varid);			
-
-			varcrs.putAtt("grid_mapping_name", "latitude_longitude");
-			varcrs.putAtt("epsg_code", c.epsg_code.c_str());
-			varcrs.putAtt("semi_major_axis", ncDouble, c.semi_major_axis);
-			varcrs.putAtt("inverse_flattening", ncDouble, c.inverse_flattening);
+			cCRS crs(datum);	
+			ncFile.addCRS(crs);			
 		}
+
 		return true;
 	}	
-
-	static float preferred_float_fillvalue(){
-		_GSTITEM_
-		return -9999.0f;
-	}
-
-	static double preferred_double_fillvalue(){
-		_GSTITEM_
-		return -9999.0;
-	}
-
-	void change_nulls_float(ILSegment& S, const float& nullvalue){
-		_GSTITEM_
-		if (S.datatype().isfloat()){
-			float* fp = (float*)S.pvoid();
-			for (size_t k = 0; k < S.nstored(); k++){
-				if (S.datatype().isnull(fp[k])){
-					fp[k] = nullvalue;
-				}
-			}
-		}
-	}
-
-	void change_nulls_double(ILSegment& S, const double& nullvalue){
-
-		if (S.datatype().isdouble()){
-			double* fp = (double*)S.pvoid();
-			for (size_t k = 0; k < S.nstored(); k++){
-				if (S.datatype().isnull(fp[k])){
-					fp[k] = nullvalue;
-				}
-			}
-		}
-
-	}
+		
 };
 
 int main(int argc, char** argv)
