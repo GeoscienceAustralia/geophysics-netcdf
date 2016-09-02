@@ -108,7 +108,8 @@ public:
 			add_indexed_variables(ncFile, D);
 			add_line_startend_points(ncFile, D);			
 			add_global_metadata(ncFile, R);
-			add_geospatial_metadata(ncFile, D);
+			//add_geospatial_metadata(ncFile, D);
+			ncFile.addAlphaShapePolygon();
 		}
 		return true;
 	}

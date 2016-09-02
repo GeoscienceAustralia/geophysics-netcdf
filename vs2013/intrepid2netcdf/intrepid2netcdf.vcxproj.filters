@@ -33,6 +33,9 @@
     <ClCompile Include="..\..\src\cxx\geophysics_netcdf.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\src\cxx\cgal_utils.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\src\c++\blocklanguage.h">

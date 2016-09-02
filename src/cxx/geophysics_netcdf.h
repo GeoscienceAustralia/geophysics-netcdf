@@ -12,6 +12,9 @@ Author: Ross C. Brodie, Geoscience Australia.
 #include "general_utils.h"
 #include "vector_utils.h"
 #include "crs.h"
+
+#include "cgal_utils.h"
+
 #include <netcdf>
 using namespace netCDF;
 using namespace netCDF::exceptions;
@@ -531,6 +534,38 @@ public:
 		varcrs.putAtt("epsg_code", crs.epsg_code.c_str());
 		varcrs.putAtt("semi_major_axis", ncDouble, crs.semi_major_axis);
 		varcrs.putAtt("inverse_flattening", ncDouble, crs.inverse_flattening);		
+		return true;
+	}
+
+	bool addAlphaShapePolygon(){
+		std::vector<double> x;
+		std::vector<double> y;
+		double maxdistance;
+		std::vector<double> px;
+		std::vector<double> py;
+		maxdistance = 1000.0 / 30.0 / 3600.0;
+		getVarAll("longitude", x);
+		getVarAll("latitude", y);
+		bool status = line_data_alpha_shape_polygon_ch(
+			line_index_start, line_index_count,
+			x, y, 32, px, py);
+
+		size_t nv = px.size();
+		std::vector<double> poly(nv*2);
+		for (size_t i = 0; i < nv; i++){
+			poly[i*2] = px[i];
+			poly[i*2 + 1] = py[i];
+		}
+	
+		std::vector<NcDim> dims;
+		dims.push_back(addDim("polygonvertex",nv));
+		dims.push_back(addDim("polygonordinate",2));
+
+		cGeophysicsVar v = addVar("bounding_polygon", ncDouble, dims);		
+		v.add_standard_name("bounding_polygon");
+		v.add_description("bounding polygon of survey");
+		v.add_units("degree");
+		v.putVar(poly.data());		
 		return true;
 	}
 
