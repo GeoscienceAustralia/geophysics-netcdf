@@ -38,28 +38,28 @@
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="..\..\src\c++\blocklanguage.h">
+    <ClInclude Include="..\..\src\cxx\geophysics_netcdf.h">
       <Filter>Source Files\Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\src\c++\file_utils.h">
+    <ClInclude Include="..\..\src\cxx\cgal_utils.h">
       <Filter>Source Files\Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\src\c++\general_constants.h">
+    <ClInclude Include="..\..\src\cxx\crs.h">
       <Filter>Source Files\Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\src\c++\general_types.h">
+    <ClInclude Include="..\..\src\cxx\csvfile.h">
       <Filter>Source Files\Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\src\c++\general_utils.h">
+    <ClInclude Include="..\..\src\cxx\intrepid.h">
       <Filter>Source Files\Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\src\c++\geometry3d.h">
+    <ClInclude Include="..\..\src\cxx\metadata.h">
       <Filter>Source Files\Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\src\c++\intrepid.h">
+    <ClInclude Include="..\..\src\cxx\blocklanguage.h">
       <Filter>Source Files\Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\src\c++\stacktrace.h">
+    <ClInclude Include="..\..\src\cxx\file_utils.h">
       <Filter>Source Files\Header Files</Filter>
     </ClInclude>
   </ItemGroup>

@@ -101,15 +101,15 @@ public:
 
 			cMetaDataRecord R = M;
 			populate_metadata(R,projectnumber);
-						
+									
 			cGeophysicsNcFile ncFile(NCPath, NcFile::replace);
 			add_lineindex(ncFile, D);
 			add_groupbyline_variables(ncFile, D);			
 			add_indexed_variables(ncFile, D);
 			add_line_startend_points(ncFile, D);			
-			add_global_metadata(ncFile, R);
+			//add_global_metadata(ncFile, R);
 			//add_geospatial_metadata(ncFile, D);
-			ncFile.addAlphaShapePolygon();
+			//ncFile.addAlphaShapePolygon();
 		}
 		return true;
 	}

@@ -62,9 +62,18 @@ bool test_read1(){
 
 bool test_read2(){
 
-	std::string ncpath = "test.nc";
+	std::string ncpath = "PIRSA_P702_SAEI_C1_tmi.nc";	                      
+	cGeophysicsNcFile ncfile(ncpath, NcFile::write);
 
-	cGeophysicsNcFile ncfile(ncpath, NcFile::read);
+	std::vector<double> x1;
+	std::vector<double> x2;
+	std::vector<double> y1;
+	std::vector<double> y2;
+	ncfile.findLineStartEndPoints(x1, x2, y1, y2);
+	ncfile.addLineStartEndPoints(x1, x2, y1, y2);
+	cLineVar v = ncfile.getLineVar("longitude");
+	std::vector<double> vals;
+	v.getAll(vals);
 
 	std::vector<int> linenumber;
 	ncfile.getLineNumbers(linenumber);
@@ -94,16 +103,17 @@ bool test_create(){
 	std::vector<size_t> linensamples = { 10,   20,  30,  40 };
 	std::vector<size_t> flightnumbers = {11, 22, 33, 44 };
 
-	cGeophysicsNcFile   nc(ncpath, linenumbers, linensamples);
+	cGeophysicsNcFile   nc(ncpath,NcFile::FileMode::replace);
+	nc.InitialiseNew(linenumbers, linensamples);
 	size_t nwindows = 45;
 	size_t nlayers  = 30;
 	size_t nrxcomponents = 3;
 
 	size_t ntotalsamples = nc.ntotalsamples();
-	std::vector<int> fid     = increment(ntotalsamples,0,1);
-	std::vector<int> layers  = increment(nlayers, 0, 1);
-	std::vector<int> windows = increment(nwindows, 0, 1);
-	std::vector<int> rxcomponents = increment(nrxcomponents, 0, 1);	
+	std::vector<int> fid = increment((int)ntotalsamples);
+	std::vector<int> layers = increment((int)nlayers);
+	std::vector<int> windows = increment((int)nwindows);
+	std::vector<int> rxcomponents = increment((int)nrxcomponents);
 	
 	NcDim dim_rxcomponent = nc.addDimVar("rxcomponents", rxcomponents);
 	NcDim dim_window = nc.addDimVar("windows", windows);	
@@ -131,14 +141,14 @@ bool test_create(){
 	cSampleVar vem = nc.addSampleVar("em", ncDouble, emdims);
 		
 	const size_t n = ntotalsamples*nrxcomponents*nwindows;
-	std::vector<double> em = increment(n,0.0,1.0);		
+	std::vector<double> em = increment((double)n,0.0,1.0);		
 	vfid.putAll(fid);
 	vem.putAll(em);
 
 	for (size_t li = 0; li < nc.nlines(); li++){
 		size_t nls = nc.nlinesamples(li);
-		std::vector<double> x = increment(nls,500000.0,10.0);
-		std::vector<double> y = increment(nls,6500000.0,10.0);
+		std::vector<double> x = increment((double)nls,500000.0,10.0);
+		std::vector<double> y = increment((double)nls,6500000.0,10.0);
 		
 		vx.putLine(x, li);
 		vy.putLine(y, li);
@@ -163,7 +173,7 @@ int main(int argc, char** argv)
 	
 	try
 	{		
-		test_create();
+		//test_create();
 		test_read2();
 	}
 

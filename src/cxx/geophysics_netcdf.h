@@ -9,6 +9,10 @@ Author: Ross C. Brodie, Geoscience Australia.
 #ifndef _geophysics_netcdf_H
 #define _geophysics_netcdf_H
 
+#ifdef USEGLOBALSTACKTRACE
+#include "stacktrace.h"
+#endif
+
 #include "general_utils.h"
 #include "vector_utils.h"
 #include "crs.h"
@@ -51,18 +55,24 @@ class cGeophysicsNcFile;
 class cGeophysicsVar : public NcVar{
 
 private:	
+
 	cGeophysicsNcFile* parent=NULL;
 
 public:
 	
-	cGeophysicsVar(const NcVar& var) : NcVar(var) { }
+	cGeophysicsVar(cGeophysicsNcFile* _parent, const NcVar& var) : NcVar(var) {
+		parent = _parent;
+	}
 
-	void set_parent(cGeophysicsNcFile* _parent){ parent = _parent; }
+	//void set_parent(cGeophysicsNcFile* _parent){
+	//	parent = _parent;
+	//}
+	
 	cGeophysicsNcFile* get_parent(){ return parent; }
 
 	size_t line_index_start(const size_t& index);
 	size_t line_index_count(const size_t& index);
-
+	
 	size_t length(){		
 		std::vector<NcDim> dims = getDims();
 		size_t len = dims[0].getSize();
@@ -109,10 +119,18 @@ public:
 
 	bool set_default_fillvalue(){
 		const NcType type = getType();
-		if (type == ncShort) putAtt(AN_FILLVALUE, ncShort, NcShortNull);
-		else if (type == ncInt) putAtt(AN_FILLVALUE, ncInt, NcIntNull);
-		else if (type == ncFloat) putAtt(AN_FILLVALUE, ncFloat, NcFloatNull);
-		else if (type == ncDouble) putAtt(AN_FILLVALUE, ncDouble, NcDoubleNull);
+		if (type == ncShort){
+			putAtt(AN_FILLVALUE, ncShort, (short) NcShortNull);
+		}
+		else if (type == ncInt){
+			putAtt(AN_FILLVALUE, ncInt, (int) NcIntNull);
+		}
+		else if (type == ncFloat){
+			putAtt(AN_FILLVALUE, ncFloat, (float) NcFloatNull);
+		}
+		else if (type == ncDouble){
+			putAtt(AN_FILLVALUE, ncDouble, (double) NcDoubleNull);
+		}
 		else return false;
 		return true;
 	}
@@ -127,7 +145,20 @@ public:
 		else return false;
 		return true;
 	}
-	
+
+	template<typename T>
+	bool get_fillvalue(T& value){
+		getAtt(AN_FILLVALUE).getValues(&value);		
+		return true;
+	}
+
+	template<typename T>
+	bool getAll(std::vector<T>& vals){				
+		vals.resize(length());
+		var.getVar(vals.data());
+		return true;
+	}
+		
 };
 
 class cSampleVar : public cGeophysicsVar{
@@ -136,7 +167,9 @@ private:
 
 public:
 
-	cSampleVar(const NcVar& var) : cGeophysicsVar(var) {	}
+	cSampleVar(cGeophysicsNcFile* _parent, const NcVar& var) 
+		: cGeophysicsVar(_parent, var) {		
+	}
 
 	template<typename T>
 	bool putAll(std::vector<T> vals){
@@ -166,6 +199,16 @@ public:
 		return true;
 	}
 
+	template<typename T>
+	bool getLine(std::vector<T>& vals, const size_t lineindex, const size_t bandindex = 0){
+		if (isNull()){ return false; }
+		std::vector<size_t> startp = { line_index_start(lineindex), bandindex };
+		std::vector<size_t> countp = { line_index_count(lineindex), 1 };
+		vals.resize(countp[0]);
+		getVar(startp, countp, vals.data());
+		return true;
+	}
+
 };
 
 class cLineVar : public cGeophysicsVar{
@@ -174,7 +217,9 @@ private:
 
 public:
 
-	cLineVar(const NcVar& var) : cGeophysicsVar(var) {	}
+	cLineVar(cGeophysicsNcFile* _parent, const NcVar& var)
+		: cGeophysicsVar(_parent, var) {
+	}
 
 	template<typename T>
 	bool putAll(std::vector<T> vals){
@@ -203,15 +248,13 @@ private:
 	NcDim dim_sample;
 	NcDim dim_line;	
 	std::vector<size_t> line_index_start;
-	std::vector<size_t> line_index_count;	
-	std::vector<size_t> flight_number;
+	std::vector<size_t> line_index_count;
 	std::vector<size_t> line_number;
-	   
+			   
 	bool InitialiseExisting(){
 		bool status;
 		status = readLineIndex();
-		status = getLineNumbers(line_number);
-		status = getFlightNumbers(flight_number);
+		status = getLineNumbers(line_number);		
 		return true;
 	}
 	
@@ -219,9 +262,10 @@ private:
 
 		bool status;
 		size_t ns = getDim(DN_POINT).getSize();
-		status = getVarAll(VN_LI_START, line_index_start);
-		//line_index_start.pop_back();
-
+		cLineVar v = getLineVar(VN_LI_START);
+		status = v.getAll(line_index_start);
+		//status = getVarAll(VN_LI_START, line_index_start);
+		
 		size_t nl = nlines();
 		line_index_count.resize(nl);
 		for (size_t i = 0; i < nl - 1; i++){
@@ -244,7 +288,7 @@ public:
 			InitialiseExisting();
 		}
 		else if (filemode == NcFile::write){
-
+			InitialiseExisting();
 		}
 		else if (filemode == NcFile::replace){
 
@@ -258,14 +302,16 @@ public:
 	};
 
 	//Create new file
-	cGeophysicsNcFile(const std::string& ncpath, const std::vector<size_t>& linenumbers, const std::vector<size_t>& nsamples)
-		: NcFile(ncpath, FileMode::newFile)
-	{
-		InitialiseNew(linenumbers,nsamples);
-	};
+	//cGeophysicsNcFile(const std::string& ncpath, const std::vector<size_t>& linenumbers, const std::vector<size_t>& nsamples)
+	//	: NcFile(ncpath, FileMode::newFile, NcFile::FileFormat::nc4)
+	//{
+	//	InitialiseNew(linenumbers,nsamples);
+	//};
 
 	bool InitialiseNew(const std::vector<size_t>& linenumbers, const std::vector<size_t>& linesamplecount){
 		
+		_GSTITEM_
+
 		bool status;
 		size_t nl = linenumbers.size();
 		line_number = linenumbers;
@@ -280,27 +326,26 @@ public:
 		dim_sample = addDim(DN_POINT, nsamples);
 		dim_line   = addDim(DN_LINE, nl);
 				
-		cLineVar vstart = addLineVar(VN_LI_START, ncInt);
-		vstart.putVar(line_index_start.data());
+		cLineVar vstart = addLineVar(VN_LI_START, ncUint64);				
+		vstart.putVar(line_index_start.data());		
 		vstart.add_standard_name(VN_LI_START);
 		vstart.add_description("zero based index of the first sample in the line");
-		vstart.add_units("1");
-		
-		
-		cLineVar vcount = addLineVar(VN_LI_COUNT, ncInt);
+		vstart.add_units("1");		
+				
+		cLineVar vcount = addLineVar(VN_LI_COUNT, ncUint64);
 		vcount.putVar(line_index_count.data());		
 		vcount.add_standard_name(VN_LI_COUNT);
 		vcount.add_description("number of samples in the line");
 		vcount.add_units("1");
 
-		cLineVar vline = addLineVar(DN_LINE, ncInt);
+		cLineVar vline = addLineVar(DN_LINE, ncUint64);
 		vline.putVar(line_number.data());
 		vline.add_standard_name(SN_LINE_NUMBER);
 		vline.add_description("flight line number");
 		vline.add_units("1");
 
-		std::vector<int> sample = increment((int)ntotalsamples(), 0, 1);
-		cSampleVar vsample = addSampleVar(DN_POINT, ncInt);
+		std::vector<size_t> sample = increment(ntotalsamples(), (size_t)0, (size_t)1);
+		cSampleVar vsample = addSampleVar(DN_POINT, ncUint64);
 		vsample.putVar(sample.data());
 		vsample.add_standard_name(SN_SAMPLE_NUMBER);
 		vsample.add_description("sequential point number");
@@ -353,17 +398,6 @@ public:
 		return false;
 	}
 	
-	template<typename T>
-	bool getVarAll(const std::string& varname, std::vector<T>& vals){
-		NcVar var = NcFile::getVar(varname);
-		std::vector<NcDim> dims = var.getDims();
-		size_t ne = 1;
-		for (size_t i = 0; i < dims.size(); i++) ne *= dims[i].getSize();
-		vals.resize(ne);
-		var.getVar(vals.data());
-		return true;
-	}
-
 	template<typename T>
 	bool getVarByLineNumber(const std::string& varname, const size_t& linenumber, std::vector<T>& vals){
 		size_t index = getLineIndex(linenumber);
@@ -443,12 +477,13 @@ public:
 	}
 
 	cSampleVar getSampleVar(const std::string& name){
-		return cSampleVar(getVar(name));
+		if (getVarCount() == 0) return cSampleVar(this, NcVar());
+		return cSampleVar(this,getVar(name));
 	}
 
 	cLineVar getLineVar(const std::string& name){
-		if (getVarCount() == 0) return cLineVar(NcVar());
-		return cLineVar(getVar(name));		
+		if (getVarCount() == 0) return cLineVar(this,NcVar());
+		return cLineVar(this,getVar(name));		
 	}
 	
 	cSampleVar addSampleVar(const std::string& name, const NcType& type, const std::vector<NcDim>& dims){
@@ -459,8 +494,8 @@ public:
 			for (size_t i = 0; i<dims.size(); i++){
 				vardims.push_back(dims[i]);
 			}
-			var = addVar(name, type, vardims);
-			var.set_parent(this);
+			var = cSampleVar(this,addVar(name, type, vardims));
+			//var.set_parent(this);
 			var.set_default_fillvalue();
 		}
 		return var;
@@ -482,8 +517,7 @@ public:
 			for (size_t i = 0; i<dims.size(); i++){
 				vardims.push_back(dims[i]);
 			}
-			var = addVar(name, type, vardims);
-			var.set_parent(this);
+			var = cLineVar(this, addVar(name, type, vardims));
 			var.set_default_fillvalue();
 		}
 		return var;
@@ -495,6 +529,42 @@ public:
 			dims.push_back(banddim);
 		}
 		return addLineVar(name, type, dims);
+	}
+
+	bool findLineStartEndPoints(std::vector<double>& x1, std::vector<double>& x2, std::vector<double>& y1, std::vector<double>& y2){
+		x1.resize(nlines());
+		x2.resize(nlines());
+		y1.resize(nlines());
+		y2.resize(nlines());
+
+		cSampleVar vx = getSampleVar("longitude");
+		cSampleVar vy = getSampleVar("latitude");		
+		double nvx, nvy;
+		vx.get_fillvalue(nvx);
+		vy.get_fillvalue(nvy);		
+		for (size_t li = 0; li < nlines(); li++){
+			std::vector<double> x;
+			std::vector<double> y;
+			vx.getLine(x, li);
+			vy.getLine(y, li);
+			const size_t ns = x.size();
+			for (size_t si = 0; si < ns; si++){
+				if (x[si] != nvx && y[si] != nvy){
+					x1[li] = x[si];
+					y1[li] = y[si];
+					break;
+				}
+			}
+
+			for (size_t si = ns-1; si > 0; si--){
+				if (x[si] != nvx && y[si] != nvy){
+					x2[li] = x[si];
+					x2[li] = y[si];
+					break;
+				}
+			}
+		}
+		return true;
 	}
 
 	bool addLineStartEndPoints(const std::vector<double>& x1, const std::vector<double>& x2, const std::vector<double>& y1, const std::vector<double>& y2){
@@ -528,12 +598,13 @@ public:
 		return true;
 	}
 
-	bool addCRS(const cCRS& crs){					
-		NcVar varcrs = addVar("crs", ncInt);
-		varcrs.putAtt("grid_mapping_name", "latitude_longitude");
-		varcrs.putAtt("epsg_code", crs.epsg_code.c_str());
-		varcrs.putAtt("semi_major_axis", ncDouble, crs.semi_major_axis);
-		varcrs.putAtt("inverse_flattening", ncDouble, crs.inverse_flattening);		
+	bool addCRS(const cCRS& crs){
+		NcDim d = addDim("scalar");
+		NcVar v = addVar("crs", ncInt, d);
+		v.putAtt("grid_mapping_name", "latitude_longitude");
+		v.putAtt("epsg_code", crs.epsg_code.c_str());
+		v.putAtt("semi_major_axis", ncDouble, crs.semi_major_axis);
+		v.putAtt("inverse_flattening", ncDouble, crs.inverse_flattening);
 		return true;
 	}
 
@@ -544,8 +615,8 @@ public:
 		std::vector<double> px;
 		std::vector<double> py;
 		maxdistance = 1000.0 / 30.0 / 3600.0;
-		getVarAll("longitude", x);
-		getVarAll("latitude", y);
+		getLineVar("longitude").getAll(x);
+		getLineVar("latitude").getAll(y);		
 		bool status = line_data_alpha_shape_polygon_ch(
 			line_index_start, line_index_count,
 			x, y, 32, px, py);
@@ -561,7 +632,7 @@ public:
 		dims.push_back(addDim("polygonvertex",nv));
 		dims.push_back(addDim("polygonordinate",2));
 
-		cGeophysicsVar v = addVar("bounding_polygon", ncDouble, dims);		
+		cGeophysicsVar v(this,addVar("bounding_polygon", ncDouble, dims));
 		v.add_standard_name("bounding_polygon");
 		v.add_description("bounding polygon of survey");
 		v.add_units("degree");
