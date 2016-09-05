@@ -37,12 +37,16 @@
     <Import Project="..\propertysheets\x64.props" />
     <Import Project="..\propertysheets\netcdf4.props" />
     <Import Project="..\propertysheets\netcdf4-cxx.props" />
+    <Import Project="..\propertysheets\boost.props" />
+    <Import Project="..\propertysheets\cgal.props" />
   </ImportGroup>
   <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="PropertySheets">
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
     <Import Project="..\propertysheets\x64.props" />
     <Import Project="..\propertysheets\netcdf4.props" />
     <Import Project="..\propertysheets\netcdf4-cxx.props" />
+    <Import Project="..\propertysheets\boost.props" />
+    <Import Project="..\propertysheets\cgal.props" />
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
@@ -82,20 +86,14 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="..\..\src\cxx\cgal_utils.cpp">
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Create</PrecompiledHeader>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Create</PrecompiledHeader>
+    </ClCompile>
     <ClCompile Include="..\..\src\cxx\file_utils.cpp" />
     <ClCompile Include="..\..\src\cxx\general_utils.cpp" />
     <ClCompile Include="..\..\src\cxx\geophysics_netcdf.cpp" />
     <ClCompile Include="..\..\src\cxx\test_geophysics_netcdf_reader.cpp" />
-  </ItemGroup>
-  <ItemGroup>
-    <ClInclude Include="..\..\src\c++\blocklanguage.h" />
-    <ClInclude Include="..\..\src\c++\file_utils.h" />
-    <ClInclude Include="..\..\src\c++\general_constants.h" />
-    <ClInclude Include="..\..\src\c++\general_types.h" />
-    <ClInclude Include="..\..\src\c++\general_utils.h" />
-    <ClInclude Include="..\..\src\c++\geometry3d.h" />
-    <ClInclude Include="..\..\src\c++\stacktrace.h" />
-    <ClInclude Include="..\..\src\cxx\geophysicsncfile.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

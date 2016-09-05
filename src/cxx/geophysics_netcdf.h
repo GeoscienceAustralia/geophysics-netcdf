@@ -64,10 +64,6 @@ public:
 		parent = _parent;
 	}
 
-	//void set_parent(cGeophysicsNcFile* _parent){
-	//	parent = _parent;
-	//}
-	
 	cGeophysicsNcFile* get_parent(){ return parent; }
 
 	size_t line_index_start(const size_t& index);
@@ -147,15 +143,16 @@ public:
 	}
 
 	template<typename T>
-	bool get_fillvalue(T& value){
-		getAtt(AN_FILLVALUE).getValues(&value);		
-		return true;
+	T fillvalue(const T& value){
+		T v;
+		getAtt(AN_FILLVALUE).getValues(&v);
+		return v;
 	}
 
 	template<typename T>
 	bool getAll(std::vector<T>& vals){				
 		vals.resize(length());
-		var.getVar(vals.data());
+		getVar(vals.data());
 		return true;
 	}
 		
@@ -244,13 +241,15 @@ public:
 class cGeophysicsNcFile : public NcFile {
 
 private:
-	const std::string classname = "cGeophysicsNcFile";	
-	NcDim dim_sample;
-	NcDim dim_line;	
+	const std::string classname = "cGeophysicsNcFile";		
 	std::vector<size_t> line_index_start;
 	std::vector<size_t> line_index_count;
 	std::vector<size_t> line_number;
-			   
+		
+	NcDim dim_sample() { return getDim(DN_POINT); }
+	
+	NcDim dim_line() { return getDim(DN_LINE); }
+
 	bool InitialiseExisting(){
 		bool status;
 		status = readLineIndex();
@@ -323,8 +322,8 @@ public:
 			nsamples += line_index_count[i];
 		}
 
-		dim_sample = addDim(DN_POINT, nsamples);
-		dim_line   = addDim(DN_LINE, nl);
+		NcDim ds = addDim(DN_POINT, nsamples);
+		NcDim dl = addDim(DN_LINE, nl);
 				
 		cLineVar vstart = addLineVar(VN_LI_START, ncUint64);				
 		vstart.putVar(line_index_start.data());		
@@ -356,8 +355,13 @@ public:
 	size_t nlines(){ return line_index_start.size(); }
 	size_t ntotalsamples(){ return sum(line_index_count); }
 	size_t nlinesamples(const size_t lineindex){ return line_index_count[lineindex]; }
+	
+	size_t getLineIndex(const int& linenumber){
+		auto it = std::find(line_number.begin(), line_number.end(), linenumber);				
+		return it - line_number.begin();		
+	}
 
-	bool getNcVarByAttribute(const std::string& attribute_name, const std::string& attribute_value, NcVar& var){
+	NcVar findVarByAttribute(const std::string& attribute_name, const std::string& attribute_value){
 
 		std::multimap<std::string, NcVar> vars = getVars();
 		for (auto vit = vars.begin(); vit != vars.end(); vit++){
@@ -368,34 +372,32 @@ public:
 					std::string attvalue;
 					ait->second.getValues(attvalue);
 					if (attvalue == attribute_value){
-						var = vit->second;
-						return true;
+						return vit->second;						
 					}
 				}
 			}
 		}
-		return false;
-	}
-	
-	size_t getLineIndex(const int& linenumber){
-		auto it = std::find(line_number.begin(), line_number.end(), linenumber);				
-		return it - line_number.begin();		
+		return NcVar();
 	}
 
 	template<typename T>
-	bool getLineNumbers(std::vector<T>& vals){
-		NcVar var;
-		bool status = getNcVarByAttribute(AN_STANDARD_NAME, SN_LINE_NUMBER, var);
-		if (status) return getVarAll(var.getName(), vals);
+	bool getLineNumbers(std::vector<T>& vals){		
+		NcVar v = findVarByAttribute(AN_STANDARD_NAME, SN_LINE_NUMBER);
+		if (!v.isNull()){
+			cLineVar var(this, v);
+			return var.getAll(vals);
+		}
 		return false;
 	}
 
 	template<typename T>
 	bool getFlightNumbers(std::vector<T>& vals){
-		NcVar var;
-		bool status = getNcVarByAttribute(AN_STANDARD_NAME, SN_FLIGHT_NUMBER, var);
-		if (status) return getVarAll(var.getName(), vals);
-		return false;
+		NcVar v = findVarByAttribute(AN_STANDARD_NAME, SN_FLIGHT_NUMBER);
+		if (!v.isNull()){
+			cLineVar var(this, v);
+			return var.getAll(vals);
+		}
+		return false;		
 	}
 	
 	template<typename T>
@@ -490,7 +492,7 @@ public:
 
 		cSampleVar var = getSampleVar(name);
 		if (var.isNull()){
-			std::vector<NcDim> vardims = { dim_sample };
+			std::vector<NcDim> vardims = { dim_sample() };
 			for (size_t i = 0; i<dims.size(); i++){
 				vardims.push_back(dims[i]);
 			}
@@ -513,7 +515,7 @@ public:
 		
 		cLineVar var = getLineVar(name);
 		if (var.isNull()){
-			std::vector<NcDim> vardims = { dim_line };
+			std::vector<NcDim> vardims = { dim_line() };
 			for (size_t i = 0; i<dims.size(); i++){
 				vardims.push_back(dims[i]);
 			}
@@ -531,17 +533,16 @@ public:
 		return addLineVar(name, type, dims);
 	}
 
-	bool findLineStartEndPoints(std::vector<double>& x1, std::vector<double>& x2, std::vector<double>& y1, std::vector<double>& y2){
+	bool findNonNullLineStartEndPoints(std::vector<double>& x1, std::vector<double>& x2, std::vector<double>& y1, std::vector<double>& y2){
 		x1.resize(nlines());
 		x2.resize(nlines());
 		y1.resize(nlines());
 		y2.resize(nlines());
 
 		cSampleVar vx = getSampleVar("longitude");
-		cSampleVar vy = getSampleVar("latitude");		
-		double nvx, nvy;
-		vx.get_fillvalue(nvx);
-		vy.get_fillvalue(nvy);		
+		cSampleVar vy = getSampleVar("latitude");				
+		double nvx = vx.fillvalue(nvx);
+		double nvy = vy.fillvalue(nvy);
 		for (size_t li = 0; li < nlines(); li++){
 			std::vector<double> x;
 			std::vector<double> y;
@@ -559,7 +560,7 @@ public:
 			for (size_t si = ns-1; si > 0; si--){
 				if (x[si] != nvx && y[si] != nvy){
 					x2[li] = x[si];
-					x2[li] = y[si];
+					y2[li] = y[si];
 					break;
 				}
 			}
@@ -567,7 +568,14 @@ public:
 		return true;
 	}
 
-	bool addLineStartEndPoints(const std::vector<double>& x1, const std::vector<double>& x2, const std::vector<double>& y1, const std::vector<double>& y2){
+	bool addLineStartEndPoints(){
+
+		std::vector<double> x1;
+		std::vector<double> x2;
+		std::vector<double> y1;
+		std::vector<double> y2;
+		findNonNullLineStartEndPoints(x1, x2, y1, y2);
+
 		cLineVar vx1 = addLineVar("longitude_first", ncDouble);
 		vx1.add_fillvalue(vx1.preferred_double_fillvalue());
 		vx1.add_standard_name("longitude_first");
@@ -599,8 +607,8 @@ public:
 	}
 
 	bool addCRS(const cCRS& crs){
-		NcDim d = addDim("scalar");
-		NcVar v = addVar("crs", ncInt, d);
+		//NcDim d = addDim("scalar");
+		NcVar v = addVar("crs", ncInt);
 		v.putAtt("grid_mapping_name", "latitude_longitude");
 		v.putAtt("epsg_code", crs.epsg_code.c_str());
 		v.putAtt("semi_major_axis", ncDouble, crs.semi_major_axis);
@@ -615,11 +623,16 @@ public:
 		std::vector<double> px;
 		std::vector<double> py;
 		maxdistance = 1000.0 / 30.0 / 3600.0;
-		getLineVar("longitude").getAll(x);
-		getLineVar("latitude").getAll(y);		
+		cSampleVar vx = getSampleVar("longitude");
+		cSampleVar vy = getSampleVar("latitude");
+		vx.getAll(x);
+		vy.getAll(y);
+		double nullx = vx.fillvalue(nullx);
+		double nully = vy.fillvalue(nully);
+
 		bool status = line_data_alpha_shape_polygon_ch(
 			line_index_start, line_index_count,
-			x, y, 32, px, py);
+			x, y, nullx, nully, 64, px, py);
 
 		size_t nv = px.size();
 		std::vector<double> poly(nv*2);

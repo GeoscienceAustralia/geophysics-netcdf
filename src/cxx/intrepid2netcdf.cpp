@@ -105,11 +105,11 @@ public:
 			cGeophysicsNcFile ncFile(NCPath, NcFile::replace);
 			add_lineindex(ncFile, D);
 			add_groupbyline_variables(ncFile, D);			
-			add_indexed_variables(ncFile, D);
-			add_line_startend_points(ncFile, D);			
-			//add_global_metadata(ncFile, R);
-			//add_geospatial_metadata(ncFile, D);
-			//ncFile.addAlphaShapePolygon();
+			add_indexed_variables(ncFile, D);			
+			add_global_metadata(ncFile, R);
+			add_geospatial_metadata(ncFile, D);
+			ncFile.addLineStartEndPoints();
+			ncFile.addAlphaShapePolygon();			
 		}
 		return true;
 	}
@@ -445,19 +445,7 @@ public:
 			}			
 		}		
 		return true;
-	}
-
-	bool add_line_startend_points(cGeophysicsNcFile& ncFile, ILDataset& D)
-	{
-		_GSTITEM_
-		std::vector<double> x1;
-		std::vector<double> x2;
-		std::vector<double> y1;
-		std::vector<double> y2;
-		D.get_line_start_end_points(x1,x2,y1,y2);
-		ncFile.addLineStartEndPoints(x1, x2, y1, y2);		
-		return true;
-	}
+	}	
 
 	std::string standardize_date(const std::string& indate){
 		_GSTITEM_

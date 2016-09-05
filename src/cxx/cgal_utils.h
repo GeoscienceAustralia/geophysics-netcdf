@@ -16,7 +16,9 @@ bool line_data_alpha_shape_polygon_ch(
 	const std::vector<size_t>& line_index_count,
 	const std::vector<double>& x,
 	const std::vector<double>& y,
-	size_t maxvertices,
+	const double nullx,
+	const double nully,
+	const size_t maxvertices,
 	std::vector<double>& px,
 	std::vector<double>& py);
 #endif

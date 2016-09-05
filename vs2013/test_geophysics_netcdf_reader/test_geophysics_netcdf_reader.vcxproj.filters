@@ -30,31 +30,8 @@
     <ClCompile Include="..\..\src\cxx\geophysics_netcdf.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-  </ItemGroup>
-  <ItemGroup>
-    <ClInclude Include="..\..\src\c++\blocklanguage.h">
-      <Filter>Source Files\Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\src\c++\file_utils.h">
-      <Filter>Source Files\Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\src\c++\general_constants.h">
-      <Filter>Source Files\Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\src\c++\general_types.h">
-      <Filter>Source Files\Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\src\c++\general_utils.h">
-      <Filter>Source Files\Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\src\c++\geometry3d.h">
-      <Filter>Source Files\Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\src\c++\stacktrace.h">
-      <Filter>Source Files\Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\src\cxx\geophysicsncfile.h">
-      <Filter>Source Files\Header Files</Filter>
-    </ClInclude>
+    <ClCompile Include="..\..\src\cxx\cgal_utils.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
 </Project>

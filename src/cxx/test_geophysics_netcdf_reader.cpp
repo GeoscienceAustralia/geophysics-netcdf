@@ -62,15 +62,16 @@ bool test_read1(){
 
 bool test_read2(){
 
-	std::string ncpath = "PIRSA_P702_SAEI_C1_tmi.nc";	                      
+	std::string indir = "Z:\\projects\\geophysics_netcdf\\awags_levelled_conversion\\ncfiles\\";
+	//std::string ncpath = indir + "PIRSA_P702_SAEI_C1_tmi.nc";	                      
+	std::string ncpath = indir + "PIRSA_P850_P851_TEiSA_A2_A3_B1_B2_Mag.nc";
 	cGeophysicsNcFile ncfile(ncpath, NcFile::write);
+		
+	//ncfile.addLineStartEndPoints();
+	ncfile.addAlphaShapePolygon();
+	return true;
 
-	std::vector<double> x1;
-	std::vector<double> x2;
-	std::vector<double> y1;
-	std::vector<double> y2;
-	ncfile.findLineStartEndPoints(x1, x2, y1, y2);
-	ncfile.addLineStartEndPoints(x1, x2, y1, y2);
+	/*
 	cLineVar v = ncfile.getLineVar("longitude");
 	std::vector<double> vals;
 	v.getAll(vals);
@@ -94,6 +95,7 @@ bool test_read2(){
 		ncfile.getVarByLineIndex("fiducial", i, v1);						
 	}
 	return true;
+	*/
 }
 
 bool test_create(){

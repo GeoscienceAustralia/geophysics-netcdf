@@ -51,11 +51,13 @@ bool line_data_alpha_shape_polygon_ch(
 	const std::vector<size_t>& line_index_count,
 	const std::vector<double>& x,
 	const std::vector<double>& y,
-	size_t maxvertices,
+	const double nullx,
+	const double nully,	
+	const size_t maxvertices,
 	std::vector<double>& px,
 	std::vector<double>& py)
 {
-
+	size_t nmaxvertices = maxvertices;
 	std::list<Point> points;
 	size_t nl = line_index_start.size();
 	for (size_t li = 0; li < nl; li++){	
@@ -63,7 +65,10 @@ bool line_data_alpha_shape_polygon_ch(
 		size_t start = line_index_start[li];		
 		std::list<Point> plist;		
 		for (size_t si = 0; si < ns; si++){
-			plist.push_back(Point(x[start + si], y[start + si]));
+			const double xp = x[start + si];
+			const double yp = y[start + si];
+			if (xp == nullx || yp == nully)continue;
+			plist.push_back(Point(xp, yp));
 		}				
 		std::list<Point> hull;		
 		CGAL::convex_hull_2(plist.begin(), plist.end(), std::inserter(hull, hull.begin()));
@@ -125,7 +130,7 @@ bool line_data_alpha_shape_polygon_ch(
 	size_t np = polygon.container().size();
 	printf("Number of hull vertices = %d\n", np);
 	
-	if (np < maxvertices) maxvertices = np;
+	if (np < nmaxvertices) nmaxvertices = np;
 
 	//Simplify the polygon
 	Cost cost;
