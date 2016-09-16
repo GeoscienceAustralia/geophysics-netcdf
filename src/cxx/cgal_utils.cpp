@@ -23,6 +23,7 @@
 #include <CGAL/Polygon_2.h>
 #include <CGAL/Polyline_simplification_2/simplify.h>
 #include <CGAL/Polyline_simplification_2/Stop_below_count_threshold.h>
+#include <CGAL/Polyline_simplification_2/Stop_above_cost_threshold.h>
 #  pragma warning (pop)
 
 #include <vector>
@@ -43,8 +44,6 @@ typedef Alpha_shape_2::Alpha_shape_edges_iterator Alpha_shape_edges_iterator;
 
 typedef CGAL::Polygon_2<K> Polygon;
 namespace PS = CGAL::Polyline_simplification_2;
-typedef PS::Stop_below_count_threshold Stop;
-typedef PS::Squared_distance_cost Cost;
 
 bool line_data_alpha_shape_polygon_ch(
 	const std::vector<size_t>& line_index_start,
@@ -53,11 +52,10 @@ bool line_data_alpha_shape_polygon_ch(
 	const std::vector<double>& y,
 	const double nullx,
 	const double nully,	
-	const size_t maxvertices,
+	size_t maxvertices,
 	std::vector<double>& px,
 	std::vector<double>& py)
-{
-	size_t nmaxvertices = maxvertices;
+{	
 	std::list<Point> points;
 	size_t nl = line_index_start.size();
 	for (size_t li = 0; li < nl; li++){	
@@ -70,10 +68,9 @@ bool line_data_alpha_shape_polygon_ch(
 			if (xp == nullx || yp == nully)continue;
 			plist.push_back(Point(xp, yp));
 		}				
-		std::list<Point> hull;		
-		CGAL::convex_hull_2(plist.begin(), plist.end(), std::inserter(hull, hull.begin()));
-		//printf("Number of chull points = %d\n", hull.size());
-		points.splice(points.end(), hull);
+		//std::list<Point> hull;		
+		//CGAL::convex_hull_2(plist.begin(), plist.end(), std::inserter(hull, hull.begin()));		
+		points.splice(points.end(), plist);
 	}
 	//printf("Number of filtered points = %d\n", points.size());
 
@@ -121,49 +118,56 @@ bool line_data_alpha_shape_polygon_ch(
 		double vx = (*it).source().x();
 		double vy = (*it).source().y();
 		Point p = Point(vx, vy);
-		if (A.classify(p) == Alpha_shape_2::Classification_type::INTERIOR)continue;
-		if (A.classify(p) == Alpha_shape_2::Classification_type::EXTERIOR)continue;
-		if (A.classify(p) == Alpha_shape_2::Classification_type::SINGULAR)continue;
+		//if (A.classify(p) == Alpha_shape_2::Classification_type::INTERIOR)continue;
+		//if (A.classify(p) == Alpha_shape_2::Classification_type::EXTERIOR)continue;
+		//if (A.classify(p) == Alpha_shape_2::Classification_type::SINGULAR)continue;
 		polygon.push_back(p);
 	}
+	size_t nhull = polygon.container().size();
+	printf("Number of hull vertices = %d\n", nhull);
 
-	size_t np = polygon.container().size();
-	printf("Number of hull vertices = %d\n", np);
-	
-	if (np < nmaxvertices) nmaxvertices = np;
-
-	//Simplify the polygon
-	Cost cost;
-	double area0 = polygon.area();
-	polygon = PS::simplify(polygon, cost, Stop(maxvertices));
-	
-	np = polygon.container().size();
-	printf("Number of hull vertices = %d\n", np);
-	
-	Polygon simple;	
-	size_t i;
-	for (i = maxvertices; i > 3; i--){
-		simple  = PS::simplify(polygon, cost, Stop(i));
-		double ratio = simple.area() / area0;
-		printf("Vertices = %d area ratio = %lf\n", i,ratio);
-		if (ratio <= 0.99 || ratio >= 1.00){
-			simple = PS::simplify(polygon, cost, Stop(i + 1));
-			break;
+	if (true){
+		for (r = 10; r <= 5000; r = r + 10){
+			double thr_m = r;
+			double thr_d = thr_m / (3600.0 * 30.0);
+			PS::Stop_above_cost_threshold stop(thr_d*thr_d);
+			PS::Squared_distance_cost cost;
+			//PS::Scaled_squared_distance_cost cost;
+			Polygon simple = polygon;
+			simple = PS::simplify(simple, cost, stop);
+			printf("%lf %d\n", r, simple.container().size());
+			polygon = simple;
+			if (simple.container().size() <= 64){
+				break;
+			}
 		}
-	}		
-	np = simple.container().size();
-	printf("Number of simplified polygon vertices = %d\n", np);
-	
-	px.resize(np);
-	py.resize(np);
+	}
+
+	if (false){
+		double thr_m = 100.0;
+		double thr_d = thr_m / (3600.0 * 30.0);
+		PS::Stop_above_cost_threshold stop(thr_d*thr_d);
+		//PS::Squared_distance_cost cost;
+		PS::Scaled_squared_distance_cost cost;
+		Polygon simple = polygon;
+		simple = PS::simplify(simple, cost, stop); printf("Number of simplified polygon vertices = %d\n", simple.container().size());
+		simple = PS::simplify(simple, cost, stop); printf("Number of simplified polygon vertices = %d\n", simple.container().size());
+		simple = PS::simplify(simple, cost, stop); printf("Number of simplified polygon vertices = %d\n", simple.container().size());		
+		simple = PS::simplify(simple, cost, stop); printf("Number of simplified polygon vertices = %d\n", simple.container().size());
+		simple = PS::simplify(simple, cost, stop); printf("Number of simplified polygon vertices = %d\n", simple.container().size());
+		simple = PS::simplify(simple, cost, stop); printf("Number of simplified polygon vertices = %d\n", simple.container().size());
+		simple = PS::simplify(simple, cost, stop); printf("Number of simplified polygon vertices = %d\n", simple.container().size());
+		polygon = simple;
+	}
+
+	px.resize(polygon.container().size());
+	py.resize(polygon.container().size());
 	size_t k = 0;
-	for (auto it = simple.vertices_begin(); it != simple.vertices_end(); ++it){
+	for (auto it = polygon.vertices_begin(); it != polygon.vertices_end(); ++it){
 		px[k] = (*it).x();
 		py[k] = (*it).y();
 		k++;
-	}
-
-	prompttocontinue();
+	}	
 	return true;
 }
 

@@ -229,11 +229,11 @@ public:
 	{
 		_GSTITEM_
 		NcType t = v.getType();
-		if (t == ncUbyte) v.add_fillvalue(IDatatype::bytenull());
-		else if (t == ncShort) v.add_fillvalue(IDatatype::shortnull());
-		else if (t == ncInt) v.add_fillvalue(IDatatype::intnull());		
-		else if (t == ncFloat) v.add_fillvalue(v.preferred_float_fillvalue());
-		else if (t == ncDouble) v.add_fillvalue(v.preferred_double_fillvalue());
+		if (t == ncUbyte) v.add_missing_value(IDatatype::bytenull());
+		else if (t == ncShort) v.add_missing_value(IDatatype::shortnull());
+		else if (t == ncInt) v.add_missing_value(IDatatype::intnull());		
+		else if (t == ncFloat) v.add_missing_value(v.preferred_float_missing_value());
+		else if (t == ncDouble) v.add_missing_value(v.preferred_double_missing_value());
 		else{
 			std::string msg = "Error: Unsupported data type\n";
 			message(flog, msg.c_str());
@@ -389,10 +389,10 @@ public:
 
 				//Replace the nulls with more "sensible" values
 				if (S.datatype().isfloat()){
-					S.change_nullvalue(var.preferred_float_fillvalue());
+					S.change_nullvalue(var.preferred_float_missing_value());
 				}
 				else if (S.datatype().isdouble()){
-					S.change_nullvalue(var.preferred_double_fillvalue());
+					S.change_nullvalue(var.preferred_double_missing_value());
 				}
 
 				std::vector<size_t> startp(2);
@@ -530,6 +530,13 @@ public:
 
 int main(int argc, char** argv)
 {	
+	double dnull = std::pow(-2, 127);
+	float  fnull = -2*std::pow(2, 127);
+	float  fnull1 = fnull - FLT_EPSILON ;//         3.402823466e+38F
+
+	if (fnull == fnull1){
+		int dummy = 5;
+	}
 	_GSTITEM_
 	if (argc != 2){
 		printf("Usage: %s control_file_name\n", argv[0]);

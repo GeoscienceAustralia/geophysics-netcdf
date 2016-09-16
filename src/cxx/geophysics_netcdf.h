@@ -13,6 +13,7 @@ Author: Ross C. Brodie, Geoscience Australia.
 #include "stacktrace.h"
 #endif
 
+#include "float.h"
 #include "general_utils.h"
 #include "vector_utils.h"
 #include "crs.h"
@@ -35,18 +36,21 @@ using namespace netCDF::exceptions;
 
 #define AN_UNITS "units"
 #define AN_DESCRIPTION "description"
-#define AN_FILLVALUE "_FillValue"
+#define AN_MISSINGVALUE "missing_value"
 #define AN_ORIGINAL_NAME "original_database_name"
 
 #define NcShortNull -32767
 #define NcIntNull -2147483647
-#define NcFloatNull  -3.4E+38F
-#define NcDoubleNull -5.0E+75
+//#define NcFloatNull  -3.4E+38F
+//#define NcDoubleNull -5.0E+75
+#define NcFloatNull  (float)-std::pow(2,128)
+#define NcDoubleNull -std::pow(2,1024)
 
 std::string errormsg(const char* file, const int& linenumber, const char* function);
 
 NcType nctype(const short dummy);
 NcType nctype(const int dummy);
+NcType nctype(const float dummy);
 NcType nctype(const double dummy);
 NcType nctype(const std::string dummy);
 
@@ -105,47 +109,47 @@ public:
 		return putAtt(AN_DESCRIPTION, value);
 	}
 	
-	static float preferred_float_fillvalue(){		
+	static float preferred_float_missing_value(){		
 		return NcFloatNull;
 	}
 
-	static double preferred_double_fillvalue(){		
+	static double preferred_double_missing_value(){		
 		return NcDoubleNull;
 	}
 
-	bool set_default_fillvalue(){
+	bool set_default_missingvalue(){
 		const NcType type = getType();
 		if (type == ncShort){
-			putAtt(AN_FILLVALUE, ncShort, (short) NcShortNull);
+			putAtt(AN_MISSINGVALUE, ncShort, (short) NcShortNull);
 		}
 		else if (type == ncInt){
-			putAtt(AN_FILLVALUE, ncInt, (int) NcIntNull);
+			putAtt(AN_MISSINGVALUE, ncInt, (int) NcIntNull);
 		}
 		else if (type == ncFloat){
-			putAtt(AN_FILLVALUE, ncFloat, (float) NcFloatNull);
+			putAtt(AN_MISSINGVALUE, ncFloat, (float) NcFloatNull);
 		}
 		else if (type == ncDouble){
-			putAtt(AN_FILLVALUE, ncDouble, (double) NcDoubleNull);
+			putAtt(AN_MISSINGVALUE, ncDouble, (double) NcDoubleNull);
 		}
 		else return false;
 		return true;
 	}
 
 	template<typename T>
-	bool add_fillvalue(const T& value){
+	bool add_missing_value(const T& value){
 		const NcType type = getType();
-		if (type == ncShort) putAtt(AN_FILLVALUE, ncShort, value);
-		else if (type == ncInt) putAtt(AN_FILLVALUE, ncInt, value);
-		else if (type == ncFloat) putAtt(AN_FILLVALUE, ncFloat, value);
-		else if (type == ncDouble) putAtt(AN_FILLVALUE, ncDouble, value);
+		if (type == ncShort) putAtt(AN_MISSINGVALUE, ncShort, value);
+		else if (type == ncInt) putAtt(AN_MISSINGVALUE, ncInt, value);
+		else if (type == ncFloat) putAtt(AN_MISSINGVALUE, ncFloat, value);
+		else if (type == ncDouble) putAtt(AN_MISSINGVALUE, ncDouble, value);
 		else return false;
 		return true;
 	}
 
 	template<typename T>
-	T fillvalue(const T& value){
+	T missingvalue(const T& value){
 		T v;
-		getAtt(AN_FILLVALUE).getValues(&v);
+		getAtt(AN_MISSINGVALUE).getValues(&v);
 		return v;
 	}
 
@@ -498,7 +502,7 @@ public:
 			}
 			var = cSampleVar(this,addVar(name, type, vardims));
 			//var.set_parent(this);
-			var.set_default_fillvalue();
+			var.set_default_missingvalue();
 		}
 		return var;
 	}
@@ -520,7 +524,7 @@ public:
 				vardims.push_back(dims[i]);
 			}
 			var = cLineVar(this, addVar(name, type, vardims));
-			var.set_default_fillvalue();
+			var.set_default_missingvalue();
 		}
 		return var;
 	}
@@ -541,14 +545,17 @@ public:
 
 		cSampleVar vx = getSampleVar("longitude");
 		cSampleVar vy = getSampleVar("latitude");				
-		double nvx = vx.fillvalue(nvx);
-		double nvy = vy.fillvalue(nvy);
+		double nvx = vx.missingvalue(nvx);
+		double nvy = vy.missingvalue(nvy);
 		for (size_t li = 0; li < nlines(); li++){
 			std::vector<double> x;
 			std::vector<double> y;
 			vx.getLine(x, li);
 			vy.getLine(y, li);
 			const size_t ns = x.size();
+
+			x1[li] = nvx; 
+			y1[li] = nvy;
 			for (size_t si = 0; si < ns; si++){
 				if (x[si] != nvx && y[si] != nvy){
 					x1[li] = x[si];
@@ -557,12 +564,15 @@ public:
 				}
 			}
 
-			for (size_t si = ns-1; si > 0; si--){
+			x2[li] = nvx;
+			y2[li] = nvy;
+			for (size_t si = ns-1; si >= 0; si--){
 				if (x[si] != nvx && y[si] != nvy){
 					x2[li] = x[si];
 					y2[li] = y[si];
 					break;
 				}
+				if (si == 0)break;//avoid endless loop
 			}
 		}
 		return true;
@@ -577,28 +587,28 @@ public:
 		findNonNullLineStartEndPoints(x1, x2, y1, y2);
 
 		cLineVar vx1 = addLineVar("longitude_first", ncDouble);
-		vx1.add_fillvalue(vx1.preferred_double_fillvalue());
+		vx1.add_missing_value(vx1.preferred_double_missing_value());
 		vx1.add_standard_name("longitude_first");
 		vx1.add_description("first non-null longitude coordinate in the line");
 		vx1.add_units("degree_east");
 		vx1.putAll(x1);
 
 		cLineVar vx2 = addLineVar("longitude_last", ncDouble);
-		vx2.add_fillvalue(vx2.preferred_double_fillvalue());
+		vx2.add_missing_value(vx2.preferred_double_missing_value());
 		vx2.add_standard_name("longitude_last");
 		vx2.add_description("last non-null longitude coordinate in the line");
 		vx2.add_units("degree_east");
 		vx2.putAll(x2);
 
 		cLineVar vy1 = addLineVar("latitude_first", ncDouble);
-		vy1.add_fillvalue(vy1.preferred_double_fillvalue());
+		vy1.add_missing_value(vy1.preferred_double_missing_value());
 		vy1.add_standard_name("latitude_first");
 		vy1.add_description("first non-null latitude coordinate in the line");
 		vy1.add_units("degree_north");
 		vy1.putAll(y1);
 
 		cLineVar vy2 = addLineVar("latitude_last", ncDouble);
-		vy2.add_fillvalue(vy2.preferred_double_fillvalue());
+		vy2.add_missing_value(vy2.preferred_double_missing_value());
 		vy2.add_standard_name("latitude_last");
 		vy2.add_description("last non-null latitude coordinate in the line");
 		vy2.add_units("degree_north");
@@ -621,14 +631,13 @@ public:
 		std::vector<double> y;
 		double maxdistance;
 		std::vector<double> px;
-		std::vector<double> py;
-		maxdistance = 1000.0 / 30.0 / 3600.0;
+		std::vector<double> py;		
 		cSampleVar vx = getSampleVar("longitude");
 		cSampleVar vy = getSampleVar("latitude");
 		vx.getAll(x);
 		vy.getAll(y);
-		double nullx = vx.fillvalue(nullx);
-		double nully = vy.fillvalue(nully);
+		double nullx = vx.missingvalue(nullx);
+		double nully = vy.missingvalue(nully);
 
 		bool status = line_data_alpha_shape_polygon_ch(
 			line_index_start, line_index_count,

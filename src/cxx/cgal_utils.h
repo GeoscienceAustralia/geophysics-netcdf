@@ -18,7 +18,7 @@ bool line_data_alpha_shape_polygon_ch(
 	const std::vector<double>& y,
 	const double nullx,
 	const double nully,
-	const size_t maxvertices,
+	size_t maxvertices,
 	std::vector<double>& px,
 	std::vector<double>& py);
 #endif

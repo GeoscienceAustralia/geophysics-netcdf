@@ -64,38 +64,13 @@ bool test_read2(){
 
 	std::string indir = "Z:\\projects\\geophysics_netcdf\\awags_levelled_conversion\\ncfiles\\";
 	//std::string ncpath = indir + "PIRSA_P702_SAEI_C1_tmi.nc";	                      
-	std::string ncpath = indir + "PIRSA_P850_P851_TEiSA_A2_A3_B1_B2_Mag.nc";
+	//std::string ncpath = indir + "PIRSA_P853_TEiSA_D1_D2_D3_Mag_C.nc";
+	std::string ncpath = indir + "P406MAG.nc";
 	cGeophysicsNcFile ncfile(ncpath, NcFile::write);
 		
 	//ncfile.addLineStartEndPoints();
 	ncfile.addAlphaShapePolygon();
-	return true;
-
-	/*
-	cLineVar v = ncfile.getLineVar("longitude");
-	std::vector<double> vals;
-	v.getAll(vals);
-
-	std::vector<int> linenumber;
-	ncfile.getLineNumbers(linenumber);
-
-	size_t lnum = linenumber[3];
-	size_t index = ncfile.getLineIndex(lnum);
-	std::vector<double> v0;
-	bool status;
-
-	status = ncfile.getVarByLineNumber("easting", 300, v0);
-	status = ncfile.getVarByLineNumber("northing", 300, v0);
-
-	std::vector<size_t> flightnumber;
-	ncfile.getFlightNumbers(flightnumber);
-
-	std::vector<double> v1, v2, v3;
-	for (size_t i = 0; i < ncfile.nlines(); i++){		
-		ncfile.getVarByLineIndex("fiducial", i, v1);						
-	}
-	return true;
-	*/
+	return true;	
 }
 
 bool test_create(){
@@ -124,7 +99,7 @@ bool test_create(){
 	cSampleVar vfid = nc.addSampleVar("fiducial", ncInt);
 	vfid.add_standard_name("fiducial");
 	vfid.add_units("1");
-	vfid.add_fillvalue(34);
+	vfid.add_missing_value(34);
 
 
 	cSampleVar vx   = nc.addSampleVar("easting",  ncDouble);
