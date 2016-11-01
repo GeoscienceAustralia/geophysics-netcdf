@@ -3,15 +3,16 @@ clc;
 clear all;
 
 %ncfile  = 'http://dapds00.nci.org.au/thredds/dodsC/uc0/rr2_dev/rcb547/ncfiles/aem_conductivity/galeisbs.final.1e4.a.nc';
-ncdir = 'Z:\projects\geophysics_netcdf\awags_levelled_conversion\ncfiles\';
 
-plotdir = 'Z:\projects\geophysics_netcdf\awags_levelled_conversion\plots\';
+basedir = 'Z:\projects\geophysics_netcdf\awags_levelled_conversion\';
+ncdir   = [basedir 'ncfiles\'];
+plotdir = [basedir 'plots\'];
 
 files = dir([ncdir '\' '*.nc']);
 nfiles = size(files);
 
 k=1;
-for si=1:1:nfiles
+for si=1:1:1
     ncfile = [ncdir files(si).name];
     fileid = netcdf.open(ncfile,'NOWRITE');
     istart = get_by_name(fileid,'_index_line');
@@ -22,13 +23,13 @@ for si=1:1:nfiles
     y2  = get_by_name(fileid,'latitude_last');
     lat = get_by_stdname(fileid,'latitude');
     lon = get_by_stdname(fileid,'longitude');
-    bp  = get_by_name(fileid,'bounding_polygon');
+    %bp  = get_by_name(fileid,'bounding_polygon');
     line = get_by_name(fileid,'line');
     nlines = length(istart);
     
-    bp(:,length(bp)+1)=bp(:,1);
+    %bp(:,length(bp)+1)=bp(:,1);
     
-    BP(k).poly = bp;
+    %BP(k).poly = bp;
     k=k+1;
     
     if(true)
@@ -41,7 +42,7 @@ for si=1:1:nfiles
         
         %plot(lon(1:100:end),lat(1:100:end),'g.');
         plot([x1 x2]',[y1 y2]','-b');
-        plot(bp(1,:),bp(2,:),'-r.');
+        %plot(bp(1,:),bp(2,:),'-r.');
         %xlim([min([x1;x2]) max([x1;x2])]);
         %ylim([min([y1;y2]) max([y1;y2])]);
         daspect([1 1 1]);
