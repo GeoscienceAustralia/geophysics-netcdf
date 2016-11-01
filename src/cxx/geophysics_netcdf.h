@@ -13,6 +13,7 @@ Author: Ross C. Brodie, Geoscience Australia.
 #include "stacktrace.h"
 #endif
 
+#include <stdexcept>
 #include "float.h"
 #include "general_utils.h"
 #include "vector_utils.h"
@@ -82,11 +83,12 @@ public:
 		return len;
 	}
 
-	size_t nbands(){		
+	size_t nbands(){
 		std::vector<NcDim> dims = getDims();
 		if (dims.size() == 1) return 1;
-		else if (dims.size() == 2) dims[1].getSize();
-		else return 0;
+		else if (dims.size() == 2) return dims[1].getSize();
+		return 0;
+		//this need fixing for case of extra dims
 	}
 
 	NcVarAtt add_attribute(const std::string& att, std::string value){
@@ -178,7 +180,7 @@ public:
 		if (isNull()){
 			std::string msg = strprint("Attempt to write to a Null variable\n");
 			msg += errormsg(__FILE__, __LINE__, __FUNCTION__);
-			throw(std::runtime_error(msg));
+			throw(std::runtime_error(msg.c_str()));
 		}
 
 		if (vals.size() != length()){
@@ -234,7 +236,7 @@ public:
 		if (vals.size() != length()){
 			std::string msg = strprint("Attempt to write variable (%s) with non-matching size\n", getName().c_str());
 			msg += errormsg(__FILE__, __LINE__, __FUNCTION__);
-			throw(std::runtime_error(msg));
+			throw(std::runtime_error(msg.c_str()));
 		}
 
 		putVar(vals.data());
@@ -313,8 +315,6 @@ public:
 
 	bool InitialiseNew(const std::vector<size_t>& linenumbers, const std::vector<size_t>& linesamplecount){
 		
-		_GSTITEM_
-
 		bool status;
 		size_t nl = linenumbers.size();
 		line_number = linenumbers;
@@ -617,8 +617,9 @@ public:
 	}
 
 	bool addCRS(const cCRS& crs){
-		//NcDim d = addDim("scalar");
-		NcVar v = addVar("crs", ncInt);
+		//NcDim d = addDim("scalar",1);
+		std::vector<NcDim> d;
+		NcVar v = NcFile::addVar("crs", ncInt, d);
 		v.putAtt("grid_mapping_name", "latitude_longitude");
 		v.putAtt("epsg_code", crs.epsg_code.c_str());
 		v.putAtt("semi_major_axis", ncDouble, crs.semi_major_axis);
@@ -626,6 +627,7 @@ public:
 		return true;
 	}
 
+	
 	bool addAlphaShapePolygon(){
 		std::vector<double> x;
 		std::vector<double> y;
@@ -661,6 +663,7 @@ public:
 		v.putVar(poly.data());		
 		return true;
 	}
+	
 
 };
 

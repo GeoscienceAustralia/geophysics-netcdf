@@ -3,12 +3,14 @@ SHELL = /bin/sh
 include mydefaultmakesettings.make
 
 #cxxflags   += -DUSEGLOBALSTACKTRACE
-libs       =  -lnetcdf -lnetcdf_c++4
+libs       =  -lnetcdf -lnetcdf_c++4 -lCGAL_Core
 executable =  $(exedir)/intrepid2netcdf.exe
 
 objects += $(objdir)/general_utils.o
 objects += $(objdir)/file_utils.o
 objects += $(objdir)/blocklanguage.o
+objects += $(objdir)/cgal_utils.o
+objects += $(objdir)/geophysics_netcdf.o
 objects += $(objdir)/intrepid2netcdf.o
 
 $(objects): $(objdir)/%.o: $(srcdir)/%.cpp

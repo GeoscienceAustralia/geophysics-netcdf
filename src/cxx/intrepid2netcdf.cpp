@@ -138,7 +138,7 @@ public:
 			pmax = (int)s.max;
 			if (s.min != s.max){
 				message(flog, "Warning 1a: %s Database has more than one survey number (%d to %d)\n", IDBPath.c_str(), (int)s.min, (int)s.max);
-			}			
+			}
 		}
 
 		int pguess = 0;
@@ -205,8 +205,8 @@ public:
 
 		ki = r.findkeyindex("geoscience_australia_source_dataset");
 		if (ki >= 0){
-			r.values[(size_t)ki] = IDBPath;
-		}		
+			r.values[(size_t)ki] = IDBName;
+		}
 		return true;
 	};
 

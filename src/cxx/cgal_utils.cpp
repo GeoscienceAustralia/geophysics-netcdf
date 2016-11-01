@@ -72,7 +72,7 @@ bool line_data_alpha_shape_polygon_ch(
 		//CGAL::convex_hull_2(plist.begin(), plist.end(), std::inserter(hull, hull.begin()));		
 		points.splice(points.end(), plist);
 	}
-	//printf("Number of filtered points = %d\n", points.size());
+	//printf("Number of filtered points = %lu\n", points.size());
 
 	Alpha_shape_2 A(points.begin(), points.end(), Alpha_shape_2::REGULARIZED);
 	auto ait = A.find_optimal_alpha(1);
@@ -124,7 +124,7 @@ bool line_data_alpha_shape_polygon_ch(
 		polygon.push_back(p);
 	}
 	size_t nhull = polygon.container().size();
-	printf("Number of hull vertices = %d\n", nhull);
+	printf("Number of hull vertices = %lu\n", nhull);
 
 	if (true){
 		for (r = 10; r <= 5000; r = r + 10){
@@ -135,7 +135,7 @@ bool line_data_alpha_shape_polygon_ch(
 			//PS::Scaled_squared_distance_cost cost;
 			Polygon simple = polygon;
 			simple = PS::simplify(simple, cost, stop);
-			printf("%lf %d\n", r, simple.container().size());
+			printf("%lf %lu\n", r, simple.container().size());
 			polygon = simple;
 			if (simple.container().size() <= 64){
 				break;
@@ -150,13 +150,13 @@ bool line_data_alpha_shape_polygon_ch(
 		//PS::Squared_distance_cost cost;
 		PS::Scaled_squared_distance_cost cost;
 		Polygon simple = polygon;
-		simple = PS::simplify(simple, cost, stop); printf("Number of simplified polygon vertices = %d\n", simple.container().size());
-		simple = PS::simplify(simple, cost, stop); printf("Number of simplified polygon vertices = %d\n", simple.container().size());
-		simple = PS::simplify(simple, cost, stop); printf("Number of simplified polygon vertices = %d\n", simple.container().size());		
-		simple = PS::simplify(simple, cost, stop); printf("Number of simplified polygon vertices = %d\n", simple.container().size());
-		simple = PS::simplify(simple, cost, stop); printf("Number of simplified polygon vertices = %d\n", simple.container().size());
-		simple = PS::simplify(simple, cost, stop); printf("Number of simplified polygon vertices = %d\n", simple.container().size());
-		simple = PS::simplify(simple, cost, stop); printf("Number of simplified polygon vertices = %d\n", simple.container().size());
+		simple = PS::simplify(simple, cost, stop); printf("Number of simplified polygon vertices = %lu\n", simple.container().size());
+		simple = PS::simplify(simple, cost, stop); printf("Number of simplified polygon vertices = %lu\n", simple.container().size());
+		simple = PS::simplify(simple, cost, stop); printf("Number of simplified polygon vertices = %lu\n", simple.container().size());		
+		simple = PS::simplify(simple, cost, stop); printf("Number of simplified polygon vertices = %lu\n", simple.container().size());
+		simple = PS::simplify(simple, cost, stop); printf("Number of simplified polygon vertices = %lu\n", simple.container().size());
+		simple = PS::simplify(simple, cost, stop); printf("Number of simplified polygon vertices = %lu\n", simple.container().size());
+		simple = PS::simplify(simple, cost, stop); printf("Number of simplified polygon vertices = %lu\n", simple.container().size());
 		polygon = simple;
 	}
 
