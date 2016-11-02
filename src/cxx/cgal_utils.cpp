@@ -56,17 +56,28 @@ bool line_data_alpha_shape_polygon_ch(
 	std::vector<double>& px,
 	std::vector<double>& py)
 {	
+	double minsepmetres = 100.0;
+	double minsepdeg    = minsepmetres / 30.0 / 3600.0;//assumes 1 arc second is 30m.
+
 	std::list<Point> points;
 	size_t nl = line_index_start.size();
 	for (size_t li = 0; li < nl; li++){	
 		size_t ns = line_index_count[li];
 		size_t start = line_index_start[li];		
 		std::list<Point> plist;		
+		double lastx = 0.0;
+		double lasty = 0.0;
 		for (size_t si = 0; si < ns; si++){
 			const double xp = x[start + si];
 			const double yp = y[start + si];
-			if (xp == nullx || yp == nully)continue;
-			plist.push_back(Point(xp, yp));
+			if (xp == nullx || yp == nully)continue;			
+			
+			double d = std::sqrt((xp - lastx)*(xp - lastx) + (yp - lasty)*(yp - lasty));
+			if (si==0 || si==(ns-1) || d >= minsepdeg){
+				plist.push_back(Point(xp, yp));
+				lastx = xp;
+				lasty = yp;
+			}			
 		}				
 		//std::list<Point> hull;		
 		//CGAL::convex_hull_2(plist.begin(), plist.end(), std::inserter(hull, hull.begin()));		
@@ -80,10 +91,10 @@ bool line_data_alpha_shape_polygon_ch(
 	A.set_alpha(r*r);
 	
 	int nsc = A.number_of_solid_components();
-	printf("alpha radius=%lf\n", r);
-	printf("Number of solid components=%d\n", nsc);
+	//printf("alpha radius=%lf\n", r);
+	//printf("Number of solid components=%d\n", nsc);
 	
-	printf("Ordering edges\n");	
+	//printf("Ordering edges\n");	
 	std::list<Segment> src;
 	for (auto it = A.alpha_shape_edges_begin(); it != A.alpha_shape_edges_end(); ++it){				
 		if (A.classify(*it) == Alpha_shape_2::Classification_type::REGULAR){
@@ -95,7 +106,7 @@ bool line_data_alpha_shape_polygon_ch(
 	std::list<Segment> dst;
 	dst.splice(dst.end(), src, src.begin());
 
-	//Empty rest of src into dst in order
+	//Empty rest of src into dst in order	
 	Point p = dst.back().target();
 	while (src.size() > 0){
 		size_t n1 = src.size();
@@ -124,7 +135,7 @@ bool line_data_alpha_shape_polygon_ch(
 		polygon.push_back(p);
 	}
 	size_t nhull = polygon.container().size();
-	printf("Number of hull vertices = %lu\n", nhull);
+	//printf("Number of hull vertices = %lu\n", nhull);
 
 	if (true){
 		for (r = 10; r <= 5000; r = r + 10){
@@ -135,7 +146,7 @@ bool line_data_alpha_shape_polygon_ch(
 			//PS::Scaled_squared_distance_cost cost;
 			Polygon simple = polygon;
 			simple = PS::simplify(simple, cost, stop);
-			printf("%lf %lu\n", r, simple.container().size());
+			//printf("%lf %lu\n", r, simple.container().size());
 			polygon = simple;
 			if (simple.container().size() <= 64){
 				break;
@@ -143,31 +154,15 @@ bool line_data_alpha_shape_polygon_ch(
 		}
 	}
 
-	if (false){
-		double thr_m = 100.0;
-		double thr_d = thr_m / (3600.0 * 30.0);
-		PS::Stop_above_cost_threshold stop(thr_d*thr_d);
-		//PS::Squared_distance_cost cost;
-		PS::Scaled_squared_distance_cost cost;
-		Polygon simple = polygon;
-		simple = PS::simplify(simple, cost, stop); printf("Number of simplified polygon vertices = %lu\n", simple.container().size());
-		simple = PS::simplify(simple, cost, stop); printf("Number of simplified polygon vertices = %lu\n", simple.container().size());
-		simple = PS::simplify(simple, cost, stop); printf("Number of simplified polygon vertices = %lu\n", simple.container().size());		
-		simple = PS::simplify(simple, cost, stop); printf("Number of simplified polygon vertices = %lu\n", simple.container().size());
-		simple = PS::simplify(simple, cost, stop); printf("Number of simplified polygon vertices = %lu\n", simple.container().size());
-		simple = PS::simplify(simple, cost, stop); printf("Number of simplified polygon vertices = %lu\n", simple.container().size());
-		simple = PS::simplify(simple, cost, stop); printf("Number of simplified polygon vertices = %lu\n", simple.container().size());
-		polygon = simple;
-	}
-
+	//printf("Building polygon\n");
 	px.resize(polygon.container().size());
 	py.resize(polygon.container().size());
 	size_t k = 0;
-	for (auto it = polygon.vertices_begin(); it != polygon.vertices_end(); ++it){
+	for (auto it = polygon.vertices_begin(); it != polygon.vertices_end(); ++it){		
 		px[k] = (*it).x();
 		py[k] = (*it).y();
 		k++;
-	}	
+	}		
 	return true;
 }
 

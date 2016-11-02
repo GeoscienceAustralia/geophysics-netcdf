@@ -617,9 +617,13 @@ public:
 	}
 
 	bool addCRS(const cCRS& crs){
-		//NcDim d = addDim("scalar",1);
-		std::vector<NcDim> d;
-		NcVar v = NcFile::addVar("crs", ncInt, d);
+
+		#ifdef _WIN32 
+			NcVar v = NcFile::addVar("crs", ncInt);
+		#else 			
+			std::vector<NcDim> d;
+			NcVar v = NcFile::addVar("crs", ncInt, d);			
+		#endif
 		v.putAtt("grid_mapping_name", "latitude_longitude");
 		v.putAtt("epsg_code", crs.epsg_code.c_str());
 		v.putAtt("semi_major_axis", ncDouble, crs.semi_major_axis);
@@ -644,18 +648,18 @@ public:
 		bool status = line_data_alpha_shape_polygon_ch(
 			line_index_start, line_index_count,
 			x, y, nullx, nully, 64, px, py);
-
+		
 		size_t nv = px.size();
 		std::vector<double> poly(nv*2);
 		for (size_t i = 0; i < nv; i++){
 			poly[i*2] = px[i];
 			poly[i*2 + 1] = py[i];
 		}
-	
+			
 		std::vector<NcDim> dims;
 		dims.push_back(addDim("polygonvertex",nv));
 		dims.push_back(addDim("polygonordinate",2));
-
+	
 		cGeophysicsVar v(this,addVar("bounding_polygon", ncDouble, dims));
 		v.add_standard_name("bounding_polygon");
 		v.add_description("bounding polygon of survey");

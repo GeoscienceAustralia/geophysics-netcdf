@@ -19,6 +19,8 @@ using namespace netCDF::exceptions;
 	cStackTrace globalstacktrace;
 #endif
 
+#include <mpi.h>
+
 #include "general_utils.h"
 #include "file_utils.h"
 #include "blocklanguage.h"
@@ -32,6 +34,8 @@ using namespace netCDF::exceptions;
 
 class cIntrepidConverter{
 	
+	int mpisize;
+	int mpirank;
 	std::string IDBPath;
 	std::string IDBName;
 	std::string NCPath;
@@ -48,11 +52,17 @@ public:
 	size_t DatabaseStart = 0;
 	size_t DatabaseSubsample = 1;
 
-	cIntrepidConverter(const std::string& controlfile){
+	cIntrepidConverter(const std::string& controlfile, int _mpisize=1, int _mpirank=0){
 		_GSTITEM_
 
+		mpisize = _mpisize;
+		mpirank = _mpirank;
 		cBlock B(controlfile);
 		LogFile = B.getstringvalue("LogFile");
+
+		std::string suffix = stringvalue(mpirank, ".%04lu");
+		LogFile = insert_after_filename(LogFile, suffix);
+
 		flog = fileopen(LogFile, "w");
 		message(flog, "Program starting at %s\n", timestamp().c_str());
 		B.write(flog);
@@ -79,42 +89,87 @@ public:
 	};
 
 	bool process_databases(){
-
+		
 		std::vector<std::string> dlist = getfilelist(IntrepidDatbasesDir, ".DIR");
+		int count = -1;
 		for (size_t di = DatabaseStart - 1; di < dlist.size(); di = di + DatabaseSubsample){
-			IDBPath = ILDataset::dbdirpath(dlist[di]);
-			IDBName = ILDataset::dbname(dlist[di]);
-			NCPath  = NetCDFOutputDir + IDBName + ".nc";
+			count++;
+			if (count%mpisize == mpirank){
+				IDBPath = ILDataset::dbdirpath(dlist[di]);
+				IDBName = ILDataset::dbname(dlist[di]);
+				NCPath = NetCDFOutputDir + IDBName + ".nc";
 
-			message(flog, "\nConverting database %lu of %lu: %s\n", di+1, dlist.size(), dlist[di].c_str());
-			
-			bool datasetexists = exists(IDBPath);
-			if (datasetexists == false){
-				message(flog, "Warning: Database %lu does not exist: %s\n", di, IDBPath.c_str());
-				continue;
-			}
+				message(flog, "\nConverting database %lu of %lu: %s\n", di + 1, dlist.size(), dlist[di].c_str());
 
-			ILDataset D(IDBPath);
+				bool datasetexists = exists(IDBPath);
+				if (datasetexists == false){
+					message(flog, "Warning: Database %lu does not exist: %s\n", di, IDBPath.c_str());
+					continue;
+				}
 
-			int projectnumber = guessprojectnumber(D);
-			if (projectnumber < 0) continue;
+				message(flog, "Opening Intrepid database\n");
+				ILDataset D(IDBPath);
+												
+				//bool xstatus = D.hassurveyinfoid_fieldexists("X");
+				//if (xstatus == false){
+				//	message(flog, "Error: could not determine the X field\n");
+				//	continue;
+				//}
 
-			cMetaDataRecord R = M;
-			populate_metadata(R,projectnumber);
-									
-			cGeophysicsNcFile ncFile(NCPath, NcFile::replace);
-			add_lineindex(ncFile, D);
-			add_groupbyline_variables(ncFile, D);			
-			add_indexed_variables(ncFile, D);			
-			add_global_metadata(ncFile, R);
-			add_geospatial_metadata(ncFile, D);
-			ncFile.addLineStartEndPoints();
-			ncFile.addAlphaShapePolygon();			
-		}
+				//bool ystatus = D.hassurveyinfoid_fieldexists("Y");
+				//if (ystatus == false){
+				//	message(flog, "Error: could not determine the Y field\n");
+				//	continue;
+				//}
+
+				message(flog, "Determining GA project number\n");
+				int projectnumber = determineprojectnumber(D);
+				if (projectnumber < 0){
+					message(flog, "Error: could not determinine GA project number - skipping this database\n");
+					continue;
+				}
+
+				message(flog, "Populating metadata\n");
+				cMetaDataRecord R = M;
+				populate_metadata(R, projectnumber);
+
+				message(flog, "Creating NetCDF file\n");
+				cGeophysicsNcFile ncFile(NCPath, NcFile::replace);
+
+				message(flog, "Adding line index variables\n");
+				bool lstatus = add_lineindex(ncFile, D);
+				if (lstatus == false){
+					message(flog, "Error: could not determine the line numbers\n");
+					continue;
+				}
+
+				message(flog, "Adding global metadata\n");
+				add_global_metadata(ncFile, R);
+
+				if (DummyRun == false){
+					message(flog, "Adding groupbyline varaibles\n");
+					add_groupbyline_variables(ncFile, D);
+
+					message(flog, "Adding indexed varaibles\n");
+					add_indexed_variables(ncFile, D);					
+
+					message(flog, "Adding geospatial metadata\n");
+					add_geospatial_metadata(ncFile, D);
+
+					message(flog, "Adding line start and end points\n");
+					ncFile.addLineStartEndPoints();
+
+					message(flog, "Adding alphashape polygon\n");
+					ncFile.addAlphaShapePolygon();
+				}
+
+				message(flog, "Conversion complete\n");
+			}			
+		}		
 		return true;
 	}
 
-	int guessprojectnumber(ILDataset& D){
+	int determineprojectnumber(ILDataset& D){
 		
 		_GSTITEM_
 		bool hassurvey = false;
@@ -141,36 +196,71 @@ public:
 			}
 		}
 
-		int pguess = 0;
-		bool guessed = false;
-		for (size_t i = 0; i < IDBName.size(); i++){
-			if (IDBName[i] == 'P'){
-				if (sscanf(&IDBName[i], "P%d", &pguess) == 1){
-					guessed = true;
-					break;
-				}
-			}
-			else if (IDBName[i] == 'p'){
-				if (sscanf(&IDBName[i], "p%d", &pguess) == 1){
-					guessed = true;
-					break;
+		//Check for GA or GSV project number in database name		
+		int  GApnumberguess = -1;
+		bool GAguessed = parseGAprojectnumber(IDBName, GApnumberguess);
+		if (GAguessed == false){
+			int  GSVpnumberguess = -1;
+			bool GSVguessed = parseGSVprojectnumber(IDBName, GSVpnumberguess);
+			if (GSVguessed){
+				int sindex = A.findkeyindex("SURVEYNAME");				
+				for (size_t i = 0; i < A.records.size(); i++){
+					std::string sname = A.records[i][sindex];
+					int gsvnum;
+					bool status = parseGSVprojectnumber(sname,gsvnum);
+					if (status){
+						if (gsvnum == GSVpnumberguess){
+							int pindex = A.findkeyindex("PROJECT");
+							GApnumberguess = std::atoi((A.records[i][pindex]).c_str());
+							GAguessed = true;
+							message(flog, "Warning 1b: GA Project number taken from GSV number (GSV=%d -> GA=%d)\n", GSVpnumberguess, GApnumberguess);
+							break;
+						}
+					}
 				}
 			}
 		}
 
-		if(guessed == true){
-			if(hassurvey==true && pmin!=pguess){
-				message(flog, "Warning 1b: %s Project number guessed from database name does not match that from the survey field in database (%d and %d) using %d\n",IDBPath.c_str(),pguess,pmin,pguess);
+		if(GAguessed == true){
+			if (hassurvey == true && pmin != GApnumberguess){
+				message(flog, "Warning 1c: Project number guessed from database name does not match that from the survey field in database (%d and %d) using %d\n",GApnumberguess, pmin, GApnumberguess);
 			}
-			return pguess;
+			return GApnumberguess;
 		}
 		else{
 			if (hassurvey==false){
-				message(flog, "Warning 1c: %s Could not determine a project from the database name or survey field\n", IDBPath.c_str());
+				message(flog, "Warning 1d: Could not determine a project from the database name or survey field\n");
 				return -1;
 			}			
 			return pmin;
 		}		
+	}
+
+	bool parseGAprojectnumber(const std::string& str, int& pguess){
+		bool status = false;
+		pguess = -1;
+		for (size_t i = 0; i < IDBName.size(); i++){			
+			if (sscanf(&str[i], "P%d", &pguess) == 1){
+				return true;				
+			}					
+			else if (sscanf(&str[i], "p%d", &pguess) == 1){
+				return true;				
+			}			
+		}
+		return false;
+	}
+
+	bool parseGSVprojectnumber(const std::string& str, int& pguess){		
+		pguess = -1;
+		for (size_t i = 0; i < str.size(); i++){			
+			if (sscanf(&str[i], "GSV%d", &pguess) == 1){
+				return true;				
+			}		
+			else if (sscanf(&str[i], "gsv%d", &pguess) == 1){
+				return true;				
+			}			
+		}
+		return false;
 	}
 
 	bool populate_metadata(cMetaDataRecord& r, const int projectnumber){
@@ -249,9 +339,12 @@ public:
 		size_t nlines   = D.nlines();
 		std::vector<size_t> count = D.linesamplecount();
 		std::vector<size_t> linenumbers;
-		D.getlinenumbers(linenumbers);
-		ncFile.InitialiseNew(linenumbers,count);		
-		return true;
+		bool status = D.getlinenumbers(linenumbers);
+		if (status){
+			ncFile.InitialiseNew(linenumbers, count);
+			return true;
+		}
+		return false;
 	}
 	
 	bool add_groupbyline_variables(cGeophysicsNcFile& ncFile, ILDataset& D)
@@ -502,6 +595,11 @@ public:
 			}
 		}
 
+		if (datum.size() > 0){
+			cCRS crs(datum);
+			ncFile.addCRS(crs);
+		}
+
 		n.resize(0);
 		n.push_back("altitude");
 		n.push_back("clearance");
@@ -518,11 +616,6 @@ public:
 			}
 		}
 
-		if (datum.size() > 0){
-			cCRS crs(datum);	
-			ncFile.addCRS(crs);			
-		}
-
 		return true;
 	}	
 		
@@ -530,13 +623,13 @@ public:
 
 int main(int argc, char** argv)
 {	
-	double dnull = std::pow(-2, 127);
-	float  fnull = -2*std::pow(2, 127);
-	float  fnull1 = fnull - FLT_EPSILON ;//         3.402823466e+38F
+	//double dnull = std::pow(-2, 127);
+	//float  fnull = -2*std::pow(2, 127);
+	//float  fnull1 = fnull - FLT_EPSILON ;//         3.402823466e+38F
+	//if (fnull == fnull1){
+	//	int dummy = 5;
+	//}
 
-	if (fnull == fnull1){
-		int dummy = 5;
-	}
 	_GSTITEM_
 	if (argc != 2){
 		printf("Usage: %s control_file_name\n", argv[0]);
@@ -544,10 +637,17 @@ int main(int argc, char** argv)
 	}
 
 	try
-	{
+	{		
+		int mpisize;
+		int mpirank;
+		MPI_Init(&argc, &argv);
+		MPI_Comm_size(MPI_COMM_WORLD, &mpisize);
+		MPI_Comm_rank(MPI_COMM_WORLD, &mpirank);
+		
 		std::string controlfile = argv[1];
-		cIntrepidConverter C(controlfile);
+		cIntrepidConverter C(controlfile,mpisize,mpirank);
 		C.process_databases();			
+		MPI_Finalize();
 	}
 
 	catch (NcException& e)

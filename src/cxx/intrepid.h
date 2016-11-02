@@ -1151,6 +1151,16 @@ public:
 		return false;		
 	}
 
+	bool hassurveyinfoid_fieldexists(const std::string& identifer)
+	{
+		_GSTITEM_
+		if(hassurveyinfoid(identifer)){
+			std::string fname = surveyinfofieldname(identifer);
+			return fieldexists(fname);
+		}			
+		return false;
+	}
+
 	std::string surveyinfofieldname(const std::string& identifer)
 	{
 		_GSTITEM_
@@ -1248,9 +1258,18 @@ public:
 	
 	template <typename T>
 	bool getlinenumbers(std::vector<T>& v){
-		ILField& f = *getsurveyinfofield("LineNumber");		
-		bool status = getgroupbydata(f,v);
-		return status;
+		
+		if (hassurveyinfoid_fieldexists("LineNumber")){
+			ILField& f = *getsurveyinfofield("LineNumber");
+			bool status = getgroupbydata(f, v);
+			return status;
+		}
+		else if (fieldexists("LINE")){
+			ILField& f = *getfield("LINE");
+			bool status = getgroupbydata(f, v);
+			return status;
+		}		
+		else return false;
 	}
 
 	template <typename T> 
