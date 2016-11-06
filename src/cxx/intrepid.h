@@ -277,7 +277,7 @@ public:
 
 		if (s[91] != 1 && s[91] != 2){
 			endian_swap(p);
-			printf("swapped\n");
+			//printf("swapped\n");
 			if (s[91] != 1 && s[91] != 2){
 				return false;
 			}

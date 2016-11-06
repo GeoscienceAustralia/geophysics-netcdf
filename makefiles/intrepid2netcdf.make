@@ -1,8 +1,12 @@
 SHELL = /bin/sh
 
-include mydefaultmakesettings.make
+srcdir     = ../src/cxx
+objdir     = ./obj
+includes   = -I$(srcdir)
+cxxflags   = -std=c++11 -O3 -Wall
 
 #cxxflags   += -DUSEGLOBALSTACKTRACE
+cxxflags   += -D_MPI_ENABLED
 libs       =  -lnetcdf -lnetcdf_c++4 -lCGAL_Core
 executable =  $(exedir)/intrepid2netcdf.exe
 
@@ -16,7 +20,7 @@ objects += $(objdir)/intrepid2netcdf.o
 $(objects): $(objdir)/%.o: $(srcdir)/%.cpp
 	@echo ' '
 	@echo Compiling $<
-	$(CXX) -c $(includes) $(cxxflags) $< -o $@
+	$(mpicxx) -c $(includes) $(cxxflags) $< -o $@
 
 compile: $(objects)
 
@@ -24,7 +28,7 @@ link: $(objects)
 	@echo ' '
 	@echo Linking
 	mkdir -p $(exedir)
-	$(CXX) $(objects) $(libs) -o $(executable)
+	$(mpicxx) $(objects) $(libs) -o $(executable)
 
 clean:
 	@echo ' '
@@ -35,4 +39,8 @@ clean:
 all: compile link
 
 allclean: clean compile link
+
+.SUFFIXES:
+.SUFFIXES: .cpp .o
+.DEFAULT_GOAL := allclean
 
