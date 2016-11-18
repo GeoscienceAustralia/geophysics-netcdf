@@ -103,7 +103,7 @@ public:
 
 	int findkeyindex(const std::string& fname){
 		for (size_t i = 0; i < header.size(); i++){
-			if (header[i] == fname){
+			if (strcasecmp(header[i].c_str(),fname.c_str())==0){
 				return (int)i;
 			}
 		}

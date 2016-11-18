@@ -27,8 +27,8 @@ using namespace netCDF::exceptions;
 
 #define DN_POINT "point"
 #define DN_LINE  "line"
-#define VN_LI_START "_index_line"
-#define VN_LI_COUNT "_index_count"
+#define VN_LI_START "index_line"
+#define VN_LI_COUNT "index_count"
 
 #define AN_STANDARD_NAME "standard_name"
 #define SN_LINE_NUMBER   "line_number"
@@ -37,15 +37,33 @@ using namespace netCDF::exceptions;
 
 #define AN_UNITS "units"
 #define AN_DESCRIPTION "description"
-#define AN_MISSINGVALUE "missing_value"
+#define AN_MISSINGVALUE "_FillValue"
 #define AN_ORIGINAL_NAME "original_database_name"
 
 #define NcShortNull -32767
 #define NcIntNull -2147483647
+#define NcFloatNull  9.969209968386869e+36F
+#define NcDoubleNull 9.969209968386869e+36
+
 //#define NcFloatNull  -3.4E+38F
 //#define NcDoubleNull -5.0E+75
-#define NcFloatNull  (float)-std::pow(2,128)
-#define NcDoubleNull -std::pow(2,1024)
+//#define NcFloatNull  (float)-std::pow(2,128)
+//#define NcDoubleNull -std::pow(2,1024)
+
+/*
+netCDF4.default_fillvals
+{ 'S1': '\x00',
+'f4' : 9.969209968386869e+36,
+'f8' : 9.969209968386869e+36,
+'i1' : -127,
+'i2' : -32767,
+'i4' : -2147483647,
+'i8' : -9223372036854775806,
+'u1' : 255,
+'u2' : 65535,
+'u4' : 4294967295L,
+'u8' : 18446744073709551614L }
+*/
 
 std::string errormsg(const char* file, const int& linenumber, const char* function);
 
@@ -329,26 +347,26 @@ public:
 		NcDim ds = addDim(DN_POINT, nsamples);
 		NcDim dl = addDim(DN_LINE, nl);
 				
-		cLineVar vstart = addLineVar(VN_LI_START, ncUint64);				
+		cLineVar vstart = addLineVar(VN_LI_START, ncUint);
 		vstart.putVar(line_index_start.data());		
 		vstart.add_standard_name(VN_LI_START);
 		vstart.add_description("zero based index of the first sample in the line");
 		vstart.add_units("1");		
 				
-		cLineVar vcount = addLineVar(VN_LI_COUNT, ncUint64);
+		cLineVar vcount = addLineVar(VN_LI_COUNT, ncUint);
 		vcount.putVar(line_index_count.data());		
 		vcount.add_standard_name(VN_LI_COUNT);
 		vcount.add_description("number of samples in the line");
 		vcount.add_units("1");
 
-		cLineVar vline = addLineVar(DN_LINE, ncUint64);
+		cLineVar vline = addLineVar(DN_LINE, ncUint);
 		vline.putVar(line_number.data());
 		vline.add_standard_name(SN_LINE_NUMBER);
 		vline.add_description("flight line number");
 		vline.add_units("1");
 
 		std::vector<size_t> sample = increment(ntotalsamples(), (size_t)0, (size_t)1);
-		cSampleVar vsample = addSampleVar(DN_POINT, ncUint64);
+		cSampleVar vsample = addSampleVar(DN_POINT, ncUint);
 		vsample.putVar(sample.data());
 		vsample.add_standard_name(SN_SAMPLE_NUMBER);
 		vsample.add_description("sequential point number");

@@ -48,7 +48,12 @@ public:
 	cCSVFile V;	
 	std::string IntrepidDatbasesDir;	
 	std::string NetCDFOutputDir;
-	bool DummyRun;
+	bool OverWriteExistingNcFiles = false;
+	bool DummyRun = false;
+	bool AddGeospatialMetadata = true;
+	bool AddLineStartEndPoints = true;
+	bool AddAlphaShapePolygon  = true;
+
 	size_t DatabaseStart = 0;
 	size_t DatabaseSubsample = 1;
 
@@ -70,10 +75,14 @@ public:
 		M = cMetaDataRecord(B, "Metadata");
 		std::string argusfile = B.getstringvalue("ArgusMetaData");
 		A = cMetaDataTable(argusfile, 1);
-		V = cCSVFile(B.getstringvalue("VocabularyFile"));
-		DummyRun = B.getboolvalue("DummyRun");
+		V = cCSVFile(B.getstringvalue("VocabularyFile"));		
 		DatabaseStart     = B.getsizetvalue("DatabaseStart");
-		DatabaseSubsample = B.getsizetvalue("DatabaseSubsample");
+		DatabaseSubsample = B.getsizetvalue("DatabaseSubsample");		
+		OverWriteExistingNcFiles = B.getboolvalue("OverWriteExistingNcFiles");
+		DummyRun                 = B.getboolvalue("DummyRun");
+		AddGeospatialMetadata    = B.getboolvalue("AddGeospatialMetadata");
+		AddLineStartEndPoints    = B.getboolvalue("AddLineStartEndPoints");
+		AddAlphaShapePolygon     = B.getboolvalue("AddAlphaShapePolygon");
 		
 		IntrepidDatbasesDir = B.getstringvalue("IntrepidDatabasesPath");
 		NetCDFOutputDir     = B.getstringvalue("NetCDFOutputDir");
@@ -100,8 +109,10 @@ public:
 				NCPath = NetCDFOutputDir + IDBName + ".nc";
 
 				if(exists(NCPath)){
-					fprintf(flog, "Error 0: NetCDF file %s already exists - skipping this database\n",NCPath.c_str());
-					continue;
+					if (OverWriteExistingNcFiles == false){
+						fprintf(flog, "Warning 0: NetCDF file %s already exists - skipping this database\n", NCPath.c_str());
+						continue;
+					}
 				}
 
 				fprintf(flog, "\nConverting database %lu of %lu: %s\n", di + 1, dlist.size(), dlist[di].c_str());
@@ -164,24 +175,29 @@ public:
 
 				fprintf(flog, "Adding global metadata\n");
 				add_global_metadata(ncFile, R);
+				
+				fprintf(flog, "Adding groupbyline varaibles\n");
+				add_groupbyline_variables(ncFile, D);
+
+				fprintf(flog, "Adding indexed varaibles\n");
+				add_indexed_variables(ncFile, D);					
 
 				if (DummyRun == false){
-					fprintf(flog, "Adding groupbyline varaibles\n");
-					add_groupbyline_variables(ncFile, D);
+					if (AddGeospatialMetadata){
+						fprintf(flog, "Adding geospatial metadata\n");
+						add_geospatial_metadata(ncFile, D);
+					}
 
-					fprintf(flog, "Adding indexed varaibles\n");
-					add_indexed_variables(ncFile, D);					
+					if (AddLineStartEndPoints){
+						fprintf(flog, "Adding line start and end points\n");
+						ncFile.addLineStartEndPoints();
+					}
 
-					fprintf(flog, "Adding geospatial metadata\n");
-					add_geospatial_metadata(ncFile, D);
-
-					fprintf(flog, "Adding line start and end points\n");
-					ncFile.addLineStartEndPoints();
-
-					fprintf(flog, "Adding alphashape polygon\n");
-					ncFile.addAlphaShapePolygon();
+					if (AddAlphaShapePolygon){
+						fprintf(flog, "Adding alphashape polygon\n");
+						ncFile.addAlphaShapePolygon();
+					}
 				}
-
 				fprintf(flog, "Conversion complete\n");
 			}			
 		}		
@@ -328,7 +344,7 @@ public:
 		else if (F.datatype().isfloat())return NcType(ncFloat);
 		else if (F.datatype().isdouble())return NcType(ncDouble);			
 		else{
-			std::string msg = "Error: Unknown Intrepid data type\n";
+			std::string msg = "Error 6: Unknown Intrepid data type\n";
 			fprintf(flog, msg.c_str());
 			throw(msg);
 		}
@@ -344,7 +360,7 @@ public:
 		else if (t == ncFloat) v.add_missing_value(v.preferred_float_missing_value());
 		else if (t == ncDouble) v.add_missing_value(v.preferred_double_missing_value());
 		else{
-			std::string msg = "Error: Unsupported data type\n";
+			std::string msg = "Error 7: Unsupported data type\n";
 			fprintf(flog, msg.c_str());
 			throw(msg);
 		}
@@ -426,7 +442,12 @@ public:
 			
 			for (size_t li = 0; li < nlines; li++){
 				ILSegment& S = F.Segments[li];
-				S.readbuffer();
+				
+				if (S.readbuffer() == false){
+					fprintf(flog, "Error 8: could not read buffer for line sequence number %lu in field %s\n", li, F.Name.c_str());
+					return false;
+				}
+
 				std::vector<size_t> startp(2);
 				std::vector<size_t> countp(2);
 
@@ -458,7 +479,7 @@ public:
 		size_t fi = 0;
 		for (auto it = D.Fields.begin(); it != D.Fields.end(); ++it){
 			fi++;
-			ILField& F = *it;
+			ILField& F = *it;			
 			if (F.isgroupbyline() == true)continue;
 
 			if (F.datatype().name() == "UNKNOWN"){
@@ -502,7 +523,11 @@ public:
 			size_t startindex = 0;
 			for (size_t li = 0; li < nlines; li++){
 				ILSegment& S = F.Segments[li];
-				S.readbuffer();
+				
+				if (S.readbuffer() == false){
+					fprintf(flog, "Error 8: could not read buffer for line sequence number %lu in field %s\n", li, F.Name.c_str());
+					return false;
+				}
 
 				//Replace the nulls with more "sensible" values
 				if (S.datatype().isfloat()){
@@ -533,7 +558,13 @@ public:
 	bool add_global_metadata(cGeophysicsNcFile& ncFile, const cMetaDataRecord& m){
 		_GSTITEM_
 		for (size_t j = 0; j < m.header.size(); j++){
-			if (strcasecmp(m.header[j],"nominal_minimum_line_spacing")==0){
+			if (m.header[j][0] == '/')continue;
+
+			if (strcasecmp(m.header[j], "geoscience_australia_airborne_survey_project_number") == 0){
+				int pnum = atoi(m.values[j].c_str());
+				ncFile.putAtt(m.header[j].c_str(), ncInt, pnum);
+			}			
+			else if (strcasecmp(m.header[j],"nominal_minimum_line_spacing")==0){
 				std::string s = m.values[j] + " m";
 				ncFile.putAtt(m.header[j].c_str(), s);
 			}
@@ -639,21 +670,12 @@ public:
 				break;
 			}
 		}
-
 		return true;
-	}	
-		
+	}			
 };
 
 int main(int argc, char** argv)
 {	
-	//double dnull = std::pow(-2, 127);
-	//float  fnull = -2*std::pow(2, 127);
-	//float  fnull1 = fnull - FLT_EPSILON ;//         3.402823466e+38F
-	//if (fnull == fnull1){
-	//	int dummy = 5;
-	//}
-
 	_GSTITEM_
 	if (argc != 2){
 		printf("Usage: %s control_file_name\n", argv[0]);
