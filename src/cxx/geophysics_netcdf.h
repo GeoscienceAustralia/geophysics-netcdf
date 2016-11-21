@@ -42,11 +42,7 @@ using namespace netCDF::exceptions;
 
 #define NcShortNull -32767
 #define NcIntNull -2147483647
-
-//#define NcFloatNull  9.969209968386869e+36F
-//#define NcDoubleNull 9.969209968386869e+36
-
-#define NcFloatNull  -9999.0F
+#define NcFloatNull  9.969209968386869e+36F
 #define NcDoubleNull 9.969209968386869e+36
 
 
