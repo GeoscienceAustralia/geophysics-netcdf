@@ -505,6 +505,12 @@ public:
 			std::string standard_name = V.records[vi][i_standard_name];
 			std::string units = V.records[vi][i_units];
 
+			NcVar tmp = ncFile.getVar(variable_name);
+			if (tmp.isNull() == false){
+				fprintf(flog, "Error 9: variable name %s for field %s already exists in this NC file - skipping this field\n", variable_name.c_str(), F.Name.c_str());
+				continue;
+			}
+
 			std::vector<NcDim> dims;			
 			if (F.nbands() > 1){
 				std::string dimname = "nbands_" + F.Name;
@@ -512,7 +518,7 @@ public:
 				dims.push_back(dim_band);
 			}
 
-			cSampleVar var = ncFile.addSampleVar(variable_name, nc_datatype(F), dims);
+			cSampleVar var = ncFile.addSampleVar(variable_name, nc_datatype(F), dims);			
 			set_intrepid_nullvalue(var);
 			var.add_standard_name(standard_name);
 			var.add_original_name(F.Name);
