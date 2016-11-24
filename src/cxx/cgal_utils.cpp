@@ -46,8 +46,8 @@ typedef CGAL::Polygon_2<K> Polygon;
 namespace PS = CGAL::Polyline_simplification_2;
 
 bool line_data_alpha_shape_polygon_ch(
-	const std::vector<size_t>& line_index_start,
-	const std::vector<size_t>& line_index_count,
+	const std::vector<unsigned int>& line_index_start,
+	const std::vector<unsigned int>& line_index_count,
 	const std::vector<double>& x,
 	const std::vector<double>& y,
 	const double nullx,

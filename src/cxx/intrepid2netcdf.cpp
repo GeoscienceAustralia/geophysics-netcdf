@@ -398,8 +398,7 @@ public:
 		size_t fi = 0;
 		for (auto it = D.Fields.begin(); it != D.Fields.end(); ++it){
 			fi++;
-			ILField& F = *it;
-			//fprintf(flog,"Processing field %lu %s %s\n", fi, F.Name.c_str(), F.datatype().name().c_str());
+			ILField& F = *it;			
 			if (F.isgroupbyline() == false) continue;
 
 			if (F.datatype().name() == "UNKNOWN"){
@@ -434,7 +433,7 @@ public:
 				dims.push_back(dim_band);
 			}
 
-			cLineVar var = ncFile.addLineVar(variable_name,nc_datatype(F),dims);			
+			cLineVar var = ncFile.addLineVar(variable_name,nc_datatype(F),dims);
 			set_intrepid_nullvalue(var);
 			var.add_standard_name(standard_name);			
 			var.add_original_name(F.Name);

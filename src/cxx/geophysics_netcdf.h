@@ -267,9 +267,9 @@ class cGeophysicsNcFile : public NcFile {
 
 private:
 	const std::string classname = "cGeophysicsNcFile";		
-	std::vector<size_t> line_index_start;
-	std::vector<size_t> line_index_count;
-	std::vector<size_t> line_number;
+	std::vector<unsigned int> line_index_start;
+	std::vector<unsigned int> line_index_count;
+	std::vector<unsigned int> line_number;
 		
 	NcDim dim_sample() { return getDim(DN_POINT); }
 	
@@ -325,14 +325,18 @@ public:
 		}
 	};
 
-	//Create new file
-	//cGeophysicsNcFile(const std::string& ncpath, const std::vector<size_t>& linenumbers, const std::vector<size_t>& nsamples)
-	//	: NcFile(ncpath, FileMode::newFile, NcFile::FileFormat::nc4)
-	//{
-	//	InitialiseNew(linenumbers,nsamples);
-	//};
-
 	bool InitialiseNew(const std::vector<size_t>& linenumbers, const std::vector<size_t>& linesamplecount){
+		size_t n = linenumbers.size();
+		std::vector<unsigned int> uint_linenumbers(n);
+		std::vector<unsigned int> uint_linesamplecount(n);
+		for (size_t i = 0; i < n; i++){			
+			uint_linenumbers[i] = linenumbers[i];
+			uint_linesamplecount[i] = linesamplecount[i];
+		}
+		return InitialiseNew(uint_linenumbers, uint_linesamplecount);
+	}
+
+	bool InitialiseNew(const std::vector<unsigned int>& linenumbers, const std::vector<unsigned int>& linesamplecount){
 		
 		bool status;
 		size_t nl = linenumbers.size();

@@ -12,8 +12,8 @@ Author: Ross C. Brodie, Geoscience Australia.
 #include <vector>
 
 bool line_data_alpha_shape_polygon_ch(
-	const std::vector<size_t>& line_index_start,
-	const std::vector<size_t>& line_index_count,
+	const std::vector<unsigned int>& line_index_start,
+	const std::vector<unsigned int>& line_index_count,
 	const std::vector<double>& x,
 	const std::vector<double>& y,
 	const double nullx,
