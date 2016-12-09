@@ -17,7 +17,7 @@ Author: Ross C. Brodie, Geoscience Australia.
 //#define USEGLOBALSTACKTRACE
 
 #ifdef USEGLOBALSTACKTRACE
-	#define _GSTITEM_ cTraceItem trace(__FILE__, __FUNCTION__, __LINE__);	
+	#define _GSTITEM_ cTraceItem trace(__FILE__, __FUNCTION__, __LINE__);
 	#define _GSTPUSH_ globalstacktrace.push(__FILE__, __FUNCTION__, __LINE__);
 	#define _GSTPOP_ globalstacktrace.pop();
 	#define _GSTPRINT_ globalstacktrace.printf();

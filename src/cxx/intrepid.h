@@ -1279,7 +1279,7 @@ public:
 			ILSegment S = f.Segments[li];
 			S.readbuffer();
 			std::vector<T> b;
-			bool status = S.getband(b,band);
+			S.getband(b,band);
 			v[li] = b[0];
 		}
 		return true;

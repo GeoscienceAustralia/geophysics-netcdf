@@ -21,6 +21,8 @@ Author: Ross C. Brodie, Geoscience Australia.
 #include "general_constants.h"
 #include "general_types.h"
 
+#define _SRC_ srcloc(__FILE__, __LINE__, __FUNCTION__)
+
 std::string commandlinestring(int argc, char** argv);
 std::string versionstring(const std::string& version, const std::string& compiletime, const std::string& compiledate);
 
@@ -33,6 +35,8 @@ void my_barrier();
 std::string strprint_va(const char* fmt, va_list argptr);
 std::string strprint(const char* fmt, ...);
 
+void logmsg(const std::string& msg);
+void logmsg(const char* fmt, ...);
 void message(const char* fmt, ...);
 void message(FILE* fp,const char* fmt, ... );
 void rootmessage(const char* fmt, ...);
@@ -309,8 +313,9 @@ std::vector<float> dvec2fvec(std::vector<double>& vd);
 
 std::vector<double> linspace(const double x1, const double x2, const size_t n);
 
-
 bool filegetline(FILE* fp, std::string& str);
+
+std::string srcloc(const char* filepath, const int& linenumber, const char* function);
 
 int LevenshteinDistance(char* s, int len_s, char* t, int len_t);
 

@@ -25,51 +25,107 @@ using namespace netCDF::exceptions;
 #include "vector_utils.h"
 #include "geophysics_netcdf.h"
 
+FILE* global_log_file = NULL;
 
-bool test_read1(){
+bool test_magnetics(){
 
-	//std::string ncpath = argv[1];
-	//std::string ncpath = "http://dapds00.nci.org.au/thredds/dodsC/uc0/rr2_dev/rcb547/magrad_tests_indexed_v2/GSQP1029MAG.nc";
-	std::string ncpath   = "http://dapds00.nci.org.au/thredds/dodsC/uc0/rr2_dev/rcb547/magrad_tests_indexed_v2/P583MAG.nc";
+	bool status;		
+	std::string indir,ncpath;
+	//indir = "z:\\projects\\geophysics_netcdf\\conversion_scripts\\ncfiles\\";
+	indir = "http://dapds00.nci.org.au/thredds/dodsC/uc0/rr2_dev/rcb547/AWAGS_Levelled_Line_Databases/mag_database_reformat_2016_adjusted/netcdf/";
+	ncpath = indir + "GSSA_P1255MAG_Marree.nc";
 
+	//Open the file and initialise the indexes
 	cGeophysicsNcFile ncfile(ncpath, NcFile::read);
 
-	std::vector<int> linenumber;
-	ncfile.getLineNumbers(linenumber);
+	//Get the line numbers using the standard_name attributes
+	std::vector<int> linenumber = ncfile.getLineNumbers();
+	std::vector<int> flightnumber = ncfile.getFlightNumbers();
+
+	std::string stdname_x         = "longitude";
+	std::string stdname_y         = "latitude";
+	std::string stdname_tielev    = "total_magnetic_intensity_anomaly_tie_line_levelled";
+	std::string stdname_mlev      = "total_magnetic_intensity_anomaly_micro_levelled";
+	std::string stdname_awagslev  = "total_magnetic_intensity_anomaly_datum_levelled";
 	
+	std::string xvarname = ncfile.getVarNameByStandardName(stdname_x);
+	std::string yvarname = ncfile.getVarNameByStandardName(stdname_y);
+	std::string mvarname = ncfile.getVarNameByStandardName(stdname_awagslev);
+
+	//Get 21th line number and index
 	size_t lnum = linenumber[20];
-	size_t index = ncfile.getLineIndex(lnum);
-	std::vector<double> v0;
-	bool status = ncfile.getVarByLineNumber("mag_microLevelled", 2440, v0);
+	size_t lind = ncfile.getLineIndex(lnum);
+	
+	//Get mag data for 21th line by number and index
+	std::vector<double> v1darray;
+	status = ncfile.getDataByLineNumber(mvarname, lnum, v1darray);
+	status = ncfile.getDataByLineIndex(mvarname, lind, v1darray);
 
-	std::vector<std::vector<double>> v00;
-	status = ncfile.getVarByLineNumber("mag_microLevelled", 2440, v00);
+	//Loop over all lines getting the x, y, and mag values
+	std::vector<double> x, y;
+	std::vector<float> mag;
+	int date;
+	cSampleVar xvar = ncfile.getSampleVar(xvarname);
+	cSampleVar yvar = ncfile.getSampleVar(yvarname);
+	cSampleVar mvar = ncfile.getSampleVar(mvarname);
+	
+	double t, ta, tb;
+	ta = gettime(); status = xvar.getAll(x); tb = gettime();
+	logmsg("Get all of double x nsample=%lu time=%lf\n", x.size(), tb - ta);
+	ta = gettime(); status = yvar.getAll(x); tb = gettime();
+	logmsg("Get all of double y nsample=%lu time=%lf\n", x.size(), tb - ta);
+	ta = gettime(); status = mvar.getAll(mag); tb = gettime();
+	logmsg("Get all of float  mag nsample=%lu time=%lf\n", x.size(), tb - ta);
 
-	std::vector<size_t> flightnumber;
-	ncfile.getFlightNumbers(flightnumber);
-
-	std::vector<double> v1, v2, v3;
-	for (size_t i = 0; i < ncfile.nlines(); i++){
-		double t1 = gettime();
-		ncfile.getVarByLineIndex("mag_microLevelled", i, v1);
-		ncfile.getVarByLineIndex("latitude_GDA94", i, v2);
-		ncfile.getVarByLineIndex("longitude_GDA94", i, v3);
-		double t2 = gettime();
-		printf("%lu nsamples=%lu time=%lf\n", i, v1.size(), t2 - t1);
-	}	
+	t = 0;
+	//for (size_t li = 0; li < ncfile.nlines(); li++){
+	for (size_t li = 0; li < 100; li++){		
+		ta = gettime();	
+		status = xvar.getLine(li, x);
+		status = yvar.getLine(li, y);
+		status = mvar.getLine(li, mag);		
+		tb = gettime();
+		logmsg("%lu nsamples=%lu time=%lf\n", li, x.size(), tb - ta);
+		t += (tb - ta);
+	}		
+	logmsg("Total time=%lf\n", t);
 	return true;
 }
 
-bool test_read2(){
+bool test_aem_conductivity(){
 
-	std::string indir = "Z:\\projects\\geophysics_netcdf\\awags_levelled_conversion\\ncfiles\\";
-	//std::string ncpath = indir + "PIRSA_P702_SAEI_C1_tmi.nc";	                      
-	//std::string ncpath = indir + "PIRSA_P853_TEiSA_D1_D2_D3_Mag_C.nc";
-	std::string ncpath = indir + "P406MAG.nc";
-	cGeophysicsNcFile ncfile(ncpath, NcFile::write);
+	bool status;
+	std::string indir  = "Z:\\projects\\geophysics_netcdf\\aem\\temp\\";			
+	std::string ncpath = indir + "AUS_10009_Ord_Bonaparte_LCI.nc";
+
+	//Open the file
+	cGeophysicsNcFile ncfile(ncpath, NcFile::write);			
 		
-	//ncfile.addLineStartEndPoints();
-	ncfile.addAlphaShapePolygon();
+	//Get the line numbers
+	std::vector<int> linenumber = ncfile.getLineNumbers();
+
+	//Get conductivity variable name by its standard name attribute
+	std::string stdname_conductivity = "layer_conductivity";
+	std::string varname = ncfile.getVarNameByStandardName(stdname_conductivity);
+	
+	//Get conductivity all at once in 1d array
+	std::vector<float> c1darray;
+	cSampleVar vc = ncfile.getSampleVar(varname);
+	status = vc.getAll(c1darray);
+
+	//Get conductivity line by line and band by band in 1d array
+	for (size_t li = 0; li < ncfile.nlines(); li++){
+		for (size_t bi = 0; bi < vc.nbands(); bi++){			
+			status = vc.getLine(li, bi, c1darray);
+		}
+	}	
+
+	//Get conductivity line by line in 2d array
+	std::vector<std::vector<float>> c2darray;
+	for (size_t li = 0; li < ncfile.nlines(); li++){
+		status = ncfile.getDataByLineIndex(varname, li, c2darray);
+	}
+
 	return true;	
 }
 
@@ -127,17 +183,17 @@ bool test_create(){
 		std::vector<double> x = increment((double)nls,500000.0,10.0);
 		std::vector<double> y = increment((double)nls,6500000.0,10.0);
 		
-		vx.putLine(x, li);
-		vy.putLine(y, li);
+		vx.putLine(li, x);
+		vy.putLine(li, y);
 		
 		for (size_t bi = 0; bi < nlayers; bi++){
 			std::vector<double> c(nls, li*10+bi);
-			vconductivity.putLine(c, li, bi);
+			vconductivity.putLine(li, bi, c);
 		}
 
 		for (size_t bi = 0; bi < nlayers; bi++){
 			std::vector<double> t(nls, li * 100 + bi);
-			vthickness.putLine(t, li, bi);
+			vthickness.putLine(li, bi, t);
 		}
 		
 	}		
@@ -146,12 +202,18 @@ bool test_create(){
 
 int main(int argc, char** argv)
 {
-	_GSTITEM_
-	
+	_GSTITEM_	
 	try
-	{		
-		//test_create();
-		test_read2();
+	{	
+		logmsg("Opening log file\n");
+		global_log_file = fopen("test.log", "w");		
+		logmsg("Log file opened\n");
+
+		test_magnetics();
+		//test_aem_conductivity();
+		
+		logmsg("Closing log file\n");
+		fclose(global_log_file);
 	}
 
 	catch (NcException& e)

@@ -11,9 +11,9 @@
     </ProjectConfiguration>
   </ItemGroup>
   <PropertyGroup Label="Globals">
-    <ProjectGuid>{A18BC83C-0079-41A6-B33D-52162C9EA6C9}</ProjectGuid>
+    <ProjectGuid>{0636C513-CAB2-45C1-8942-FDBFD5653916}</ProjectGuid>
     <Keyword>Win32Proj</Keyword>
-    <RootNamespace>test_geophysics_netcdf_reader</RootNamespace>
+    <RootNamespace>aseggdf2netcdf</RootNamespace>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
@@ -37,29 +37,34 @@
     <Import Project="..\propertysheets\x64.props" />
     <Import Project="..\propertysheets\netcdf4.props" />
     <Import Project="..\propertysheets\netcdf4-cxx.props" />
+    <Import Project="..\propertysheets\gdal.props" />
+    <Import Project="..\propertysheets\msmpi.x64.props" />
     <Import Project="..\propertysheets\boost.props" />
     <Import Project="..\propertysheets\cgal.props" />
-    <Import Project="..\propertysheets\msmpi.x64.props" />
   </ImportGroup>
   <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="PropertySheets">
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
     <Import Project="..\propertysheets\x64.props" />
     <Import Project="..\propertysheets\netcdf4.props" />
     <Import Project="..\propertysheets\netcdf4-cxx.props" />
+    <Import Project="..\propertysheets\gdal.props" />
+    <Import Project="..\propertysheets\msmpi.x64.props" />
     <Import Project="..\propertysheets\boost.props" />
     <Import Project="..\propertysheets\cgal.props" />
-    <Import Project="..\propertysheets\msmpi.x64.props" />
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <LinkIncremental>true</LinkIncremental>
+    <ExecutablePath>$(ExecutablePath)</ExecutablePath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <LinkIncremental>false</LinkIncremental>
+    <ExecutablePath>$(ExecutablePath)</ExecutablePath>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <ClCompile>
-      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+      <PrecompiledHeader>
+      </PrecompiledHeader>
       <WarningLevel>Level3</WarningLevel>
       <Optimization>Disabled</Optimization>
       <PreprocessorDefinitions>USEGLOBALSTACKTRACE;WIN32;_DEBUG;_CONSOLE;_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
@@ -72,11 +77,12 @@
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <ClCompile>
       <WarningLevel>Level3</WarningLevel>
-      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+      <PrecompiledHeader>
+      </PrecompiledHeader>
       <Optimization>MaxSpeed</Optimization>
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
-      <PreprocessorDefinitions>USEGLOBALSTACKTRACE;WIN32;NDEBUG;_CONSOLE;_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>WIN32;NDEBUG;_CONSOLE;_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -86,23 +92,24 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="..\..\src\cxx\cgal_utils.cpp">
-      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">NotUsing</PrecompiledHeader>
-      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">NotUsing</PrecompiledHeader>
-    </ClCompile>
+    <ClCompile Include="..\..\src\cxx\aseggdf2netcdf.cpp" />
+    <ClCompile Include="..\..\src\cxx\blocklanguage.cpp" />
+    <ClCompile Include="..\..\src\cxx\cgal_utils.cpp" />
     <ClCompile Include="..\..\src\cxx\file_utils.cpp" />
+    <ClCompile Include="..\..\src\cxx\gdal_utils.cpp" />
     <ClCompile Include="..\..\src\cxx\general_utils.cpp" />
     <ClCompile Include="..\..\src\cxx\geophysics_netcdf.cpp" />
-    <ClCompile Include="..\..\src\cxx\test_geophysics_netcdf_reader.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\src\cxx\blocklanguage.h" />
     <ClInclude Include="..\..\src\cxx\cgal_utils.h" />
+    <ClInclude Include="..\..\src\cxx\crs.h" />
+    <ClInclude Include="..\..\src\cxx\csvfile.h" />
     <ClInclude Include="..\..\src\cxx\file_utils.h" />
     <ClInclude Include="..\..\src\cxx\gdal_utils.h" />
+    <ClInclude Include="..\..\src\cxx\general_constants.h" />
     <ClInclude Include="..\..\src\cxx\general_types.h" />
     <ClInclude Include="..\..\src\cxx\general_utils.h" />
-    <ClInclude Include="..\..\src\cxx\geometry3d.h" />
     <ClInclude Include="..\..\src\cxx\geophysics_netcdf.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
