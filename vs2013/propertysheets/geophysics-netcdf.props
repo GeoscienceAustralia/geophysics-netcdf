@@ -1,9 +1,12 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Project DefaultTargets="Build" ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ImportGroup Label="PropertySheets">
+    <Import Project="cpp-utils.props" />
+  </ImportGroup>
   <PropertyGroup>
     <IncludePath>Z:\code\repos\geophysics-netcdf\src\cxx;$(IncludePath)</IncludePath>
     <LibraryPath>Z:\code\lib\$(Platform)\$(Configuration);$(LibraryPath)</LibraryPath>
-    <OutDir>$(Platform)\$(Configuration)\</OutDir>
+    <OutDir>..\..\bin\$(Platform)\$(Configuration)\</OutDir>
   </PropertyGroup>
   <ItemDefinitionGroup>
     <ClCompile>
@@ -15,5 +18,13 @@
     <Link>
       <GenerateDebugInformation>false</GenerateDebugInformation>
     </Link>
+    <PostBuildEvent>
+      <Command>del $(OutDir)$(TargetName).lib
+del $(OutDir)$(TargetName).exp
+</Command>
+    </PostBuildEvent>
+    <PostBuildEvent>
+      <Message>Delete .lib and .exp files</Message>
+    </PostBuildEvent>
   </ItemDefinitionGroup>
 </Project>

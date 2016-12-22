@@ -34,21 +34,23 @@
   </ImportGroup>
   <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="PropertySheets">
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
-    <Import Project="..\propertysheets\x64.props" />
     <Import Project="..\propertysheets\netcdf4.props" />
     <Import Project="..\propertysheets\netcdf4-cxx.props" />
     <Import Project="..\propertysheets\boost.props" />
     <Import Project="..\propertysheets\cgal.props" />
+    <Import Project="..\propertysheets\gdal.props" />
     <Import Project="..\propertysheets\msmpi.x64.props" />
+    <Import Project="..\propertysheets\geophysics-netcdf.props" />
   </ImportGroup>
   <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="PropertySheets">
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
-    <Import Project="..\propertysheets\x64.props" />
     <Import Project="..\propertysheets\netcdf4.props" />
     <Import Project="..\propertysheets\netcdf4-cxx.props" />
     <Import Project="..\propertysheets\boost.props" />
     <Import Project="..\propertysheets\cgal.props" />
+    <Import Project="..\propertysheets\gdal.props" />
     <Import Project="..\propertysheets\msmpi.x64.props" />
+    <Import Project="..\propertysheets\geophysics-netcdf.props" />
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
@@ -80,30 +82,20 @@
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
-      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <GenerateDebugInformation>false</GenerateDebugInformation>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="..\..\src\cxx\cgal_utils.cpp">
-      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">NotUsing</PrecompiledHeader>
-      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">NotUsing</PrecompiledHeader>
-    </ClCompile>
-    <ClCompile Include="..\..\src\cxx\file_utils.cpp" />
-    <ClCompile Include="..\..\src\cxx\general_utils.cpp" />
+    <ClCompile Include="..\..\..\cpp-utils\src\file_utils.cpp" />
+    <ClCompile Include="..\..\..\cpp-utils\src\general_utils.cpp" />
     <ClCompile Include="..\..\src\cxx\geophysics_netcdf.cpp" />
     <ClCompile Include="..\..\src\cxx\test_geophysics_netcdf_reader.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="..\..\src\cxx\blocklanguage.h" />
-    <ClInclude Include="..\..\src\cxx\cgal_utils.h" />
-    <ClInclude Include="..\..\src\cxx\file_utils.h" />
-    <ClInclude Include="..\..\src\cxx\gdal_utils.h" />
-    <ClInclude Include="..\..\src\cxx\general_types.h" />
-    <ClInclude Include="..\..\src\cxx\general_utils.h" />
-    <ClInclude Include="..\..\src\cxx\geometry3d.h" />
-    <ClInclude Include="..\..\src\cxx\geophysics_netcdf.h" />
+    <ClInclude Include="..\..\..\cpp-utils\src\file_utils.h" />
+    <ClInclude Include="..\..\..\cpp-utils\src\general_utils.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

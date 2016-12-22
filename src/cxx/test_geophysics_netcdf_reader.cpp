@@ -27,13 +27,14 @@ using namespace netCDF::exceptions;
 
 FILE* global_log_file = NULL;
 
-bool test_magnetics(){
+bool example_magnetics(){
 
 	bool status;		
 	std::string indir,ncpath;
-	//indir = "z:\\projects\\geophysics_netcdf\\conversion_scripts\\ncfiles\\";
-	indir = "http://dapds00.nci.org.au/thredds/dodsC/uc0/rr2_dev/rcb547/AWAGS_Levelled_Line_Databases/mag_database_reformat_2016_adjusted/netcdf/";
+	indir = "z:\\projects\\geophysics_netcdf\\conversion_scripts\\ncfiles\\";
+	//indir = "http://dapds00.nci.org.au/thredds/dodsC/uc0/rr2_dev/rcb547/AWAGS_Levelled_Line_Databases/mag_database_reformat_2016_adjusted/netcdf/";
 	ncpath = indir + "GSSA_P1255MAG_Marree.nc";
+	//ncpath = "http://dapds00.nci.org.au/thredds/dodsC/uc0/rr2_dev/rcb547/AWAGS_Levelled_Line_Databases/mag_database_reformat_2016_adjusted/netcdf/GSSA_P1255MAG_Marree.nc";
 
 	//Open the file and initialise the indexes
 	cGeophysicsNcFile ncfile(ncpath, NcFile::read);
@@ -62,70 +63,63 @@ bool test_magnetics(){
 	status = ncfile.getDataByLineIndex(mvarname, lind, v1darray);
 
 	//Loop over all lines getting the x, y, and mag values
-	std::vector<double> x, y;
-	std::vector<float> mag;
-	int date;
+	std::vector<double> x, y; std::vector<float>  mag;
 	cSampleVar xvar = ncfile.getSampleVar(xvarname);
 	cSampleVar yvar = ncfile.getSampleVar(yvarname);
 	cSampleVar mvar = ncfile.getSampleVar(mvarname);
 	
 	double t, ta, tb;
 	ta = gettime(); status = xvar.getAll(x); tb = gettime();
-	logmsg("Get all of double x nsample=%lu time=%lf\n", x.size(), tb - ta);
+	logmsg("Get all of x (%lu doubles) - time=%lf s\n", x.size(), tb - ta);
 	ta = gettime(); status = yvar.getAll(x); tb = gettime();
-	logmsg("Get all of double y nsample=%lu time=%lf\n", x.size(), tb - ta);
+	logmsg("Get all of y (%lu doubles) - time=%lf s\n", x.size(), tb - ta);
 	ta = gettime(); status = mvar.getAll(mag); tb = gettime();
-	logmsg("Get all of float  mag nsample=%lu time=%lf\n", x.size(), tb - ta);
+	logmsg("Get all of mag (%lu floats) - time=%lf s\n", x.size(), tb - ta);
 
 	t = 0;
-	//for (size_t li = 0; li < ncfile.nlines(); li++){
-	for (size_t li = 0; li < 100; li++){		
+	for (size_t li = 0; li < ncfile.nlines(); li += 100){
 		ta = gettime();	
 		status = xvar.getLine(li, x);
 		status = yvar.getLine(li, y);
 		status = mvar.getLine(li, mag);		
 		tb = gettime();
-		logmsg("%lu nsamples=%lu time=%lf\n", li, x.size(), tb - ta);
+		logmsg("%lu nsamples=%lu - time=%lf s\n", li, x.size(), tb - ta);
 		t += (tb - ta);
 	}		
-	logmsg("Total time=%lf\n", t);
+	logmsg("Total every 100th line - time=%lf\n", t);
 	return true;
 }
 
-bool test_aem_conductivity(){
-
-	bool status;
-	std::string indir  = "Z:\\projects\\geophysics_netcdf\\aem\\temp\\";			
-	std::string ncpath = indir + "AUS_10009_Ord_Bonaparte_LCI.nc";
-
-	//Open the file
-	cGeophysicsNcFile ncfile(ncpath, NcFile::write);			
-		
-	//Get the line numbers
+bool example_aem_conductivity(){
+	bool status; double t1, t2;
+	std::string indir  = "Z:\\projects\\geophysics_netcdf\\aem\\temp\\";
+	//std::string indir  = "http://dapds00.nci.org.au/thredds/dodsC/uc0/rr2_dev/rcb547/AEM_examples/";
+	std::string ncpath = indir + "AUS_10008_WestK_LCI.nc";	
+	//Open the file, get the line numbers
+	cGeophysicsNcFile ncfile(ncpath, NcFile::write);						
 	std::vector<int> linenumber = ncfile.getLineNumbers();
-
-	//Get conductivity variable name by its standard name attribute
+	//Determine conductivity variable name by its standard name attribute
 	std::string stdname_conductivity = "layer_conductivity";
-	std::string varname = ncfile.getVarNameByStandardName(stdname_conductivity);
-	
-	//Get conductivity all at once in 1d array
-	std::vector<float> c1darray;
+	std::string varname = ncfile.getVarNameByStandardName(stdname_conductivity);	
+	//Get conductivity variable
 	cSampleVar vc = ncfile.getSampleVar(varname);
-	status = vc.getAll(c1darray);
-
+	//Get conductivity data all at once in 1d array
+	std::vector<float> c1darray;
+	t1 = gettime();	status = vc.getAll(c1darray); t2 = gettime();
+	logmsg("Get all at once (%lu floats) - time=%lf s\n", c1darray.size(), t2-t1);
 	//Get conductivity line by line and band by band in 1d array
-	for (size_t li = 0; li < ncfile.nlines(); li++){
+	t1 = gettime();
+	for (size_t li = 0; li < ncfile.nlines(); li++){	
 		for (size_t bi = 0; bi < vc.nbands(); bi++){			
-			status = vc.getLine(li, bi, c1darray);
+			status = vc.getLine(li, bi, c1darray); if (status == false)logmsg("Error");
 		}
-	}	
-
+	} t2 = gettime(); logmsg("Get line by line and band by band in 1d array - time=%lf s\n", t2 - t1);
 	//Get conductivity line by line in 2d array
+	t1 = gettime();
 	std::vector<std::vector<float>> c2darray;
-	for (size_t li = 0; li < ncfile.nlines(); li++){
-		status = ncfile.getDataByLineIndex(varname, li, c2darray);
-	}
-
+	for (size_t li = 0; li < ncfile.nlines(); li++){	
+		status = ncfile.getDataByLineIndex(varname, li, c2darray); 	if (status == false)logmsg("Error");
+	} t2 = gettime(); logmsg("Get line by line in 2D array - time=%lf s\n", t2-t1);
 	return true;	
 }
 
@@ -203,33 +197,31 @@ bool test_create(){
 int main(int argc, char** argv)
 {
 	_GSTITEM_	
-	try
-	{	
-		logmsg("Opening log file\n");
-		global_log_file = fopen("test.log", "w");		
-		logmsg("Log file opened\n");
 
-		test_magnetics();
-		//test_aem_conductivity();
-		
+	logmsg("Opening log file\n");
+	global_log_file = fopen("test.log", "w");
+	logmsg("Log file opened\n");
+
+	try{	
+		example_magnetics();
+		example_aem_conductivity();				
 		logmsg("Closing log file\n");
 		fclose(global_log_file);
 	}
-
 	catch (NcException& e)
 	{
-		_GSTPRINT_
-		std::cout << e.what() << std::endl;
+		_GSTPRINT_		
+		logmsg(e.what());
 		return 1;
 	}
 	catch (std::exception& e)
 	{
 		_GSTPRINT_
-		std::cout << e.what() << std::endl;
+		logmsg(e.what());
 		return 1;
 	}
-	std::printf("Success\n");
-	return 0;  // successfully terminated
+
+	return 0;
 }
 
 

@@ -18,7 +18,6 @@ Author: Ross C. Brodie, Geoscience Australia.
 #include "general_utils.h"
 #include "vector_utils.h"
 #include "crs.h"
-
 #include "cgal_utils.h"
 
 #include <netcdf>
