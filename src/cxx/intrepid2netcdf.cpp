@@ -22,8 +22,6 @@ using namespace netCDF::exceptions;
 #define __PROGRAM__ "intrepid2netcdf"
 #define __VERSION__ "1.0"
 
-FILE* global_log_file = NULL;
-
 #include <mpi.h>
 
 #include "general_utils.h"
@@ -70,18 +68,16 @@ public:
 
 		std::string suffix = stringvalue(mpirank, ".%04lu");
 		LogFile = insert_after_filename(LogFile, suffix);
-		global_log_file = fileopen(LogFile, "w");
-
+				
+		open_global_log_file(LogFile);
 		logmsg("Log file opened at %s\n", timestamp().c_str());				
 		logmsg("Program %s \n", __PROGRAM__);
 		logmsg("Version %s Compiled at %s on %s\n", __VERSION__, __TIME__, __DATE__);
 		logmsg("Working directory %s\n", getcurrentdirectory().c_str());
 		logmsg("Control file %s\n", controlfile.c_str());				
 		logmsg("Processes %lu\n", mpisize);
-		logmsg("Rank      %lu\n", mpirank);
-		
-
-		B.write(global_log_file);
+		logmsg("Rank      %lu\n", mpirank);	
+		B.write(global_log_file_pointer());
 
 		M = cMetaDataRecord(B, "Metadata");
 		std::string argusfile = B.getstringvalue("ArgusMetaData");
@@ -102,7 +98,7 @@ public:
 		process_databases();
 
 		logmsg("Finished at %s\n", timestamp().c_str());
-		fclose(global_log_file);
+		close_global_log_file();
 	};
 
 	~cIntrepidConverter(){
