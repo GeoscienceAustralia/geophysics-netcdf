@@ -92,24 +92,21 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="..\..\..\cpp-utils\src\blocklanguage.cpp" />
-    <ClCompile Include="..\..\..\cpp-utils\src\cgal_utils.cpp" />
-    <ClCompile Include="..\..\..\cpp-utils\src\file_utils.cpp" />
-    <ClCompile Include="..\..\..\cpp-utils\src\gdal_utils.cpp" />
-    <ClCompile Include="..\..\..\cpp-utils\src\general_utils.cpp" />
     <ClCompile Include="..\..\src\cxx\aseggdf2netcdf.cpp" />
     <ClCompile Include="..\..\src\cxx\geophysics_netcdf.cpp" />
+    <ClCompile Include="..\..\submodules\cpp-utils\src\blocklanguage.cpp" />
+    <ClCompile Include="..\..\submodules\cpp-utils\src\cgal_utils.cpp" />
+    <ClCompile Include="..\..\submodules\cpp-utils\src\file_utils.cpp" />
+    <ClCompile Include="..\..\submodules\cpp-utils\src\general_utils.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="..\..\..\cpp-utils\src\blocklanguage.h" />
-    <ClInclude Include="..\..\..\cpp-utils\src\cgal_utils.h" />
-    <ClInclude Include="..\..\..\cpp-utils\src\crs.h" />
-    <ClInclude Include="..\..\..\cpp-utils\src\csvfile.h" />
-    <ClInclude Include="..\..\..\cpp-utils\src\file_utils.h" />
-    <ClInclude Include="..\..\..\cpp-utils\src\gdal_utils.h" />
-    <ClInclude Include="..\..\..\cpp-utils\src\general_utils.h" />
-    <ClInclude Include="..\..\..\cpp-utils\src\stacktrace.h" />
-    <ClInclude Include="..\..\..\cpp-utils\src\vector_utils.h" />
+    <ClInclude Include="..\..\submodules\cpp-utils\src\blocklanguage.h" />
+    <ClInclude Include="..\..\submodules\cpp-utils\src\cgal_utils.h" />
+    <ClInclude Include="..\..\submodules\cpp-utils\src\crs.h" />
+    <ClInclude Include="..\..\submodules\cpp-utils\src\csvfile.h" />
+    <ClInclude Include="..\..\submodules\cpp-utils\src\file_utils.h" />
+    <ClInclude Include="..\..\submodules\cpp-utils\src\general_utils.h" />
+    <ClInclude Include="..\..\submodules\cpp-utils\src\stacktrace.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

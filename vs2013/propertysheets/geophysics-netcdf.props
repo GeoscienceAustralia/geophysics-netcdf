@@ -5,7 +5,7 @@
   </ImportGroup>
   <PropertyGroup>
     <IncludePath>Z:\code\repos\geophysics-netcdf\src\cxx;$(IncludePath)</IncludePath>
-    <LibraryPath>Z:\code\lib\$(Platform)\$(Configuration);$(LibraryPath)</LibraryPath>
+    <LibraryPath>$(LibraryPath)</LibraryPath>
     <OutDir>..\..\bin\$(Platform)\$(Configuration)\</OutDir>
   </PropertyGroup>
   <ItemDefinitionGroup>

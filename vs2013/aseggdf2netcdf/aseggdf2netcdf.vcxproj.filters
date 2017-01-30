@@ -17,48 +17,39 @@
     <ClCompile Include="..\..\src\cxx\geophysics_netcdf.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\cpp-utils\src\cgal_utils.cpp">
+    <ClCompile Include="..\..\submodules\cpp-utils\src\blocklanguage.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\cpp-utils\src\file_utils.cpp">
+    <ClCompile Include="..\..\submodules\cpp-utils\src\file_utils.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\cpp-utils\src\gdal_utils.cpp">
+    <ClCompile Include="..\..\submodules\cpp-utils\src\general_utils.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\cpp-utils\src\general_utils.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\..\cpp-utils\src\blocklanguage.cpp">
+    <ClCompile Include="..\..\submodules\cpp-utils\src\cgal_utils.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="..\..\..\cpp-utils\src\cgal_utils.h">
+    <ClInclude Include="..\..\submodules\cpp-utils\src\blocklanguage.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\..\cpp-utils\src\crs.h">
+    <ClInclude Include="..\..\submodules\cpp-utils\src\cgal_utils.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\..\cpp-utils\src\csvfile.h">
+    <ClInclude Include="..\..\submodules\cpp-utils\src\crs.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\..\cpp-utils\src\file_utils.h">
+    <ClInclude Include="..\..\submodules\cpp-utils\src\csvfile.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\..\cpp-utils\src\gdal_utils.h">
+    <ClInclude Include="..\..\submodules\cpp-utils\src\file_utils.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\..\cpp-utils\src\general_utils.h">
+    <ClInclude Include="..\..\submodules\cpp-utils\src\general_utils.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\..\cpp-utils\src\stacktrace.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\..\cpp-utils\src\vector_utils.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\..\cpp-utils\src\blocklanguage.h">
+    <ClInclude Include="..\..\submodules\cpp-utils\src\stacktrace.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
