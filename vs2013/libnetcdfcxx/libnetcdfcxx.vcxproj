@@ -10,6 +10,34 @@
       <Platform>x64</Platform>
     </ProjectConfiguration>
   </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="..\..\submodules\netcdf-cxx4\cxx4\ncAtt.cpp" />
+    <ClCompile Include="..\..\submodules\netcdf-cxx4\cxx4\ncByte.cpp" />
+    <ClCompile Include="..\..\submodules\netcdf-cxx4\cxx4\ncChar.cpp" />
+    <ClCompile Include="..\..\submodules\netcdf-cxx4\cxx4\ncCheck.cpp" />
+    <ClCompile Include="..\..\submodules\netcdf-cxx4\cxx4\ncCompoundType.cpp" />
+    <ClCompile Include="..\..\submodules\netcdf-cxx4\cxx4\ncDim.cpp" />
+    <ClCompile Include="..\..\submodules\netcdf-cxx4\cxx4\ncDouble.cpp" />
+    <ClCompile Include="..\..\submodules\netcdf-cxx4\cxx4\ncEnumType.cpp" />
+    <ClCompile Include="..\..\submodules\netcdf-cxx4\cxx4\ncException.cpp" />
+    <ClCompile Include="..\..\submodules\netcdf-cxx4\cxx4\ncFile.cpp" />
+    <ClCompile Include="..\..\submodules\netcdf-cxx4\cxx4\ncFloat.cpp" />
+    <ClCompile Include="..\..\submodules\netcdf-cxx4\cxx4\ncGroup.cpp" />
+    <ClCompile Include="..\..\submodules\netcdf-cxx4\cxx4\ncGroupAtt.cpp" />
+    <ClCompile Include="..\..\submodules\netcdf-cxx4\cxx4\ncInt.cpp" />
+    <ClCompile Include="..\..\submodules\netcdf-cxx4\cxx4\ncInt64.cpp" />
+    <ClCompile Include="..\..\submodules\netcdf-cxx4\cxx4\ncOpaqueType.cpp" />
+    <ClCompile Include="..\..\submodules\netcdf-cxx4\cxx4\ncShort.cpp" />
+    <ClCompile Include="..\..\submodules\netcdf-cxx4\cxx4\ncString.cpp" />
+    <ClCompile Include="..\..\submodules\netcdf-cxx4\cxx4\ncType.cpp" />
+    <ClCompile Include="..\..\submodules\netcdf-cxx4\cxx4\ncUbyte.cpp" />
+    <ClCompile Include="..\..\submodules\netcdf-cxx4\cxx4\ncUint.cpp" />
+    <ClCompile Include="..\..\submodules\netcdf-cxx4\cxx4\ncUint64.cpp" />
+    <ClCompile Include="..\..\submodules\netcdf-cxx4\cxx4\ncUshort.cpp" />
+    <ClCompile Include="..\..\submodules\netcdf-cxx4\cxx4\ncVar.cpp" />
+    <ClCompile Include="..\..\submodules\netcdf-cxx4\cxx4\ncVarAtt.cpp" />
+    <ClCompile Include="..\..\submodules\netcdf-cxx4\cxx4\ncVlenType.cpp" />
+  </ItemGroup>
   <PropertyGroup Label="Globals">
     <ProjectGuid>{881E5465-4273-43A2-85B3-69B1C9AF0509}</ProjectGuid>
     <Keyword>Win32Proj</Keyword>
@@ -93,37 +121,6 @@
       <Message />
     </PostBuildEvent>
   </ItemDefinitionGroup>
-  <ItemGroup>
-    <Text Include="ReadMe.txt" />
-  </ItemGroup>
-  <ItemGroup>
-    <ClCompile Include="..\..\third_party\netcdf-cxx4-4.2\cxx4\ncAtt.cpp" />
-    <ClCompile Include="..\..\third_party\netcdf-cxx4-4.2\cxx4\ncByte.cpp" />
-    <ClCompile Include="..\..\third_party\netcdf-cxx4-4.2\cxx4\ncChar.cpp" />
-    <ClCompile Include="..\..\third_party\netcdf-cxx4-4.2\cxx4\ncCheck.cpp" />
-    <ClCompile Include="..\..\third_party\netcdf-cxx4-4.2\cxx4\ncCompoundType.cpp" />
-    <ClCompile Include="..\..\third_party\netcdf-cxx4-4.2\cxx4\ncDim.cpp" />
-    <ClCompile Include="..\..\third_party\netcdf-cxx4-4.2\cxx4\ncDouble.cpp" />
-    <ClCompile Include="..\..\third_party\netcdf-cxx4-4.2\cxx4\ncEnumType.cpp" />
-    <ClCompile Include="..\..\third_party\netcdf-cxx4-4.2\cxx4\ncException.cpp" />
-    <ClCompile Include="..\..\third_party\netcdf-cxx4-4.2\cxx4\ncFile.cpp" />
-    <ClCompile Include="..\..\third_party\netcdf-cxx4-4.2\cxx4\ncFloat.cpp" />
-    <ClCompile Include="..\..\third_party\netcdf-cxx4-4.2\cxx4\ncGroup.cpp" />
-    <ClCompile Include="..\..\third_party\netcdf-cxx4-4.2\cxx4\ncGroupAtt.cpp" />
-    <ClCompile Include="..\..\third_party\netcdf-cxx4-4.2\cxx4\ncInt.cpp" />
-    <ClCompile Include="..\..\third_party\netcdf-cxx4-4.2\cxx4\ncInt64.cpp" />
-    <ClCompile Include="..\..\third_party\netcdf-cxx4-4.2\cxx4\ncOpaqueType.cpp" />
-    <ClCompile Include="..\..\third_party\netcdf-cxx4-4.2\cxx4\ncShort.cpp" />
-    <ClCompile Include="..\..\third_party\netcdf-cxx4-4.2\cxx4\ncString.cpp" />
-    <ClCompile Include="..\..\third_party\netcdf-cxx4-4.2\cxx4\ncType.cpp" />
-    <ClCompile Include="..\..\third_party\netcdf-cxx4-4.2\cxx4\ncUbyte.cpp" />
-    <ClCompile Include="..\..\third_party\netcdf-cxx4-4.2\cxx4\ncUint.cpp" />
-    <ClCompile Include="..\..\third_party\netcdf-cxx4-4.2\cxx4\ncUint64.cpp" />
-    <ClCompile Include="..\..\third_party\netcdf-cxx4-4.2\cxx4\ncUshort.cpp" />
-    <ClCompile Include="..\..\third_party\netcdf-cxx4-4.2\cxx4\ncVar.cpp" />
-    <ClCompile Include="..\..\third_party\netcdf-cxx4-4.2\cxx4\ncVarAtt.cpp" />
-    <ClCompile Include="..\..\third_party\netcdf-cxx4-4.2\cxx4\ncVlenType.cpp" />
-  </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
   </ImportGroup>

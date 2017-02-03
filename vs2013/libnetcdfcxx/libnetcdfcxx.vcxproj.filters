@@ -14,85 +14,82 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <Text Include="ReadMe.txt" />
-  </ItemGroup>
-  <ItemGroup>
-    <ClCompile Include="..\..\third_party\netcdf-cxx4-4.2\cxx4\ncAtt.cpp">
+    <ClCompile Include="..\..\submodules\netcdf-cxx4\cxx4\ncAtt.cpp">
       <Filter>Source Files\netcdfcxx</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\third_party\netcdf-cxx4-4.2\cxx4\ncByte.cpp">
+    <ClCompile Include="..\..\submodules\netcdf-cxx4\cxx4\ncByte.cpp">
       <Filter>Source Files\netcdfcxx</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\third_party\netcdf-cxx4-4.2\cxx4\ncChar.cpp">
+    <ClCompile Include="..\..\submodules\netcdf-cxx4\cxx4\ncChar.cpp">
       <Filter>Source Files\netcdfcxx</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\third_party\netcdf-cxx4-4.2\cxx4\ncCheck.cpp">
+    <ClCompile Include="..\..\submodules\netcdf-cxx4\cxx4\ncCheck.cpp">
       <Filter>Source Files\netcdfcxx</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\third_party\netcdf-cxx4-4.2\cxx4\ncCompoundType.cpp">
+    <ClCompile Include="..\..\submodules\netcdf-cxx4\cxx4\ncCompoundType.cpp">
       <Filter>Source Files\netcdfcxx</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\third_party\netcdf-cxx4-4.2\cxx4\ncDim.cpp">
+    <ClCompile Include="..\..\submodules\netcdf-cxx4\cxx4\ncDim.cpp">
       <Filter>Source Files\netcdfcxx</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\third_party\netcdf-cxx4-4.2\cxx4\ncDouble.cpp">
+    <ClCompile Include="..\..\submodules\netcdf-cxx4\cxx4\ncDouble.cpp">
       <Filter>Source Files\netcdfcxx</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\third_party\netcdf-cxx4-4.2\cxx4\ncEnumType.cpp">
+    <ClCompile Include="..\..\submodules\netcdf-cxx4\cxx4\ncEnumType.cpp">
       <Filter>Source Files\netcdfcxx</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\third_party\netcdf-cxx4-4.2\cxx4\ncException.cpp">
+    <ClCompile Include="..\..\submodules\netcdf-cxx4\cxx4\ncException.cpp">
       <Filter>Source Files\netcdfcxx</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\third_party\netcdf-cxx4-4.2\cxx4\ncFile.cpp">
+    <ClCompile Include="..\..\submodules\netcdf-cxx4\cxx4\ncFile.cpp">
       <Filter>Source Files\netcdfcxx</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\third_party\netcdf-cxx4-4.2\cxx4\ncFloat.cpp">
+    <ClCompile Include="..\..\submodules\netcdf-cxx4\cxx4\ncFloat.cpp">
       <Filter>Source Files\netcdfcxx</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\third_party\netcdf-cxx4-4.2\cxx4\ncGroup.cpp">
+    <ClCompile Include="..\..\submodules\netcdf-cxx4\cxx4\ncGroup.cpp">
       <Filter>Source Files\netcdfcxx</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\third_party\netcdf-cxx4-4.2\cxx4\ncGroupAtt.cpp">
+    <ClCompile Include="..\..\submodules\netcdf-cxx4\cxx4\ncGroupAtt.cpp">
       <Filter>Source Files\netcdfcxx</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\third_party\netcdf-cxx4-4.2\cxx4\ncInt.cpp">
+    <ClCompile Include="..\..\submodules\netcdf-cxx4\cxx4\ncInt.cpp">
       <Filter>Source Files\netcdfcxx</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\third_party\netcdf-cxx4-4.2\cxx4\ncInt64.cpp">
+    <ClCompile Include="..\..\submodules\netcdf-cxx4\cxx4\ncInt64.cpp">
       <Filter>Source Files\netcdfcxx</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\third_party\netcdf-cxx4-4.2\cxx4\ncOpaqueType.cpp">
+    <ClCompile Include="..\..\submodules\netcdf-cxx4\cxx4\ncOpaqueType.cpp">
       <Filter>Source Files\netcdfcxx</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\third_party\netcdf-cxx4-4.2\cxx4\ncShort.cpp">
+    <ClCompile Include="..\..\submodules\netcdf-cxx4\cxx4\ncShort.cpp">
       <Filter>Source Files\netcdfcxx</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\third_party\netcdf-cxx4-4.2\cxx4\ncString.cpp">
+    <ClCompile Include="..\..\submodules\netcdf-cxx4\cxx4\ncString.cpp">
       <Filter>Source Files\netcdfcxx</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\third_party\netcdf-cxx4-4.2\cxx4\ncType.cpp">
+    <ClCompile Include="..\..\submodules\netcdf-cxx4\cxx4\ncType.cpp">
       <Filter>Source Files\netcdfcxx</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\third_party\netcdf-cxx4-4.2\cxx4\ncUbyte.cpp">
+    <ClCompile Include="..\..\submodules\netcdf-cxx4\cxx4\ncUbyte.cpp">
       <Filter>Source Files\netcdfcxx</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\third_party\netcdf-cxx4-4.2\cxx4\ncUint.cpp">
+    <ClCompile Include="..\..\submodules\netcdf-cxx4\cxx4\ncUint.cpp">
       <Filter>Source Files\netcdfcxx</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\third_party\netcdf-cxx4-4.2\cxx4\ncUint64.cpp">
+    <ClCompile Include="..\..\submodules\netcdf-cxx4\cxx4\ncUint64.cpp">
       <Filter>Source Files\netcdfcxx</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\third_party\netcdf-cxx4-4.2\cxx4\ncUshort.cpp">
+    <ClCompile Include="..\..\submodules\netcdf-cxx4\cxx4\ncUshort.cpp">
       <Filter>Source Files\netcdfcxx</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\third_party\netcdf-cxx4-4.2\cxx4\ncVar.cpp">
+    <ClCompile Include="..\..\submodules\netcdf-cxx4\cxx4\ncVar.cpp">
       <Filter>Source Files\netcdfcxx</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\third_party\netcdf-cxx4-4.2\cxx4\ncVarAtt.cpp">
+    <ClCompile Include="..\..\submodules\netcdf-cxx4\cxx4\ncVarAtt.cpp">
       <Filter>Source Files\netcdfcxx</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\third_party\netcdf-cxx4-4.2\cxx4\ncVlenType.cpp">
+    <ClCompile Include="..\..\submodules\netcdf-cxx4\cxx4\ncVlenType.cpp">
       <Filter>Source Files\netcdfcxx</Filter>
     </ClCompile>
   </ItemGroup>
