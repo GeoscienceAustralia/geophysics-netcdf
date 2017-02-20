@@ -58,6 +58,7 @@
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <LinkIncremental>false</LinkIncremental>
+    <PostBuildEventUseInBuild>false</PostBuildEventUseInBuild>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <ClCompile>
@@ -88,8 +89,8 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="..\..\src\cxx\geophysics_netcdf.cpp" />
-    <ClCompile Include="..\..\src\cxx\test_geophysics_netcdf_reader.cpp" />
+    <ClCompile Include="..\..\src\cpp\geophysics_netcdf.cpp" />
+    <ClCompile Include="..\..\src\cpp\test_geophysics_netcdf_reader.cpp" />
     <ClCompile Include="..\..\submodules\cpp-utils\src\file_utils.cpp" />
     <ClCompile Include="..\..\submodules\cpp-utils\src\general_utils.cpp" />
   </ItemGroup>

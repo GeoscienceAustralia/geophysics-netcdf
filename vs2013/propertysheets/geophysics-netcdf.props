@@ -4,7 +4,7 @@
     <Import Project="cpp-utils.props" />
   </ImportGroup>
   <PropertyGroup>
-    <IncludePath>Z:\code\repos\geophysics-netcdf\src\cxx;$(IncludePath)</IncludePath>
+    <IncludePath>..\src\cpp;$(IncludePath)</IncludePath>
     <LibraryPath>$(LibraryPath)</LibraryPath>
     <OutDir>..\..\bin\$(Platform)\$(Configuration)\</OutDir>
   </PropertyGroup>
