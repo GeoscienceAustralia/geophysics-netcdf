@@ -4,7 +4,7 @@
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup>
-    <LibraryPath>..\..\vs2013\libnetcdfcxx\$(Platform)\$(Configuration);$(LibraryPath)</LibraryPath>
+    <LibraryPath>..\..\visualstudio\libnetcdfcxx\$(Platform)\$(Configuration);$(LibraryPath)</LibraryPath>
     <IncludePath>..\..\submodules\netcdf-cxx4\cxx4;$(IncludePath)</IncludePath>
     <_PropertySheetDisplayName>netcdf4-cxx</_PropertySheetDisplayName>
   </PropertyGroup>

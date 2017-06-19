@@ -3,7 +3,7 @@
   <ImportGroup Label="PropertySheets">
   </ImportGroup>
   <PropertyGroup Label="UserMacros">
-    <NETCDF_ROOT>Z:\code\third_party\netCDF-4.3.3.1</NETCDF_ROOT>
+    <NETCDF_ROOT>Y:\ops\gap\software\netcdf\netCDF-4.3.3.1</NETCDF_ROOT>
   </PropertyGroup>
   <PropertyGroup>
     <LibraryPath>$(NETCDF_ROOT)\lib;$(LibraryPath)</LibraryPath>
