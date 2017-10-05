@@ -88,7 +88,6 @@
   <ItemGroup>
     <ClCompile Include="..\..\src\cpp\geophysics_netcdf.cpp" />
     <ClCompile Include="..\..\src\cpp\intrepid2netcdf.cpp" />
-    <ClCompile Include="..\..\submodules\cpp-utils\src\blocklanguage.cpp" />
     <ClCompile Include="..\..\submodules\cpp-utils\src\cgal_utils.cpp" />
     <ClCompile Include="..\..\submodules\cpp-utils\src\file_utils.cpp" />
     <ClCompile Include="..\..\submodules\cpp-utils\src\general_utils.cpp" />
