@@ -164,7 +164,7 @@ public:
 	}
 
 	template<typename T>
-	T missingvalue(const T& value){
+	T missingvalue(const T&){
 		T v;
 		getAtt(AN_MISSINGVALUE).getValues(&v);
 		return v;
@@ -343,6 +343,14 @@ private:
 		return true;
 	}
 
+	//Do not allow implicit definition of copy constructor or assignment operators
+	cGeophysicsNcFile& operator =(const cGeophysicsNcFile & rhs);
+	cGeophysicsNcFile& operator =(const NcGroup & rhs);
+	cGeophysicsNcFile& operator =(const NcFile & rhs);
+	cGeophysicsNcFile(const cGeophysicsNcFile& rhs);
+	cGeophysicsNcFile(const NcGroup& rhs);
+	cGeophysicsNcFile(const NcFile& rhs);
+
 public:	
 
 	size_t get_line_index_start(const size_t& i){ return line_index_start[i]; }
@@ -372,15 +380,15 @@ public:
 	~cGeophysicsNcFile()
 	{
 		
-	};
+	};	
 
 	bool InitialiseNew(const std::vector<size_t>& linenumbers, const std::vector<size_t>& linesamplecount){
 		size_t n = linenumbers.size();
 		std::vector<unsigned int> uint_linenumbers(n);
 		std::vector<unsigned int> uint_linesamplecount(n);
 		for (size_t i = 0; i < n; i++){
-			uint_linenumbers[i] = linenumbers[i];
-			uint_linesamplecount[i] = linesamplecount[i];
+			uint_linenumbers[i] = (unsigned int)linenumbers[i];
+			uint_linesamplecount[i] = (unsigned int)linesamplecount[i];
 		}
 		return InitialiseNew(uint_linenumbers, uint_linesamplecount);
 	}
@@ -393,7 +401,7 @@ public:
 		line_index_start.resize(nl);
 		size_t nsamples = 0;
 		for (size_t i = 0; i < line_number.size(); i++){
-			line_index_start[i] = nsamples;
+			line_index_start[i] = (unsigned int)nsamples;
 			nsamples += line_index_count[i];
 		}
 
@@ -433,7 +441,7 @@ public:
 
 	size_t getLineIndex(const int& linenumber){
 		auto it = std::find(line_number.begin(), line_number.end(), linenumber);
-		return it - line_number.begin();
+		return (size_t)(it - line_number.begin());
 	}
 
 	bool hasVar(const std::string& varname){
@@ -677,7 +685,7 @@ public:
 
 			x2[li] = nvx;
 			y2[li] = nvy;
-			for (size_t si = ns - 1; si >= 0; si--){
+			for (size_t si = ns - 1; ; si--){
 				if (x[si] != nvx && y[si] != nvy){
 					x2[li] = x[si];
 					y2[li] = y[si];

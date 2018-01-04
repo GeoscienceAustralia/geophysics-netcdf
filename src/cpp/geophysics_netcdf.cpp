@@ -15,12 +15,12 @@ Author: Ross C. Brodie, Geoscience Australia.
 #include "file_utils.h"
 #include "geophysics_netcdf.h"
 
-NcType nctype(const short dummy){ return ncShort; }
-NcType nctype(const int dummy){ return ncInt; }
-NcType nctype(const unsigned int dummy){ return ncUint; }
-NcType nctype(const float dummy){ return ncFloat; }
-NcType nctype(const double dummy){ return ncDouble; }
-NcType nctype(const std::string dummy){ return ncString; }
+NcType nctype(const short){ return ncShort; }
+NcType nctype(const int){ return ncInt; }
+NcType nctype(const unsigned int){ return ncUint; }
+NcType nctype(const float){ return ncFloat; }
+NcType nctype(const double){ return ncDouble; }
+NcType nctype(const std::string){ return ncString; }
 
 size_t cGeophysicsVar::line_index_start(const size_t& index){
 	size_t start = get_parent()->get_line_index_start(index);	

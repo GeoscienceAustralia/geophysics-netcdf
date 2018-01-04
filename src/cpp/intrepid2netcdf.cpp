@@ -246,14 +246,14 @@ public:
 			int  GSVpnumberguess = -1;
 			bool GSVguessed = parseGSVprojectnumber(IDBName, GSVpnumberguess);
 			if (GSVguessed){
-				int sindex = A.findkeyindex("SURVEYNAME");				
+				size_t sindex = (size_t) A.findkeyindex("SURVEYNAME");				
 				for (size_t i = 0; i < A.records.size(); i++){
 					std::string sname = A.records[i][sindex];
 					int gsvnum;
 					bool status = parseGSVprojectnumber(sname,gsvnum);
 					if (status){
 						if (gsvnum == GSVpnumberguess){
-							int pindex = A.findkeyindex("PROJECT");
+							size_t pindex = (size_t)A.findkeyindex("PROJECT");
 							GApnumberguess = std::atoi((A.records[i][pindex]).c_str());
 							GAguessed = true;
 							logmsg("Warning 1b: GA Project number taken from GSV number (GSV=%d -> GA=%d)\n", GSVpnumberguess, GApnumberguess);
@@ -396,11 +396,11 @@ public:
 		size_t nlines = D.nlines();
 		NcDim  dim_line = ncFile.getDim("line");
 
-		int i_field = V.findkeyindex("field_name");
-		int i_convert = V.findkeyindex("convert");
-		int i_variable_name = V.findkeyindex("variable_name");
-		int i_standard_name = V.findkeyindex("standard_name");
-		int i_units = V.findkeyindex("units");
+		size_t i_field = (size_t) V.findkeyindex("field_name");
+		size_t i_convert = (size_t) V.findkeyindex("convert");
+		size_t i_variable_name = (size_t) V.findkeyindex("variable_name");
+		size_t i_standard_name = (size_t) V.findkeyindex("standard_name");
+		size_t i_units = (size_t) V.findkeyindex("units");
 
 		size_t fi = 0;
 		for (auto it = D.Fields.begin(); it != D.Fields.end(); ++it){
@@ -476,11 +476,11 @@ public:
 		if (D.valid == false)return false;
 		size_t nlines = D.nlines();		
 
-		int i_field = V.findkeyindex("field_name");
-		int i_convert = V.findkeyindex("convert");
-		int i_variable_name = V.findkeyindex("variable_name");
-		int i_standard_name = V.findkeyindex("standard_name");
-		int i_units = V.findkeyindex("units");
+		size_t i_field = (size_t ) V.findkeyindex("field_name");
+		size_t i_convert = (size_t) V.findkeyindex("convert");
+		size_t i_variable_name = (size_t) V.findkeyindex("variable_name");
+		size_t i_standard_name = (size_t) V.findkeyindex("standard_name");
+		size_t i_units = (size_t) V.findkeyindex("units");
 
 		size_t fi = 0;
 		for (auto it = D.Fields.begin(); it != D.Fields.end(); ++it){
