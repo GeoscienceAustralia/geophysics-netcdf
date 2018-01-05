@@ -31,10 +31,14 @@ bool example_magnetics(){
 
 	bool status;		
 	std::string indir,ncpath;
-	indir = "z:\\projects\\geophysics_netcdf\\conversion_scripts\\ncfiles\\";
+	//indir = "z:\\projects\\geophysics_netcdf\\conversion_scripts\\ncfiles\\";
 	//indir = "http://dapds00.nci.org.au/thredds/dodsC/uc0/rr2_dev/rcb547/AWAGS_Levelled_Line_Databases/mag_database_reformat_2016_adjusted/netcdf/";
-	ncpath = indir + "GSSA_P1255MAG_Marree.nc";
+	//ncpath = indir + "GSSA_P1255MAG_Marree.nc";
 	//ncpath = "http://dapds00.nci.org.au/thredds/dodsC/uc0/rr2_dev/rcb547/AWAGS_Levelled_Line_Databases/mag_database_reformat_2016_adjusted/netcdf/GSSA_P1255MAG_Marree.nc";
+
+	indir = "Y:\\ops\\gap\\geophysical_methods\\mag_rad\\AWAGS_Levelled_Databases\\awags_survey_reformat\\netcdf\\";
+	ncpath = indir + "P1152MAG.nc";
+
 
 	//Open the file and initialise the indexes
 	cGeophysicsNcFile ncfile(ncpath, NcFile::read);
@@ -137,10 +141,10 @@ bool test_create(){
 	size_t nrxcomponents = 3;
 
 	size_t ntotalsamples = nc.ntotalsamples();
-	std::vector<int> fid = increment((int)ntotalsamples);
-	std::vector<int> layers = increment((int)nlayers);
-	std::vector<int> windows = increment((int)nwindows);
-	std::vector<int> rxcomponents = increment((int)nrxcomponents);
+	std::vector<int> fid = increment(ntotalsamples,0,1);
+	std::vector<int> layers = increment(nlayers,0,1);
+	std::vector<int> windows = increment(nwindows,0,1);
+	std::vector<int> rxcomponents = increment(nrxcomponents,0,1);
 	
 	NcDim dim_rxcomponent = nc.addDimVar("rxcomponents", rxcomponents);
 	NcDim dim_window = nc.addDimVar("windows", windows);	
@@ -203,8 +207,9 @@ int main(int argc, char** argv)
 	logmsg("Log file opened\n");
 
 	try{	
-		example_magnetics();
-		example_aem_conductivity();				
+		//example_magnetics();
+		//example_aem_conductivity();	
+		test_create();
 		logmsg("Closing log file\n");
 		fclose(global_log_file);
 	}
