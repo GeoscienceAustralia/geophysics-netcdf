@@ -13,6 +13,7 @@ Author: Ross C. Brodie, Geoscience Australia.
 #include "stacktrace.h"
 #endif
 
+#include <cassert>
 #include <stdexcept>
 #include "float.h"
 #include "general_utils.h"
@@ -73,8 +74,8 @@ public:
 	
 	size_t length(){		
 		std::vector<NcDim> dims = getDims();
-		size_t len = dims[0].getSize();
-		for (size_t di = 1; di < dims.size(); di++){
+		size_t len = 1;
+		for (size_t di = 0; di < dims.size(); di++){
 			len *= dims[di].getSize();
 		}
 		return len;
@@ -244,7 +245,7 @@ public:
 		}
 
 		if (vals.size() != length()){
-			std::string msg = _SRC_ + strprint("Attempt to write variable (%s) with non-matching size\n", getName().c_str());			
+			std::string msg = _SRC_ + strprint("Attempt to write variable (%s) with non-matching size\n", getName().c_str());
 			logmsg(msg);
 			throw(std::runtime_error(msg));
 		}
@@ -255,23 +256,56 @@ public:
 
 	template<typename T>
 	bool putLine(const size_t& lineindex, const size_t& bandindex, const std::vector<T>& vals){
-		if (isNull()){ return false; }		
+		
+		if (isNull()){
+			std::string msg = _SRC_ + strprint("Attempt to write to a Null variable\n");
+			logmsg(msg);
+			throw(std::runtime_error(msg));
+		}
+
+		if (vals.size() != line_index_count(lineindex)){
+			std::string msg = _SRC_ + strprint("Attempt to write line/band of variable (%s) with non-matching size\n", getName().c_str());
+			logmsg(msg);
+			throw(std::runtime_error(msg));
+		}
+		
 		std::vector<size_t> start = { line_index_start(lineindex), bandindex };
 		std::vector<size_t> count = { line_index_count(lineindex), 1 };
 		putVar(start, count, vals.data());
-		return true;
+		return true;		
 	}
 
 	template<typename T>
 	bool putLine(const size_t& lineindex, const std::vector<T>& vals){		
+		if (isNull()){
+			std::string msg = _SRC_ + strprint("Attempt to write to a Null variable\n");
+			logmsg(msg);
+			throw(std::runtime_error(msg));
+		}
+
+		size_t sz = length()*line_index_count(lineindex);
+
+		if (vals.size() != sz){
+			std::string msg = _SRC_ + strprint("Attempt to write line/band of variable (%s) with non-matching size\n", getName().c_str());
+			logmsg(msg);
+			throw(std::runtime_error(msg));
+		}
+		
 		return putLine(lineindex, 0, vals);	
 	}
 
 	template<typename T>
 	bool getLine(const size_t& lineindex, const size_t& bandindex, std::vector<T>& vals){
-		if (isNull()){ return false; }
+		if (isNull()){
+			std::string msg = _SRC_ + strprint("Attempt to write to a Null variable\n");
+			logmsg(msg);
+			throw(std::runtime_error(msg));
+		}
 		std::vector<size_t> start = { line_index_start(lineindex), bandindex };
 		std::vector<size_t> count = { line_index_count(lineindex), 1 };
+		
+		size_t sz = length()*line_index_count(lineindex);
+
 		vals.resize(count[0]*count[1]);
 		getVar(start, count, vals.data());
 		return true;
@@ -279,6 +313,11 @@ public:
 
 	template<typename T>
 	bool getLine(const size_t& lineindex, std::vector<T>& vals){		
+		if (isNull()){
+			std::string msg = _SRC_ + strprint("Attempt to read from a Null variable\n");
+			logmsg(msg);
+			throw(std::runtime_error(msg));
+		}
 		return getLine(lineindex, 0, vals);
 	}
 

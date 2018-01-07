@@ -11,7 +11,6 @@ Author: Ross C. Brodie, Geoscience Australia.
 #include <vector>
 #include <limits>
 
-#define USEGLOBALSTACKTRACE
 #ifdef USEGLOBALSTACKTRACE
 #include "stacktrace.h"
 cStackTrace globalstacktrace;
@@ -198,6 +197,35 @@ bool test_create(){
 	return true;
 };
 
+bool test_update(){
+	std::string ncpath = "test.nc";		
+	cGeophysicsNcFile   nc(ncpath, NcFile::FileMode::write);	
+	size_t ntotalsamples = nc.ntotalsamples();
+	cLineVar   lv = nc.addLineVar("extralinevar", ncDouble);
+	cSampleVar sv = nc.addSampleVar("extrasamplevar", ncDouble);
+	cSampleVar svw = nc.addSampleVar("extrasamplevarwindow", ncDouble,nc.getDim("windows"));
+
+	NcDim ed = nc.addDim("extradim", 400);
+	cSampleVar sve = nc.addSampleVar("extrawindowsamplevarextradim", ncDouble, ed);
+
+	cSampleVar ev = nc.getSampleVar("easting");
+	std::vector<double> e;
+	bool status = ev.getAll(e);
+	status = ev.getLine(1, e);
+	e += 1.0;
+	//e.push_back(0);
+	status = ev.putLine(1, e);
+
+	cSampleVar vem = nc.getSampleVar("em");
+	std::vector<double> em;
+	status = vem.getAll(em);
+	status = vem.getLine(2,em);
+	em += 1.0;	
+	status = vem.putLine(2,em);
+
+	return true;
+};
+
 int main(int argc, char** argv)
 {
 	_GSTITEM_	
@@ -210,6 +238,7 @@ int main(int argc, char** argv)
 		//example_magnetics();
 		//example_aem_conductivity();	
 		test_create();
+		test_update();
 		logmsg("Closing log file\n");
 		fclose(global_log_file);
 	}
