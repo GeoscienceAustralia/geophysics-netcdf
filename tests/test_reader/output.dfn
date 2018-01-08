@@ -1,0 +1,9 @@
+DEFN   ST=RECD,RT=COMM;RT:A4;COMMENTS:A76
+DEFN 1 ST=RECD,RT=; altitude_gps : F10.3 : UNITS = m , height_above_ellipsoid
+DEFN 2 ST=RECD,RT=; bearing : F10.3 : UNITS = degree , nominal_line_bearing
+DEFN 3 ST=RECD,RT=; fiducial : I10 : fiducial_number
+DEFN 4 ST=RECD,RT=; height : F10.3 : UNITS = m , height_above_ground
+DEFN 5 ST=RECD,RT=; latitude : F10.3 : UNITS = degree_north , latitude
+DEFN 6 ST=RECD,RT=; longitude : F10.3 : UNITS = degree_east , longitude
+DEFN 7 ST=RECD,RT=; mag_awags : F10.3 : UNITS = nT , total_magnetic_intensity_anomaly_datum_levelled
+DEFN zu ST=RECD,RT=;END DEFN
