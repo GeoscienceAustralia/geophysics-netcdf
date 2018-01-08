@@ -15,11 +15,13 @@ Author: Ross C. Brodie, Geoscience Australia.
 
 #include <cassert>
 #include <stdexcept>
+#include <map>
 #include "float.h"
 #include "general_utils.h"
 #include "vector_utils.h"
 #include "crs.h"
 #include "cgal_utils.h"
+#include "file_formats.h"
 
 #include <netcdf>
 using namespace netCDF;
@@ -71,14 +73,33 @@ public:
 
 	size_t line_index_start(const size_t& index);
 	size_t line_index_count(const size_t& index);
-	
-	size_t length(){		
-		std::vector<NcDim> dims = getDims();
-		size_t len = 1;
-		for (size_t di = 0; di < dims.size(); di++){
+		
+	size_t length(){
+		std::vector<NcDim> dims = getDims();		
+		size_t len = dims[0].getSize();
+		for (size_t di = 1; di < dims.size(); di++){		
 			len *= dims[di].getSize();
 		}
 		return len;
+	}
+
+	size_t elementspersample(){
+		std::vector<NcDim> dims = getDims();
+		size_t len = 1;
+		if (dims.size() == 1){
+			return len;
+		}
+		else{
+			len = dims[1].getSize();
+			for (size_t di = 2; di < dims.size(); di++){
+				len *= dims[di].getSize();
+			}
+		}
+		return len;
+	}
+
+	size_t lineelements(const size_t& lineindex){
+		return elementspersample() * line_index_count(lineindex);
 	}
 
 	size_t nbands(){
@@ -109,6 +130,32 @@ public:
 		return putAtt(AN_DESCRIPTION, value);
 	}
 	
+	bool hasAtt(const std::string& name){
+		std::map<std::string, NcVarAtt> m = NcVar::getAtts();
+		auto it = m.find(name);		
+		if (it == m.end()){
+			return false;
+		}
+		return true;		
+	}
+
+	std::string getStringAtt(const std::string& attname){
+		std::string attvalue;
+		if (hasAtt(attname)){
+			NcVarAtt a = getAtt(attname);
+			a.getValues(attvalue);
+		}		
+		return attvalue;
+	}
+
+	std::string getUnits(){
+		return getStringAtt(AN_UNITS);		
+	}
+
+	std::string getDescription(){
+		return getStringAtt(AN_DESCRIPTION);
+	}
+
 	static float preferred_float_missing_value(){		
 		return NcFloatNull;
 	}
@@ -253,12 +300,19 @@ public:
 		putVar(vals.data());
 		return true;
 	}
-
+	
 	template<typename T>
-	bool putLine(const size_t& lineindex, const size_t& bandindex, const std::vector<T>& vals){
+	bool putLineBand(const size_t& lineindex, const size_t& bandindex, const std::vector<T>& vals){
 		
 		if (isNull()){
 			std::string msg = _SRC_ + strprint("Attempt to write to a Null variable\n");
+			logmsg(msg);
+			throw(std::runtime_error(msg));
+		}
+
+		std::vector<NcDim>  dims = getDims();
+		if (dims.size() > 2){
+			std::string msg = _SRC_ + strprint("Attempt to use putLineBand() to write to a variable with more than 2 dimensions\n");
 			logmsg(msg);
 			throw(std::runtime_error(msg));
 		}
@@ -268,12 +322,17 @@ public:
 			logmsg(msg);
 			throw(std::runtime_error(msg));
 		}
-		
-		std::vector<size_t> start = { line_index_start(lineindex), bandindex };
-		std::vector<size_t> count = { line_index_count(lineindex), 1 };
+
+		std::vector<size_t> start(getDimCount());
+		std::vector<size_t> count(getDimCount());
+		start[0] = line_index_start(lineindex);
+		count[0] = line_index_count(lineindex);
+		start[1] = bandindex;
+		count[1] = 1;
 		putVar(start, count, vals.data());
 		return true;		
 	}
+	
 
 	template<typename T>
 	bool putLine(const size_t& lineindex, const std::vector<T>& vals){		
@@ -283,32 +342,24 @@ public:
 			throw(std::runtime_error(msg));
 		}
 
-		size_t sz = length()*line_index_count(lineindex);
-
+		size_t sz = lineelements(lineindex);
 		if (vals.size() != sz){
 			std::string msg = _SRC_ + strprint("Attempt to write line/band of variable (%s) with non-matching size\n", getName().c_str());
 			logmsg(msg);
 			throw(std::runtime_error(msg));
 		}
 		
-		return putLine(lineindex, 0, vals);	
-	}
-
-	template<typename T>
-	bool getLine(const size_t& lineindex, const size_t& bandindex, std::vector<T>& vals){
-		if (isNull()){
-			std::string msg = _SRC_ + strprint("Attempt to write to a Null variable\n");
-			logmsg(msg);
-			throw(std::runtime_error(msg));
-		}
-		std::vector<size_t> start = { line_index_start(lineindex), bandindex };
-		std::vector<size_t> count = { line_index_count(lineindex), 1 };
-		
-		size_t sz = length()*line_index_count(lineindex);
-
-		vals.resize(count[0]*count[1]);
-		getVar(start, count, vals.data());
-		return true;
+		std::vector<NcDim>  dims = getDims();
+		std::vector<size_t> start(getDimCount());
+		std::vector<size_t> count(getDimCount());
+		start[0] = line_index_start(lineindex);
+		count[0] = line_index_count(lineindex);
+		for (size_t i = 1; i < dims.size(); i++){
+			start[i] = 0;
+			count[i] = dims[i].getSize();
+		}		
+		putVar(start, count, vals.data());
+		return true;		
 	}
 
 	template<typename T>
@@ -318,7 +369,20 @@ public:
 			logmsg(msg);
 			throw(std::runtime_error(msg));
 		}
-		return getLine(lineindex, 0, vals);
+		
+		std::vector<NcDim>  dims = getDims();
+		std::vector<size_t> start(getDimCount());
+		std::vector<size_t> count(getDimCount());
+		start[0] = line_index_count(lineindex);
+		count[0] = 1;
+		for (size_t i = 1; i < dims.size(); i++){
+			start[i] = 0;
+			count[i] = dims[i].getSize();
+		}
+		size_t sz = lineelements(lineindex);
+		vals.resize(sz);
+		getVar(start, count, vals.data());
+		return true;		
 	}
 
 };
@@ -950,6 +1014,95 @@ public:
 		return true;
 
 	}
+	
+	bool isLineVar(const NcVar& var) const {
+		if (var.getDimCount() == 0) return false;
+		if (var.getDim(0).getName() == DN_LINE){
+			return true;
+		}
+		return false;
+	}
+
+	bool isSampleVar(const NcVar& var) const {
+		if (var.getDimCount() == 0)return false;
+		if (var.getDim(0).getName() == DN_POINT){
+			return true;
+		}
+		return false;
+	}
+
+	std::vector<cLineVar> getLineVars(){
+		std::vector<cLineVar> vars;
+		std::multimap<std::string, NcVar> vm = getVars();
+		for (auto it = vm.begin(); it != vm.end(); it++){			
+			if (isLineVar(it->second)){
+				cLineVar v(this,it->second);
+				vars.push_back(v);
+			}			
+		}
+		return vars;
+	};
+
+	std::vector<cSampleVar> getSampleVars(){
+		std::vector<cSampleVar> vars;
+		std::multimap<std::string, NcVar> vm = getVars();
+		for (auto it = vm.begin(); it != vm.end(); it++){			
+			if (isSampleVar(it->second)){
+				cSampleVar v(this, it->second);
+				vars.push_back(v);
+			}
+		}
+		return vars;
+	};
+
+	bool donotexportvariable(const std::string& varname){						
+		std::vector<std::string> s = {
+			DN_POINT, VN_LI_START, VN_LI_COUNT,
+			"longitude_first", "longitude_last",
+			"latitude_first",  "latitude_last"};
+
+		auto it = std::find(s.begin(), s.end(), varname);
+		if (it == s.end()) return false;
+		else return true;
+	};
+
+	bool exportASEGGDF2(const std::string& filepath){
+		std::string dfnfile = filepath + ".dfn";
+		std::string ascfile = filepath + ".asc";
+
+		//std::vector<cLineVar> v = getLineVars();
+		std::vector<cSampleVar> v = getSampleVars();		
+		cOutputFileInfo I;
+		for (size_t i = 0; i < v.size(); i++){
+			std::string vname = v[i].getName();
+			printf("%s\n", vname.c_str());
+			if (donotexportvariable(vname))continue;
+
+			char   form;
+			size_t width = 10;
+			size_t decimals = 3;
+			size_t bands = v[i].nbands();
+
+			NcType t = v[i].getType();
+			if (t == NC_SHORT || t == NC_INT){
+				form = 'I';
+				decimals = 0;
+			}
+			else{
+				form = 'F';
+			}
+			I.addfield(v[i].getName(), form, width, decimals, bands);
+
+			std::string units = v[i].getUnits();
+			if (units != "1")I.setunits(units);			
+
+			std::string desc = v[i].getDescription();
+			desc = v[i].getStringAtt(AN_STANDARD_NAME);
+			I.setcomment(desc);
+		}
+		I.write_aseggdf_header(dfnfile);
+		return true;		
+	};
 };
 
 #endif

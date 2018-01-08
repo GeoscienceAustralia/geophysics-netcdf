@@ -114,7 +114,8 @@ bool example_aem_conductivity(){
 	t1 = gettime();
 	for (size_t li = 0; li < ncfile.nlines(); li++){	
 		for (size_t bi = 0; bi < vc.nbands(); bi++){			
-			status = vc.getLine(li, bi, c1darray); if (status == false)logmsg("Error");
+			//status = vc.getLine(li, bi, c1darray);
+			if (status == false)logmsg("Error");
 		}
 	} t2 = gettime(); logmsg("Get line by line and band by band in 1d array - time=%lf s\n", t2 - t1);
 	//Get conductivity line by line in 2d array
@@ -164,6 +165,14 @@ bool test_create(){
 	cSampleVar vconductivity = nc.addSampleVar("conductivity", ncDouble, dim_layer);
 	cSampleVar vthickness    = nc.addSampleVar("thickness", ncDouble, dim_layer);
 		
+	vconductivity.add_standard_name("conductivity");
+	vconductivity.add_units("mS/m");
+	vconductivity.add_missing_value(-999);
+	
+	vthickness.add_standard_name("thickness");
+	vthickness.add_units("m");
+	vthickness.add_missing_value(-999);
+
 	cLineVar vflight = nc.addLineVar("flight", ncInt);
 	vflight.putAll(flightnumbers);
 
@@ -185,12 +194,12 @@ bool test_create(){
 		
 		for (size_t bi = 0; bi < nlayers; bi++){
 			std::vector<double> c(nls, li*10+bi);
-			vconductivity.putLine(li, bi, c);
+			vconductivity.putLineBand(li, bi, c);
 		}
 
 		for (size_t bi = 0; bi < nlayers; bi++){
 			std::vector<double> t(nls, li * 100 + bi);
-			vthickness.putLine(li, bi, t);
+			vthickness.putLineBand(li, bi, t);
 		}
 		
 	}		
@@ -198,7 +207,7 @@ bool test_create(){
 };
 
 bool test_update(){
-	std::string ncpath = "test.nc";		
+	std::string ncpath = "test.nc";
 	cGeophysicsNcFile   nc(ncpath, NcFile::FileMode::write);	
 	size_t ntotalsamples = nc.ntotalsamples();
 	cLineVar   lv = nc.addLineVar("extralinevar", ncDouble);
@@ -212,17 +221,24 @@ bool test_update(){
 	std::vector<double> e;
 	bool status = ev.getAll(e);
 	status = ev.getLine(1, e);
-	e += 1.0;
-	//e.push_back(0);
+	e += 1.0;	
 	status = ev.putLine(1, e);
 
 	cSampleVar vem = nc.getSampleVar("em");
 	std::vector<double> em;
 	status = vem.getAll(em);
-	status = vem.getLine(2,em);
-	em += 1.0;	
-	status = vem.putLine(2,em);
+	status = vem.getLine(0,em);
+	em *= 0.0;	
+	status = vem.putLine(0,em);
 
+	return true;
+};
+
+bool test_aseggdfexport(){
+	std::string ncpath = "Y:\\ops\\gap\\geophysical_methods\\mag_rad\\AWAGS_Levelled_Databases\\awags_survey_reformat\\netcdf\\P1152MAG.nc";
+	//std::string ncpath = "test.nc";
+	cGeophysicsNcFile nc(ncpath, NcFile::FileMode::read);
+	nc.exportASEGGDF2("output");
 	return true;
 };
 
@@ -237,8 +253,9 @@ int main(int argc, char** argv)
 	try{	
 		//example_magnetics();
 		//example_aem_conductivity();	
-		test_create();
-		test_update();
+		//test_create();
+		//test_update();
+		test_aseggdfexport();
 		logmsg("Closing log file\n");
 		fclose(global_log_file);
 	}
