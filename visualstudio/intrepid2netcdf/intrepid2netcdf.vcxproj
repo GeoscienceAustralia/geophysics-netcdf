@@ -88,7 +88,10 @@
   <ItemGroup>
     <ClCompile Include="..\..\src\cpp\geophysics_netcdf.cpp" />
     <ClCompile Include="..\..\src\cpp\intrepid2netcdf.cpp" />
-    <ClCompile Include="..\..\submodules\cpp-utils\src\cgal_utils.cpp" />
+    <ClCompile Include="..\..\submodules\cpp-utils\src\cgal_utils.cpp">
+      <WarningLevel Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">TurnOffAllWarnings</WarningLevel>
+      <WarningLevel Condition="'$(Configuration)|$(Platform)'=='Release|x64'">TurnOffAllWarnings</WarningLevel>
+    </ClCompile>
     <ClCompile Include="..\..\submodules\cpp-utils\src\file_utils.cpp" />
     <ClCompile Include="..\..\submodules\cpp-utils\src\general_utils.cpp" />
   </ItemGroup>

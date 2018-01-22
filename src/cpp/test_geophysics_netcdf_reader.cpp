@@ -180,25 +180,25 @@ bool test_create(){
 	cSampleVar vem = nc.addSampleVar("em", ncDouble, emdims);
 		
 	const size_t n = ntotalsamples*nrxcomponents*nwindows;
-	std::vector<double> em = increment((double)n,0.0,1.0);		
+	std::vector<double> em = increment(n,0.0,1.0);		
 	vfid.putAll(fid);
 	vem.putAll(em);
 
 	for (size_t li = 0; li < nc.nlines(); li++){
 		size_t nls = nc.nlinesamples(li);
-		std::vector<double> x = increment((double)nls,500000.0,10.0);
-		std::vector<double> y = increment((double)nls,6500000.0,10.0);
+		std::vector<double> x = increment(nls,500000.0,10.0);
+		std::vector<double> y = increment(nls,6500000.0,10.0);
 		
 		vx.putLine(li, x);
 		vy.putLine(li, y);
 		
 		for (size_t bi = 0; bi < nlayers; bi++){
-			std::vector<double> c(nls, li*10+bi);
+			std::vector<double> c(nls, li*10.0+bi);
 			vconductivity.putLineBand(li, bi, c);
 		}
 
 		for (size_t bi = 0; bi < nlayers; bi++){
-			std::vector<double> t(nls, li * 100 + bi);
+			std::vector<double> t(nls, li * 100.0 + bi);
 			vthickness.putLineBand(li, bi, t);
 		}
 		

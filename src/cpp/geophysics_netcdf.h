@@ -371,8 +371,8 @@ public:
 		}
 		
 		std::vector<NcDim>  dims = getDims();
-		std::vector<size_t> start(getDimCount());
-		std::vector<size_t> count(getDimCount());
+		std::vector<size_t> start((size_t)getDimCount());
+		std::vector<size_t> count((size_t)getDimCount());
 		start[0] = line_index_count(lineindex);
 		count[0] = 1;
 		for (size_t i = 1; i < dims.size(); i++){

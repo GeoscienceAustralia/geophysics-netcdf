@@ -230,7 +230,7 @@ public:
 			hassurvey = true;
 		}
 		
-		int pmin;
+		int pmin=0;
 		if (hassurvey){			
 			cStats<double> s = D.fieldstats(sfname);
 			pmin = (int)s.min;
