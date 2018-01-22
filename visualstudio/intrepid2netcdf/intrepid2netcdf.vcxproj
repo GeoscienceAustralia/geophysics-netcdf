@@ -96,6 +96,7 @@
     <ClCompile Include="..\..\submodules\cpp-utils\src\general_utils.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="..\..\src\cpp\geophysics_netcdf.h" />
     <ClInclude Include="..\..\submodules\cpp-utils\src\blocklanguage.h" />
     <ClInclude Include="..\..\submodules\cpp-utils\src\cgal_utils.h" />
     <ClInclude Include="..\..\submodules\cpp-utils\src\file_utils.h" />

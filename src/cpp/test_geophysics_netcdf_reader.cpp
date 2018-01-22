@@ -242,9 +242,21 @@ bool test_aseggdfexport(){
 	return true;
 };
 
+
+using Width  = NamedType<double, struct WidthParameter>;
+using Height = NamedType<double, struct HeightParameter>;
+double area(Width w, Height h){
+	return 10.0;
+};
+
 int main(int argc, char** argv)
 {
-	_GSTITEM_	
+	_GSTITEM_
+
+	Width  w(1);
+	Height h(2);
+	double r = area(w,h);
+	double v = area(h,w);
 
 	logmsg("Opening log file\n");
 	global_log_file = fopen("test.log", "w");
