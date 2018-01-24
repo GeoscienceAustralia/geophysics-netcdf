@@ -27,19 +27,6 @@ Author: Ross C. Brodie, Geoscience Australia.
 using namespace netCDF;
 using namespace netCDF::exceptions;
 
-
-template <typename T, typename Parameter>
-class NamedType
-{
-public:
-	explicit NamedType(T const& value) : value_(value) {}
-	explicit NamedType(T&& value) : value_(std::move(value)) {}
-	T& get() { return value_; }
-	T const& get() const { return value_; }
-private:
-	T value_;
-};
-
 #define DN_POINT "point"
 #define DN_LINE  "line"
 #define VN_LI_START "index_line"

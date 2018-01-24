@@ -22,6 +22,7 @@ using namespace netCDF::exceptions;
 #include "general_utils.h"
 #include "file_utils.h"
 #include "vector_utils.h"
+#include "file_formats.h"
 #include "geophysics_netcdf.h"
 
 FILE* global_log_file = NULL;
@@ -242,22 +243,16 @@ bool test_aseggdfexport(){
 	return true;
 };
 
-
-using Width  = NamedType<double, struct WidthParameter>;
-using Height = NamedType<double, struct HeightParameter>;
-double area(Width w, Height h){
-	return 10.0;
+bool test_aseggdfheader(){	
+	std::string dfnpath = R"(z:\projects\earth_sci_test\test_data\output\inversion.output.dfn)";	
+	cASEGGDF2Header H(dfnpath);
+	H.write(dfnpath + ".txt");
+	return true;
 };
 
 int main(int argc, char** argv)
 {
 	_GSTITEM_
-
-	Width  w(1);
-	Height h(2);
-	double r = area(w,h);
-	double v = area(h,w);
-
 	logmsg("Opening log file\n");
 	global_log_file = fopen("test.log", "w");
 	logmsg("Log file opened\n");
@@ -267,7 +262,8 @@ int main(int argc, char** argv)
 		//example_aem_conductivity();	
 		//test_create();
 		//test_update();
-		test_aseggdfexport();
+		//test_aseggdfexport();
+		test_aseggdfheader();
 		logmsg("Closing log file\n");
 		fclose(global_log_file);
 	}
