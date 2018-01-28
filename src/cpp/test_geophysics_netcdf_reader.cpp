@@ -24,6 +24,7 @@ using namespace netCDF::exceptions;
 #include "vector_utils.h"
 #include "file_formats.h"
 #include "geophysics_netcdf.h"
+#include "stopwatch.h"
 
 FILE* global_log_file = NULL;
 
@@ -38,7 +39,6 @@ bool example_magnetics(){
 
 	indir = "Y:\\ops\\gap\\geophysical_methods\\mag_rad\\AWAGS_Levelled_Databases\\awags_survey_reformat\\netcdf\\";
 	ncpath = indir + "P1152MAG.nc";
-
 
 	//Open the file and initialise the indexes
 	cGeophysicsNcFile ncfile(ncpath, NcFile::read);
@@ -236,14 +236,35 @@ bool test_update(){
 };
 
 bool test_aseggdfexport(){
-	std::string ncpath = "Y:\\ops\\gap\\geophysical_methods\\mag_rad\\AWAGS_Levelled_Databases\\awags_survey_reformat\\netcdf\\P1152MAG.nc";
-	//std::string ncpath = "test.nc";
+	std::string indir  = R"(Z:\projects\geophysics_netcdf\ncfiles\)";
+	std::string ncpath  = indir + "P463RAD.nc";	
+	std::string datpath = indir + "P463RAD";
 	cGeophysicsNcFile nc(ncpath, NcFile::FileMode::read);
-	nc.exportASEGGDF2("output");
+	nc.export_ASEGGDF2(datpath);
 	return true;
 };
 
-bool test_aseggdfheader(){	
+bool test_columnfile(){
+	std::string datpath = R"(z:\projects\earth_sci_test\test_data\output\inversion.output.dat)";
+	std::string dfnpath = R"(z:\projects\earth_sci_test\test_data\output\inversion.output.dfn)";
+
+	cColumnFile A(datpath,dfnpath);
+	bool status = A.readnextrecord();
+	const std::string& s = A.currentrecordstring();
+	//A.readnextgroup()
+	std::vector<std::vector<int>> intfields;
+	std::vector<std::vector<double>> doublefields;
+	cStopWatch sw;
+	size_t i1 = A.readnextgroup(4, intfields, doublefields);
+	size_t i2 = A.readnextgroup(4, intfields, doublefields);
+	size_t i3 = A.readnextgroup(4, intfields, doublefields);
+	size_t i4 = A.readnextgroup(4, intfields, doublefields);
+	sw.reportnow();
+	prompttocontinue();
+	return true;
+};
+
+bool test_aseggdfheader(){			
 	std::string dfnpath = R"(z:\projects\earth_sci_test\test_data\output\inversion.output.dfn)";	
 	cASEGGDF2Header H(dfnpath);
 	H.write(dfnpath + ".txt");
@@ -262,8 +283,9 @@ int main(int argc, char** argv)
 		//example_aem_conductivity();	
 		//test_create();
 		//test_update();
-		//test_aseggdfexport();
-		test_aseggdfheader();
+		test_aseggdfexport();
+		//test_columnfile();
+		//test_aseggdfheader();
 		logmsg("Closing log file\n");
 		fclose(global_log_file);
 	}

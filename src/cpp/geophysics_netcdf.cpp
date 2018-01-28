@@ -23,12 +23,12 @@ NcType nctype(const double){ return ncDouble; }
 NcType nctype(const std::string){ return ncString; }
 
 
-size_t cGeophysicsVar::line_index_start(const size_t& index){
-	size_t start = get_parent()->get_line_index_start(index);
+size_t cGeophysicsVar::line_index_start(const size_t& index) const {
+	size_t start = File.get_line_index_start(index);
 	return start;
 }
 
-size_t cGeophysicsVar::line_index_count(const size_t& index){
-	size_t count = get_parent()->get_line_index_count(index);	
+size_t cGeophysicsVar::line_index_count(const size_t& index) const {
+	size_t count = File.get_line_index_count(index);	
 	return count;
 }
