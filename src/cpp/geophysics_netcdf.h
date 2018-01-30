@@ -29,6 +29,9 @@ Author: Ross C. Brodie, Geoscience Australia.
 using namespace netCDF;
 using namespace netCDF::exceptions;
 
+#include "marray.hxx"
+using namespace andres;
+
 #define DN_POINT "point"
 #define DN_LINE  "line"
 #define VN_LI_START "index_line"
@@ -130,6 +133,18 @@ public:
 		else if (dims.size() == 2) return dims[1].getSize();
 		return 0;
 		//this need fixing for case of extra dims
+	}
+
+	bool isLineVar() const {
+		if (getDimCount() == 0) return false;
+		if (getDim(0).getName() == DN_LINE) return true;		
+		return false;
+	}
+
+	bool isSampleVar() const {
+		if (getDimCount() == 0) return false;
+		if (getDim(0).getName() == DN_POINT) return true;		
+		return false;
 	}
 
 	NcVarAtt add_attribute(const std::string& att, std::string value){
@@ -291,14 +306,45 @@ public:
 	template<typename T>
 	bool getLine(const size_t& lineindex, std::vector<T>& vals) const = 0;
 		
-	//template<typename T>
-	//bool getSample(const size_t& lineindex, const size_t& sampleindex, const size_t& bandindex, T& val) = 0;
+	template<typename T>
+	void getLine(const size_t& lineindex, Marray<T>& A) const {
+		if (isNull()){
+			std::string msg = _SRC_ + strprint("Attempt to read from a Null variable\n");
+			logmsg(msg);
+			throw(std::runtime_error(msg));
+		}
+		std::vector<NcDim>  dims = getDims();
+		std::vector<size_t> start((size_t)getDimCount());
+		std::vector<size_t> count((size_t)getDimCount());
+		
+		
+		if (isLineVar()){
+			start[0] = lineindex;
+			count[0] = 1;
+		}
+		else{
+			start[0] = line_index_start(lineindex);
+			count[0] = line_index_count(lineindex);			
+		}
+
+		for (size_t i = 1; i < dims.size(); i++){
+			start[i] = 0;
+			count[i] = dims[i].getSize();
+		}
+
+		A.resize(count.data(), count.data() + count.size());
+		size_t sz = lineelements(lineindex);
+		getVar(start, count, &(A(0)));
+	}
 
 	bool donotexport(){
 		std::vector<std::string> s = {
 			DN_POINT, VN_LI_START, VN_LI_COUNT,
 			"longitude_first", "longitude_last",
-			"latitude_first", "latitude_last" };
+			"latitude_first", "latitude_last",
+			"easting_first", "easting_last",
+			"northing_first", "northing_last"};
+
 		auto it = std::find(s.begin(), s.end(), getName());
 		if (it == s.end()) return false;
 		else return true;
@@ -499,6 +545,28 @@ public:
 		vals.resize(sz);
 		getVar(start, count, vals.data());
 		return true;		
+	}
+
+	template<typename T>	
+	void getLine_temp(const size_t& lineindex, Marray<T>& A) const {
+		if (isNull()){
+			std::string msg = _SRC_ + strprint("Attempt to read from a Null variable\n");
+			logmsg(msg);
+			throw(std::runtime_error(msg));
+		}		
+		std::vector<NcDim>  dims = getDims();				
+		std::vector<size_t> start((size_t)getDimCount());
+		std::vector<size_t> count((size_t)getDimCount());		
+		start[0] = line_index_start(lineindex);
+		count[0] = line_index_count(lineindex);
+		for (size_t i = 1; i < dims.size(); i++){
+			start[i] = 0;
+			count[i] = dims[i].getSize();
+		}
+		
+		A.resize(count.data(), count.data() + count.size());
+		size_t sz = lineelements(lineindex);				
+		getVar(start, count, &(A(0)));		
 	}
 
 	template<typename T>
@@ -1118,7 +1186,7 @@ public:
 	}
 
 	bool isSampleVar(const NcVar& var) const {
-		if (var.getDimCount() == 0)return false;
+		if (var.getDimCount() == 0) return false;
 		if (var.getDim(0).getName() == DN_POINT){
 			return true;
 		}
@@ -1149,21 +1217,15 @@ public:
 		return vars;
 	};
 
-	bool export_ASEGGDF2(const std::string& filepath){
-		std::string datfile = filepath + ".dat";
-		std::string dfnfile = filepath + ".dfn";
-
-		
-		std::ofstream of(datfile);
-		//std::vector<char> vec(1024);
-		//of.rdbuf()->pubsetbuf(&vec.front(), vec.size());		
+	bool export_ASEGGDF2(const std::string& datfilepath, const std::string& dfnfilepath){		
+	
+		std::ofstream of(datfilepath);
 		of << std::fixed;
-		
 
-		std::vector<cLineVar> lvars = getLineVars();
+		std::vector<cLineVar>   lvars = getLineVars();
 		std::vector<cSampleVar> svars = getSampleVars();
 		std::vector<cGeophysicsVar> vars;
-		for (size_t i = 0; i < lvars.size(); i++){			
+		for (size_t i = 0; i < lvars.size(); i++){
 			if (lvars[i].donotexport() == false){
 				vars.push_back(lvars[i]);
 			}
@@ -1175,77 +1237,72 @@ public:
 			}
 		}
 
+		const size_t nvars = vars.size(); // number of vars to be exported
+		std::vector<double> mval(nvars); // missing value
+		std::vector<bool>   islv(nvars); // is it a line var
+		std::vector<cExportFormat> efmt(nvars);//format
+		
 		cOutputFileInfo I;
-		for (size_t i = 0; i < vars.size(); i++){					
-			cGeophysicsVar& v = vars[i];					
-			cExportFormat e = v.defaultexportformat();			
-			size_t bands = v.nbands();			
-			I.addfield(v.getName(), e.form, e.width, e.decimals, bands);
+		for (size_t vi = 0; vi < nvars; vi++){
+			cGeophysicsVar& v = vars[vi];
+			
+			if (v.isLineVar()) islv[vi] = true;
+			else islv[vi] = false;
+			mval[vi] = v.missingvalue(double(0));
+			efmt[vi] = v.defaultexportformat();
+
+			size_t bands = v.nbands();
+			I.addfield(v.getName(), efmt[vi].form, efmt[vi].width, efmt[vi].decimals, bands);
 
 			std::string units = v.getUnits();
-			if (units != "1")I.setunits(units);
+			if (units != "1") I.setunits(units);
 
 			std::string desc = v.getDescription();
 			desc = v.getStringAtt(AN_STANDARD_NAME);
 			I.setcomment(desc);
 		}
-		I.write_aseggdf_header(dfnfile);
-
+		I.write_aseggdf_header(dfnfilepath);
+		
 		cStopWatch sw;
 		const size_t nl = nlines();
 		for (size_t li = 0; li < nl; li++){
 			std::cout << "Exporting line " << line_number[li] << std::endl;
 			const size_t ns = line_index_count[li];
+
+			std::vector<Marray<double>> A(nvars);			
+			for (size_t vi = 0; vi < nvars; vi++){
+				const cGeophysicsVar& v = vars[vi];								
+				v.getLine(li, A[vi]);				
+			}
+						
 			for (size_t si = 0; si < ns; si += 100){
-				for (size_t vi = 0; vi < vars.size(); vi++){										
-					const cGeophysicsVar& var = vars[vi];
-					cExportFormat e = var.defaultexportformat();
-					of << std::setw(e.width);
-					of << std::setprecision(e.decimals);
+				for (size_t vi = 0; vi < nvars; vi++){
+					const cGeophysicsVar& v = vars[vi];	
+					of << std::setw(efmt[vi].width);
+					of << std::setprecision(efmt[vi].decimals);
+
+					const Marray<double>& a = A[vi];
+					double val;
+					const size_t nb = v.nbands();
 					
-					if (isSampleVar(var)){
-						const cSampleVar& v = static_cast<const cSampleVar&>(var);
-						if (e.form == 'I'){										
-							int mv  = v.missingvalue(mv);
-							int val = v.getSample(li, si, 0, val);							
-							if (val == mv) of << (int) e.nullvalue;
-							else of << val;
-							of << 1.0;
-						}
-						else{
-							double mv  = v.missingvalue(mv);
-							double val = v.getSample(li, si, 0, val);							
-							if (val == mv) of << e.nullvalue;				
-							else of << val;							
-							of << 2.0;
-						}
-					}
-					else{
-						const cLineVar& v = static_cast<const cLineVar&>(var);
-						if (e.form == 'I') {
-							int mv  = v.missingvalue(mv);
-							int val = v.getSample(li, si, 0, val);							
-							if (val == mv) of << (int)e.nullvalue;
-							else of << val;
-							of << 3.0;
-						}
-						else{
-							double mv  = v.missingvalue(mv);
-							double val = v.getSample(li, si, 0, val);							
-							if (val == mv) of << e.nullvalue;
-							else of << val;
-							of << 4.0;
-						}
+					double *b;					
+					if (islv[vi]) b = &(a(0));
+					else          b = &(a(si));
+					for (size_t bi = 0; bi < nb; bi++){
+						val = b[bi];
+						if (val == mval[vi]) val = efmt[vi].nullvalue;						
+						of << val;
 					}
 				}
 				of << std::endl;
-			}			
+			}
 		}
 		sw.reportnow();
 		prompttocontinue();
 		return true;
-
 	};
+
+
 };
 
 #endif

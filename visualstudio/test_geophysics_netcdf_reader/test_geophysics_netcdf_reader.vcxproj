@@ -55,10 +55,12 @@
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <LinkIncremental>true</LinkIncremental>
+    <IncludePath>Z:\code\repos\marray\include\andres;$(IncludePath)</IncludePath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <LinkIncremental>false</LinkIncremental>
     <PostBuildEventUseInBuild>false</PostBuildEventUseInBuild>
+    <IncludePath>Z:\code\repos\marray\include\andres;$(IncludePath)</IncludePath>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <ClCompile>
@@ -107,6 +109,7 @@
     <ClCompile Include="..\..\submodules\cpp-utils\src\general_utils.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="..\..\..\marray\include\andres\marray.hxx" />
     <ClInclude Include="..\..\src\cpp\geophysics_netcdf.h" />
     <ClInclude Include="..\..\src\cpp\metadata.h" />
     <ClInclude Include="..\..\submodules\cpp-utils\src\asciicolumnfile.h" />

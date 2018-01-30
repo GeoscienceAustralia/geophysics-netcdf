@@ -37,5 +37,8 @@
     <ClInclude Include="..\..\submodules\cpp-utils\src\asciicolumnfile.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\..\marray\include\andres\marray.hxx">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>

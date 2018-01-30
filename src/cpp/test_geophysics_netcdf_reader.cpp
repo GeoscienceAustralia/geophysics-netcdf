@@ -6,6 +6,7 @@ The GNU GPL 2.0 licence is available at: http://www.gnu.org/licenses/gpl-2.0.htm
 Author: Ross C. Brodie, Geoscience Australia.
 */
 
+
 #include <cstdio>
 #include <netcdf>
 #include <vector>
@@ -16,6 +17,9 @@ Author: Ross C. Brodie, Geoscience Australia.
 cStackTrace globalstacktrace;
 #endif
 
+#include "marray.hxx"
+using namespace andres;
+
 using namespace netCDF;
 using namespace netCDF::exceptions;
 
@@ -25,6 +29,8 @@ using namespace netCDF::exceptions;
 #include "file_formats.h"
 #include "geophysics_netcdf.h"
 #include "stopwatch.h"
+
+using namespace std;
 
 FILE* global_log_file = NULL;
 
@@ -235,12 +241,23 @@ bool test_update(){
 	return true;
 };
 
-bool test_aseggdfexport(){
+bool test_aseggdfexport_1d(){
 	std::string indir  = R"(Z:\projects\geophysics_netcdf\ncfiles\)";
 	std::string ncpath  = indir + "P463RAD.nc";	
-	std::string datpath = indir + "P463RAD";
+	std::string datpath = indir + "P463RAD.dat";
+	std::string dfnpath = indir + "P463RAD.dfn";
 	cGeophysicsNcFile nc(ncpath, NcFile::FileMode::read);
-	nc.export_ASEGGDF2(datpath);
+	nc.export_ASEGGDF2(datpath,dfnpath);
+	return true;
+};
+
+bool test_aseggdfexport_2d(){
+	std::string indir = R"(Z:\projects\geophysics_netcdf\aem\)";
+	std::string ncpath  = indir + "AUS_10008_WestK_LCI.nc";
+	std::string datpath = indir + "AUS_10008_WestK_LCI.dat";
+	std::string dfnpath = indir + "AUS_10008_WestK_LCI.dfn";
+	cGeophysicsNcFile nc(ncpath, NcFile::FileMode::read);
+	nc.export_ASEGGDF2(datpath, dfnpath);
 	return true;
 };
 
@@ -271,6 +288,23 @@ bool test_aseggdfheader(){
 	return true;
 };
 
+void test_marray(){	
+	std::vector<size_t> dims = { 3, 4, 2 };
+	Marray<int> a(dims.data(), dims.data() + dims.size());
+	
+	for (size_t j = 0; j<a.size(); ++j) a(j) = j;
+	
+	
+	cout << a.asString() << endl;
+	cout << a.size() << endl;
+
+	dims = { 3, 2, 4 };
+	a.reshape(dims.data(), dims.data() + dims.size());
+
+	cout << a.asString() << endl;
+	cout << a.size() << endl;
+};
+
 int main(int argc, char** argv)
 {
 	_GSTITEM_
@@ -283,9 +317,11 @@ int main(int argc, char** argv)
 		//example_aem_conductivity();	
 		//test_create();
 		//test_update();
-		test_aseggdfexport();
+		//test_aseggdfexport_1d();
+		test_aseggdfexport_2d();
 		//test_columnfile();
 		//test_aseggdfheader();
+		//test_marray();
 		logmsg("Closing log file\n");
 		fclose(global_log_file);
 	}
