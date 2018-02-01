@@ -4,7 +4,7 @@
     <Import Project="cpp-utils.props" />
   </ImportGroup>
   <PropertyGroup>
-    <IncludePath>..\src\cpp;$(IncludePath)</IncludePath>
+    <IncludePath>..\src\cpp;..\..\submodules\marray\include\andres;$(IncludePath)</IncludePath>
     <LibraryPath>$(LibraryPath)</LibraryPath>
     <OutDir>..\..\bin\$(Platform)\$(Configuration)\</OutDir>
   </PropertyGroup>

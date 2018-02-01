@@ -312,6 +312,8 @@ int main(int argc, char** argv)
 	global_log_file = fopen("test.log", "w");
 	logmsg("Log file opened\n");
 
+	
+
 	try{	
 		//example_magnetics();
 		//example_aem_conductivity();	
