@@ -1238,8 +1238,8 @@ public:
 		}
 
 		const size_t nvars = vars.size(); // number of vars to be exported
-		std::vector<double> mval(nvars); // missing value
-		std::vector<bool>   islv(nvars); // is it a line var
+		std::vector<double>  mval(nvars); // missing value
+		std::vector<bool>    islv(nvars); // is it a line var
 		std::vector<cExportFormat> efmt(nvars);//format
 		
 		cOutputFileInfo I;
