@@ -21,7 +21,10 @@
 #include <memory> // allocator
 #include <numeric> // accumulate
 #include <functional> // std::multiplies
+<<<<<<< HEAD
 
+=======
+>>>>>>> 91d99edad61ba35506340a7565da0a927291e98f
 #ifdef HAVE_CPP11_INITIALIZER_LISTS
     #include <initializer_list>
 #endif

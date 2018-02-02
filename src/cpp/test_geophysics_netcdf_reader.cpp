@@ -242,17 +242,19 @@ bool test_update(){
 };
 
 bool test_aseggdfexport_1d(){
-	std::string indir  = R"(Z:\projects\geophysics_netcdf\ncfiles\)";
-	std::string ncpath  = indir + "P463RAD.nc";	
-	std::string datpath = indir + "P463RAD.dat";
-	std::string dfnpath = indir + "P463RAD.dfn";
+	//std::string indir  = R"(Z:\projects\geophysics_netcdf\ncfiles\)";
+	std::string indir = R"(Y:\ops\gap\geophysical_methods\mag_rad\AWAGS_Levelled_Databases\rb_working\awags_conversions\ncfiles\)";
+	std::string ncpath  = indir + "P1152RAD.nc";	
+	std::string datpath = indir + "P1152RAD.dat";
+	std::string dfnpath = indir + "P1152RAD.dfn";
 	cGeophysicsNcFile nc(ncpath, NcFile::FileMode::read);
 	nc.export_ASEGGDF2(datpath,dfnpath);
 	return true;
 };
 
 bool test_aseggdfexport_2d(){
-	std::string indir = R"(Z:\projects\geophysics_netcdf\aem\)";
+	//std::string indir = R"(Z:\projects\geophysics_netcdf\aem\)";
+	std::string indir   = R"(Y:\ops\gap\geophysical_methods\mag_rad\AWAGS_Levelled_Databases\rb_working\aem\ncfiles\)";
 	std::string ncpath  = indir + "AUS_10008_WestK_LCI.nc";
 	std::string datpath = indir + "AUS_10008_WestK_LCI.dat";
 	std::string dfnpath = indir + "AUS_10008_WestK_LCI.dfn";
@@ -319,8 +321,8 @@ int main(int argc, char** argv)
 		//example_aem_conductivity();	
 		//test_create();
 		//test_update();
-		//test_aseggdfexport_1d();
-		test_aseggdfexport_2d();
+		test_aseggdfexport_1d();
+		//test_aseggdfexport_2d();
 		//test_columnfile();
 		//test_aseggdfheader();
 		//test_marray();
