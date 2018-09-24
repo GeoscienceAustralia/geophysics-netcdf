@@ -244,7 +244,7 @@ bool test_update(){
 bool test_aseggdfexport_1d(){
 	//std::string indir  = R"(Z:\projects\geophysics_netcdf\ncfiles\)";
 	std::string indir = R"(Y:\ops\gap\geophysical_methods\mag_rad\AWAGS_Levelled_Databases\rb_working\awags_conversions\ncfiles\)";
-	std::string ncpath  = indir + "P1152RAD.nc";	
+	std::string ncpath  = indir + "P1152RAD.nc";
 	std::string datpath = indir + "P1152RAD.dat";
 	std::string dfnpath = indir + "P1152RAD.dfn";
 	cGeophysicsNcFile nc(ncpath, NcFile::FileMode::read);
