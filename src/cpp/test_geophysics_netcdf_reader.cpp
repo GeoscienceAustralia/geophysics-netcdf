@@ -317,8 +317,8 @@ int main(int argc, char** argv)
 	try{	
 		//example_magnetics();
 		//example_aem_conductivity();	
-		//test_create();
-		test_update();
+		test_create();
+		//test_update();
 		//test_aseggdfexport_1d();
 		//test_aseggdfexport_2d();
 		//test_columnfile();

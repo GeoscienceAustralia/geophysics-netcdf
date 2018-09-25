@@ -34,8 +34,10 @@ using namespace andres;
 
 #define DN_POINT "point"
 #define DN_LINE  "line"
-#define VN_LI_START "index_line"
+
+#define VN_LI_START "index_start"
 #define VN_LI_COUNT "index_count"
+#define VN_LI_INDEX "index_line"
 
 #define SN_LINE_NUMBER   "line_number"
 #define SN_SAMPLE_NUMBER "point_number"
@@ -82,22 +84,15 @@ class cGeophysicsNcFile;
 
 class cGeophysicsVar : public NcVar{
 
-private:
+protected:
 
 	const cGeophysicsNcFile& File;
-
+	
 public:
 
 	cGeophysicsVar(cGeophysicsNcFile& _parent, const NcVar& var) : File(_parent), NcVar(var) { };
 
 	cGeophysicsVar(const cGeophysicsVar& var) : File(var.File), NcVar(var) { };	
-
-	//cGeophysicsVar& operator=(const cGeophysicsVar& rhs){		
-		//cGeophysicsVar var(rhs);
-		//bool status = var.isNull();
-		//return var;
-		//return cGeophysicsVar(rhs);
-	//}
 
 	size_t line_index_start(const size_t& index) const;
 	size_t line_index_count(const size_t& index) const;
@@ -668,11 +663,21 @@ public:
 		line_number = linenumbers;
 		line_index_count = linesamplecount;
 		line_index_start.resize(nl);
+
+		unsigned int ns = sum(line_index_count);
+		std::vector<unsigned int> line_index(ns);
+
+		size_t k = 0;
 		size_t nsamples = 0;
 		for (size_t i = 0; i < line_number.size(); i++){
 			line_index_start[i] = (unsigned int)nsamples;
-			nsamples += line_index_count[i];
-		}
+			nsamples += line_index_count[i];			
+			for (size_t j = 0; j < line_index_count[i]; j++){
+				line_index[k] = (unsigned int)i;
+				k++;
+			}
+		}						
+		
 
 		NcDim ds = addDim(DN_POINT, nsamples);
 		NcDim dl = addDim(DN_LINE, nl);
@@ -688,6 +693,12 @@ public:
 		vcount.add_standard_name(VN_LI_COUNT);
 		vcount.add_description("number of samples in the line");
 		vcount.add_units("1");
+
+		cSampleVar vindex = addSampleVar(VN_LI_INDEX, ncUint);
+		vindex.putVar(line_index.data());
+		vindex.add_standard_name(VN_LI_INDEX);
+		vindex.add_description("zero based index of line associated with point");
+		vindex.add_units("1");
 
 		cLineVar vline = addLineVar(DN_LINE, ncUint);
 		vline.putVar(line_number.data());
@@ -891,8 +902,8 @@ public:
 			vardims.push_back(dims[i]);
 		}
 		cSampleVar new_var(*this, addVar(name, type, vardims));			
-		new_var.set_default_missingvalue();
-		return new_var;		
+		new_var.set_default_missingvalue();						
+		return new_var;
 	}
 
 	cSampleVar addSampleVar(const std::string& name, const NcType& type, const NcDim& banddim = NcDim()){

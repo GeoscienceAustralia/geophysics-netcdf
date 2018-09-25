@@ -5,16 +5,19 @@ dimensions:
 	rxcomponents = 3 ;
 	windows = 45 ;
 	layers = 30 ;
-	extradim = 400 ;
 variables:
-	uint index_line(line) ;
-		index_line:standard_name = "index_line" ;
-		index_line:description = "zero based index of the first sample in the line" ;
-		index_line:units = "1" ;
+	uint index_start(line) ;
+		index_start:standard_name = "index_start" ;
+		index_start:description = "zero based index of the first sample in the line" ;
+		index_start:units = "1" ;
 	uint index_count(line) ;
 		index_count:standard_name = "index_count" ;
 		index_count:description = "number of samples in the line" ;
 		index_count:units = "1" ;
+	uint index_line(point) ;
+		index_line:standard_name = "index_line" ;
+		index_line:description = "zero based index of line associated with point" ;
+		index_line:units = "1" ;
 	uint line(line) ;
 		line:standard_name = "line_number" ;
 		line:description = "flight line number" ;
@@ -48,12 +51,4 @@ variables:
 		flight:_FillValue = -2147483647 ;
 	double em(point, rxcomponents, windows) ;
 		em:_FillValue = 9.96920996838687e+036 ;
-	double extralinevar(line) ;
-		extralinevar:_FillValue = 9.96920996838687e+036 ;
-	double extrasamplevar(point) ;
-		extrasamplevar:_FillValue = 9.96920996838687e+036 ;
-	double extrasamplevarwindow(point, windows) ;
-		extrasamplevarwindow:_FillValue = 9.96920996838687e+036 ;
-	double extrawindowsamplevarextradim(point, extradim) ;
-		extrawindowsamplevarextradim:_FillValue = 9.96920996838687e+036 ;
 }
