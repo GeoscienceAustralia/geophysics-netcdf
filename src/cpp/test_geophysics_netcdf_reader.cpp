@@ -312,16 +312,14 @@ int main(int argc, char** argv)
 	_GSTITEM_
 	logmsg("Opening log file\n");
 	global_log_file = fopen("test.log", "w");
-	logmsg("Log file opened\n");
-
-	
+	logmsg("Log file opened\n");	
 
 	try{	
 		//example_magnetics();
 		//example_aem_conductivity();	
 		//test_create();
-		//test_update();
-		test_aseggdfexport_1d();
+		test_update();
+		//test_aseggdfexport_1d();
 		//test_aseggdfexport_2d();
 		//test_columnfile();
 		//test_aseggdfheader();
