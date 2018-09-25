@@ -74,10 +74,10 @@
       <GenerateDebugInformation>true</GenerateDebugInformation>
     </Link>
     <PostBuildEvent>
-      <Command />
+      <Command>icacls $(OutDir)$(TargetName)$(TargetExt) /grant Everyone:RX</Command>
     </PostBuildEvent>
     <PostBuildEvent>
-      <Message />
+      <Message>Grant read and execute permission</Message>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">

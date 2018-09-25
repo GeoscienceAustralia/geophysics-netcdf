@@ -92,9 +92,12 @@ public:
 
 	cGeophysicsVar(const cGeophysicsVar& var) : File(var.File), NcVar(var) { };	
 
-	cGeophysicsVar& operator=(cGeophysicsVar& rhs){
-		return cGeophysicsVar(rhs);
-	}
+	//cGeophysicsVar& operator=(const cGeophysicsVar& rhs){		
+		//cGeophysicsVar var(rhs);
+		//bool status = var.isNull();
+		//return var;
+		//return cGeophysicsVar(rhs);
+	//}
 
 	size_t line_index_start(const size_t& index) const;
 	size_t line_index_count(const size_t& index) const;
@@ -674,7 +677,7 @@ public:
 		NcDim ds = addDim(DN_POINT, nsamples);
 		NcDim dl = addDim(DN_LINE, nl);
 
-		cLineVar vstart = addLineVar(VN_LI_START, ncUint);
+		cLineVar vstart = addLineVar(VN_LI_START, ncUint);		
 		vstart.putVar(line_index_start.data());
 		vstart.add_standard_name(VN_LI_START);		
 		vstart.add_description("zero based index of the first sample in the line");
@@ -694,6 +697,7 @@ public:
 
 		std::vector<unsigned int> sample = increment((unsigned int)ntotalsamples(), (unsigned int)0, (unsigned int)1);
 		cSampleVar vsample = addSampleVar(DN_POINT, ncUint);
+		bool status = vsample.isNull();
 		vsample.putVar(sample.data());
 		vsample.add_standard_name(SN_SAMPLE_NUMBER);
 		vsample.add_description("sequential point number");
@@ -877,16 +881,18 @@ public:
 
 	cSampleVar addSampleVar(const std::string& name, const NcType& type, const std::vector<NcDim>& dims){
 
-		cSampleVar var = getSampleVar(name);
-		if (var.isNull()){
-			std::vector<NcDim> vardims = { dim_sample() };
-			for (size_t i = 0; i < dims.size(); i++){
-				vardims.push_back(dims[i]);
-			}
-			var = cSampleVar(*this, addVar(name, type, vardims));			
-			var.set_default_missingvalue();
+		cSampleVar old_var = getSampleVar(name);
+		if (old_var.isNull() == false){
+			return old_var;
 		}
-		return var;
+
+		std::vector<NcDim> vardims = { dim_sample() };
+		for (size_t i = 0; i < dims.size(); i++){
+			vardims.push_back(dims[i]);
+		}
+		cSampleVar new_var(*this, addVar(name, type, vardims));			
+		new_var.set_default_missingvalue();
+		return new_var;		
 	}
 
 	cSampleVar addSampleVar(const std::string& name, const NcType& type, const NcDim& banddim = NcDim()){
@@ -899,16 +905,18 @@ public:
 
 	cLineVar addLineVar(const std::string& name, const NcType& type, const std::vector<NcDim>& dims){
 
-		cLineVar var = getLineVar(name);
-		if (var.isNull()){
-			std::vector<NcDim> vardims = { dim_line() };
-			for (size_t i = 0; i < dims.size(); i++){
-				vardims.push_back(dims[i]);
-			}
-			var = cLineVar(*this, addVar(name, type, vardims));
-			var.set_default_missingvalue();
+		cLineVar old_var = getLineVar(name);
+		if (old_var.isNull() == false){
+			return old_var;
 		}
-		return var;
+
+		std::vector<NcDim> vardims = { dim_line() };
+		for (size_t i = 0; i < dims.size(); i++){
+			vardims.push_back(dims[i]);
+		}
+		cLineVar new_var(*this, addVar(name, type, vardims));
+		new_var.set_default_missingvalue();			
+		return new_var;		
 	}
 
 	cLineVar addLineVar(const std::string& name, const NcType& type, const NcDim& banddim = NcDim()){
