@@ -17,6 +17,7 @@ Author: Ross C. Brodie, Geoscience Australia.
 #include <stdexcept>
 #include <map>
 #include <iomanip> 
+#include <memory> 
 #include "float.h"
 #include "general_utils.h"
 #include "vector_utils.h"
@@ -84,15 +85,24 @@ class cGeophysicsNcFile;
 
 class cGeophysicsVar : public NcVar{
 
-protected:
-
-	const cGeophysicsNcFile& File;
+private:	
+	cGeophysicsNcFile* FilePtr = NULL;
 	
 public:
 
-	cGeophysicsVar(cGeophysicsNcFile& _parent, const NcVar& var) : File(_parent), NcVar(var) { };
+	cGeophysicsVar(cGeophysicsNcFile* parentptr, const NcVar& var) : NcVar(var) {
+		FilePtr = parentptr;
+	};
 
-	cGeophysicsVar(const cGeophysicsVar& var) : File(var.File), NcVar(var) { };	
+	cGeophysicsVar(const cGeophysicsVar& var) : NcVar(var) {
+		FilePtr = var.FilePtr;
+	};
+
+	cGeophysicsVar& operator=(const cGeophysicsVar& rhs){
+		NcVar::operator=(rhs);
+		FilePtr = rhs.FilePtr;
+		return *this;
+	};
 
 	size_t line_index_start(const size_t& index) const;
 	size_t line_index_count(const size_t& index) const;
@@ -369,8 +379,8 @@ private:
 
 public:
 
-	cLineVar(cGeophysicsNcFile& _parent, const NcVar& var)
-		: cGeophysicsVar(_parent, var) {
+	cLineVar(cGeophysicsNcFile* parentptr, const NcVar& var)
+		: cGeophysicsVar(parentptr, var) {
 	}
 
 	template<typename T>
@@ -439,8 +449,8 @@ private:
 
 public:
 
-	cSampleVar(cGeophysicsNcFile& _parent, const NcVar& var) 
-		: cGeophysicsVar(_parent, var) {		
+	cSampleVar(cGeophysicsNcFile* parentptr, const NcVar& var) 
+		: cGeophysicsVar(parentptr, var) {
 	}
 
 	template<typename T>
@@ -581,6 +591,7 @@ public:
 class cGeophysicsNcFile : public NcFile {
 
 private:
+
 	const std::string classname = "cGeophysicsNcFile";	
 	std::vector<unsigned int> line_index_start;
 	std::vector<unsigned int> line_index_count;
@@ -607,15 +618,14 @@ private:
 		return true;
 	}
 
+public:
 	//Do not allow implicit definition of copy constructor or assignment operators
-	cGeophysicsNcFile& operator =(const cGeophysicsNcFile & rhs);
-	cGeophysicsNcFile& operator =(const NcGroup & rhs);
-	cGeophysicsNcFile& operator =(const NcFile & rhs);
+	cGeophysicsNcFile& operator=(const cGeophysicsNcFile & rhs);
+	cGeophysicsNcFile& operator=(const NcGroup & rhs);
+	cGeophysicsNcFile& operator=(const NcFile & rhs);
 	cGeophysicsNcFile(const cGeophysicsNcFile& rhs);
 	cGeophysicsNcFile(const NcGroup& rhs);
 	cGeophysicsNcFile(const NcFile& rhs);
-
-public:	
 
 	size_t get_line_index_start(const size_t& i) const { return line_index_start[i]; }
 	size_t get_line_index_count(const size_t& i) const { return line_index_count[i]; }
@@ -770,7 +780,7 @@ public:
 	bool getLineNumbers(std::vector<T>& vals){
 		NcVar v = getVarByStandardName(SN_LINE_NUMBER);
 		if (v.isNull() == false){
-			cLineVar var(*this, v);
+			cLineVar var(this, v);
 			return var.getAll(vals);
 		}
 		return false;
@@ -786,7 +796,7 @@ public:
 	bool getFlightNumbers(std::vector<T>& vals){
 		NcVar v = getVarByStandardName(SN_FLIGHT_NUMBER);
 		if (v.isNull() == false){
-			cLineVar var(*this, v);
+			cLineVar var(this, v);
 			return var.getAll(vals);
 		}
 		return false;
@@ -881,29 +891,29 @@ public:
 	}
 
 	cSampleVar getSampleVar(const std::string& name){
-		if (getVarCount() == 0) return cSampleVar(*this, NcVar());
-		return cSampleVar(*this, getVar(name));
+		if (getVarCount() == 0) return cSampleVar(this, NcVar());
+		return cSampleVar(this, getVar(name));
 	}
 
 	cLineVar getLineVar(const std::string& name){
-		if (getVarCount() == 0) return cLineVar(*this, NcVar());
-		return cLineVar(*this, getVar(name));
+		if (getVarCount() == 0) return cLineVar(this, NcVar());
+		return cLineVar(this, getVar(name));
 	}
 
 	cSampleVar addSampleVar(const std::string& name, const NcType& type, const std::vector<NcDim>& dims){
 
-		cSampleVar old_var = getSampleVar(name);
-		if (old_var.isNull() == false){
-			return old_var;
+		cSampleVar var = getSampleVar(name);
+		if (var.isNull() == false){
+			return var;
 		}
 
 		std::vector<NcDim> vardims = { dim_sample() };
 		for (size_t i = 0; i < dims.size(); i++){
 			vardims.push_back(dims[i]);
 		}
-		cSampleVar new_var(*this, addVar(name, type, vardims));			
-		new_var.set_default_missingvalue();						
-		return new_var;
+		var = cSampleVar(this, addVar(name, type, vardims));
+		var.set_default_missingvalue();
+		return var;
 	}
 
 	cSampleVar addSampleVar(const std::string& name, const NcType& type, const NcDim& banddim = NcDim()){
@@ -916,18 +926,16 @@ public:
 
 	cLineVar addLineVar(const std::string& name, const NcType& type, const std::vector<NcDim>& dims){
 
-		cLineVar old_var = getLineVar(name);
-		if (old_var.isNull() == false){
-			return old_var;
-		}
+		cLineVar var = getLineVar(name);
+		if (var.isNull() == false) return var;
 
 		std::vector<NcDim> vardims = { dim_line() };
 		for (size_t i = 0; i < dims.size(); i++){
 			vardims.push_back(dims[i]);
 		}
-		cLineVar new_var(*this, addVar(name, type, vardims));
-		new_var.set_default_missingvalue();			
-		return new_var;		
+		var = cLineVar(this, addVar(name, type, vardims));
+		var.set_default_missingvalue();			
+		return var;		
 	}
 
 	cLineVar addLineVar(const std::string& name, const NcType& type, const NcDim& banddim = NcDim()){
@@ -1125,7 +1133,7 @@ public:
 		dims.push_back(addDim("polygonvertex", nv));
 		dims.push_back(addDim("polygonordinate", 2));
 
-		cGeophysicsVar v(*this, addVar("bounding_polygon", ncDouble, dims));
+		cGeophysicsVar v(this, addVar("bounding_polygon", ncDouble, dims));
 		v.add_standard_name("bounding_polygon");
 		v.add_description("bounding polygon of survey");
 		v.add_units("degree");
@@ -1217,7 +1225,7 @@ public:
 		std::multimap<std::string, NcVar> vm = getVars();
 		for (auto it = vm.begin(); it != vm.end(); it++){			
 			if (isLineVar(it->second)){
-				cLineVar v(*this,it->second);
+				cLineVar v(this,it->second);
 				vars.push_back(v);
 			}			
 		}
@@ -1229,7 +1237,7 @@ public:
 		std::multimap<std::string, NcVar> vm = getVars();
 		for (auto it = vm.begin(); it != vm.end(); it++){			
 			if (isSampleVar(it->second)){
-				cSampleVar v(*this, it->second);
+				cSampleVar v(this, it->second);
 				vars.push_back(v);
 			}
 		}
