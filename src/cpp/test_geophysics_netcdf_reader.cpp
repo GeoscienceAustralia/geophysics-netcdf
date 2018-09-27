@@ -102,7 +102,9 @@ bool example_magnetics(){
 
 bool example_aem_conductivity(){
 	bool status; double t1, t2;
-	std::string indir  = "Z:\\projects\\geophysics_netcdf\\aem\\temp\\";
+	//std::string indir  = R"(Z:\projects\geophysics_netcdf\ncfiles\)";	
+	std::string indir = R"(Y:\ops\gap\geophysical_methods\mag_rad\AWAGS_Levelled_Databases\rb_working\aem\ncfiles\)";
+
 	//std::string indir  = "http://dapds00.nci.org.au/thredds/dodsC/uc0/rr2_dev/rcb547/AEM_examples/";
 	std::string ncpath = indir + "AUS_10008_WestK_LCI.nc";	
 	//Open the file, get the line numbers
@@ -316,10 +318,10 @@ int main(int argc, char** argv)
 
 	try{	
 		//example_magnetics();
-		//example_aem_conductivity();	
-		test_create();
+		example_aem_conductivity();	
+		//test_create();
 		//test_update();
-		//test_aseggdfexport_1d();
+		test_aseggdfexport_1d();
 		//test_aseggdfexport_2d();
 		//test_columnfile();
 		//test_aseggdfheader();

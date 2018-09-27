@@ -609,7 +609,8 @@ private:
 
 	bool readLineIndex(){
 
-		cLineVar vs = getLineVar(VN_LI_START);
+		//cLineVar vs = getLineVar(VN_LI_START);
+		cLineVar vs = getLineVar("index_line");
 		if (vs.getAll(line_index_start) == false)return false;
 		
 		cLineVar vc = getLineVar(VN_LI_COUNT);
