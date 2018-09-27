@@ -309,6 +309,19 @@ void test_marray(){
 	cout << a.size() << endl;
 };
 
+bool test_convert(){
+
+	std::string indir  = R"(Z:\projects\geophysics_netcdf\ncfiles\)";
+	//std::string indir = R"(Y:\ops\gap\geophysical_methods\mag_rad\AWAGS_Levelled_Databases\rb_working\awags_conversions\ncfiles\)";
+	std::string inpath  = indir + "P1152RAD.nc";
+	std::string outpath = indir + "P1152RAD_v2.nc";
+	deletefile(outpath);
+	cGeophysicsNcFile in_nc(inpath, NcFile::FileMode::read);
+	cGeophysicsNcFile out_nc(in_nc,outpath);
+
+	return true;
+};
+
 int main(int argc, char** argv)
 {
 	_GSTITEM_
@@ -317,15 +330,17 @@ int main(int argc, char** argv)
 	logmsg("Log file opened\n");	
 
 	try{	
+
 		//example_magnetics();
-		example_aem_conductivity();	
+		//example_aem_conductivity();	
 		//test_create();
 		//test_update();
-		test_aseggdfexport_1d();
+		//test_aseggdfexport_1d();
 		//test_aseggdfexport_2d();
 		//test_columnfile();
 		//test_aseggdfheader();
 		//test_marray();
+		test_convert();
 		logmsg("Closing log file\n");
 		fclose(global_log_file);
 	}

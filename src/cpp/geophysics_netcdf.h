@@ -116,6 +116,10 @@ public:
 		return len;
 	}
 
+	size_t sizeBytes(){
+		return length() * getType().getSize();
+	}
+
 	size_t elementspersample() const {
 		std::vector<NcDim> dims = getDims();
 		size_t len = 1;
@@ -591,8 +595,8 @@ public:
 class cGeophysicsNcFile : public NcFile {
 
 private:
-
-	const std::string classname = "cGeophysicsNcFile";	
+	
+	const std::string classname = "cGeophysicsNcFile";
 	std::vector<unsigned int> line_index_start;
 	std::vector<unsigned int> line_index_count;
 	std::vector<unsigned int> line_number;
@@ -620,6 +624,7 @@ private:
 	}
 
 public:
+
 	//Do not allow implicit definition of copy constructor or assignment operators
 	cGeophysicsNcFile& operator=(const cGeophysicsNcFile & rhs);
 	cGeophysicsNcFile& operator=(const NcGroup & rhs);
@@ -651,6 +656,44 @@ public:
 
 		}
 	};
+
+	cGeophysicsNcFile(cGeophysicsNcFile& infile, const std::string& newfilename)
+		: NcFile(newfilename, NcFile::FileMode::newFile)
+	{
+		InitialiseNew(infile.line_number, infile.line_index_count);
+		
+		std::vector<NcDim> dims = infile.getAllDims();
+		for (size_t i = 0; i < dims.size(); i++){
+			if (hasDim(dims[i].getName())) continue;
+			addDim(dims[i].getName(), dims[i].getSize());
+		}
+
+		std::vector<NcVar> vars = infile.getAllVars();
+		//book
+		for (size_t i = 0; i < vars.size(); i++){
+			NcVar& src = vars[i];
+			std::cout << src.getName() << std::endl;
+
+			if(hasVar(src.getName())) continue;
+			NcVar    v = addVar(src.getName(),src.getType(),src.getDims());
+			
+			std::vector<NcDim> dims = src.getDims();
+			size_t len = 0;
+			for (size_t di = 0; di < dims.size(); di++){
+				if (di == 0)len = 1;
+				len *= dims[di].getSize();
+			}
+			len *= src.getType().getSize();
+			
+			if (len > 0){			
+				std::vector<uint8_t> buf(len);
+				src.getVar((void*)buf.data());
+				v.putVar((void*)buf.data());
+			}
+		}		
+	};
+
+	
 
 	~cGeophysicsNcFile()
 	{
@@ -717,16 +760,16 @@ public:
 		vline.add_description("flight line number");
 		vline.add_units("1");
 
-		std::vector<unsigned int> sample = increment((unsigned int)ntotalsamples(), (unsigned int)0, (unsigned int)1);
-		cSampleVar vsample = addSampleVar(DN_POINT, ncUint);
-		bool status = vsample.isNull();
-		vsample.putVar(sample.data());
-		vsample.add_standard_name(SN_SAMPLE_NUMBER);
-		vsample.add_description("sequential point number");
-		vsample.add_units("1");
+		//std::vector<unsigned int> sample = increment((unsigned int)ntotalsamples(), (unsigned int)0, (unsigned int)1);
+		//cSampleVar vsample = addSampleVar(DN_POINT, ncUint);
+		//bool status = vsample.isNull();
+		//vsample.putVar(sample.data());
+		//vsample.add_standard_name(SN_SAMPLE_NUMBER);
+		//vsample.add_description("sequential point number");
+		//vsample.add_units("1");
 		return true;
 	}
-
+	
 	size_t nlines(){ return line_index_start.size(); }
 	size_t ntotalsamples(){ return sum(line_index_count); }
 	size_t nlinesamples(const size_t lineindex){ return line_index_count[lineindex]; }
@@ -739,6 +782,12 @@ public:
 	bool hasVar(const std::string& varname){
 		NcVar v = getVar(varname);
 		if (v.isNull()) return false;
+		return true;
+	}
+
+	bool hasDim(const std::string& dimname){
+		NcDim d = getDim(dimname);
+		if (d.isNull()) return false;
 		return true;
 	}
 
@@ -946,7 +995,7 @@ public:
 		}
 		return addLineVar(name, type, dims);
 	}
-
+	
 	bool findNonNullLineStartEndPoints(const std::string& xvar, const std::string& yvar,
 		std::vector<double>& x1, std::vector<double>& x2,
 		std::vector<double>& y1, std::vector<double>& y2){
@@ -1221,7 +1270,25 @@ public:
 		return false;
 	}
 
-	std::vector<cLineVar> getLineVars(){
+	std::vector<NcDim> getAllDims() {
+		std::vector<NcDim> dims;
+		std::multimap<std::string, NcDim> m = getDims();
+		for (auto it = m.begin(); it != m.end(); it++){
+			dims.push_back(it->second);
+		}
+		return dims;
+	};
+
+	std::vector<NcVar> getAllVars() {
+		std::vector<NcVar> vars;
+		std::multimap<std::string, NcVar> vm = getVars();
+		for (auto it = vm.begin(); it != vm.end(); it++){						
+			vars.push_back(it->second);
+		}		
+		return vars;
+	};
+
+	std::vector<cLineVar> getLineVars() {
 		std::vector<cLineVar> vars;
 		std::multimap<std::string, NcVar> vm = getVars();
 		for (auto it = vm.begin(); it != vm.end(); it++){			
