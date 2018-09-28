@@ -662,32 +662,43 @@ public:
 	{
 		InitialiseNew(infile.line_number, infile.line_index_count);
 		
-		std::vector<NcDim> dims = infile.getAllDims();
-		for (size_t i = 0; i < dims.size(); i++){
-			if (hasDim(dims[i].getName())) continue;
-			addDim(dims[i].getName(), dims[i].getSize());
+		auto dm = infile.getDims();
+		for (auto dit = dm.begin(); dit != dm.end(); dit++){		
+			NcDim& srcdim = dit->second;
+			if(hasDim(srcdim.getName())) continue;
+			addDim(srcdim.getName(), srcdim.getSize());
 		}
 
-		std::vector<NcVar> vars = infile.getAllVars();
-		//book
-		for (size_t i = 0; i < vars.size(); i++){
-			NcVar& src = vars[i];
-			std::cout << src.getName() << std::endl;
+		auto vm = infile.getVars();			
+		for (auto vit = vm.begin(); vit != vm.end(); vit++){		
+			NcVar& srcvar = vit->second;
+			std::cout << srcvar.getName() << std::endl;
 
-			if(hasVar(src.getName())) continue;
-			NcVar    v = addVar(src.getName(),src.getType(),src.getDims());
+			if (hasVar(srcvar.getName())) continue;
+			NcVar v = addVar(srcvar.getName(), srcvar.getType(), srcvar.getDims());
 			
-			std::vector<NcDim> dims = src.getDims();
+			auto am = srcvar.getAtts();
+			for (auto ait = am.begin(); ait != am.end(); ait++){
+				NcVarAtt& srcatt = ait->second;
+				size_t attlen = srcatt.getAttLength() * srcatt.getType().getSize();
+				if (attlen > 0){
+					const std::vector<uint8_t> buf(attlen);
+					srcatt.getValues((void*)buf.data());
+					v.putAtt(srcatt.getName(), srcatt.getType(), srcatt.getAttLength(), (void*)buf.data());
+				}
+			}
+
+			std::vector<NcDim> dims = srcvar.getDims();
 			size_t len = 0;
 			for (size_t di = 0; di < dims.size(); di++){
 				if (di == 0)len = 1;
 				len *= dims[di].getSize();
 			}
-			len *= src.getType().getSize();
+			len *= srcvar.getType().getSize();
 			
 			if (len > 0){			
 				std::vector<uint8_t> buf(len);
-				src.getVar((void*)buf.data());
+				srcvar.getVar((void*)buf.data());
 				v.putVar((void*)buf.data());
 			}
 		}		
