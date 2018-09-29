@@ -311,13 +311,17 @@ void test_marray(){
 
 bool test_convert(){
 
-	//std::string indir  = R"(Z:\projects\geophysics_netcdf\ncfiles\)";
-	std::string indir = R"(Y:\ops\gap\geophysical_methods\mag_rad\AWAGS_Levelled_Databases\rb_working\awags_conversions\ncfiles\)";
+	std::string indir = R"(Z:\projects\geophysics_netcdf\ncfiles\)";
+	//std::string indir   = R"(Y:\ops\gap\geophysical_methods\mag_rad\AWAGS_Levelled_Databases\rb_working\awags_conversions\ncfiles\)";
 	std::string inpath  = indir + "P1152RAD.nc";
 	std::string outpath = indir + "P1152RAD_v2.nc";
 	deletefile(outpath);
-	cGeophysicsNcFile in_nc(inpath, NcFile::FileMode::read);
-	cGeophysicsNcFile out_nc(in_nc,outpath);
+	
+	cStopWatch sw;
+	bool status = cGeophysicsNcFile::convert_legacy(inpath, outpath);
+	sw.reportnow();
+	cGeophysicsNcFile nc(outpath);
+	//prompttocontinue();
 
 	return true;
 };

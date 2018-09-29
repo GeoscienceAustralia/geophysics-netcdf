@@ -36,9 +36,9 @@ using namespace andres;
 #define DN_POINT "point"
 #define DN_LINE  "line"
 
-#define VN_LI_START "index_start"
+#define VN_LI_START "index_line"
 #define VN_LI_COUNT "index_count"
-#define VN_LI_INDEX "index_line"
+#define VN_LINE_INDEX "line_index"
 
 #define SN_LINE_NUMBER   "line_number"
 #define SN_SAMPLE_NUMBER "point_number"
@@ -595,8 +595,7 @@ public:
 class cGeophysicsNcFile : public NcFile {
 
 private:
-	
-	const std::string classname = "cGeophysicsNcFile";
+		
 	std::vector<unsigned int> line_index_start;
 	std::vector<unsigned int> line_index_count;
 	std::vector<unsigned int> line_number;
@@ -613,15 +612,102 @@ private:
 
 	bool readLineIndex(){
 
-		//cLineVar vs = getLineVar(VN_LI_START);
-		cLineVar vs = getLineVar("index_line");
-		if (vs.getAll(line_index_start) == false)return false;
-		
-		cLineVar vc = getLineVar(VN_LI_COUNT);
-		if(vc.getAll(line_index_count) == false)return false;
-		
+		if (hasVar(VN_LI_COUNT)){
+			cLineVar vc = getLineVar(VN_LI_COUNT);
+			if (vc.getAll(line_index_count) == false)return false;
+
+			cLineVar vs = getLineVar(VN_LI_START);			
+			if (vs.getAll(line_index_start) == false)return false;
+		}
+		else if (hasVar(VN_LINE_INDEX)){
+			cLineVar vl = getLineVar(VN_LINE_INDEX);
+			std::vector<unsigned int> line_index;
+			if (vl.getAll(line_index) == false)return false;
+			set_start_count(line_index);
+		}				
 		return true;
 	}
+
+	static std::vector<unsigned int> compute_line_index(std::vector<unsigned int>& count)
+	{
+		std::vector<unsigned int> index(sum(count));
+		size_t k = 0;		
+		for (size_t i = 0; i < count.size(); i++){						
+			for (size_t j = 0; j < count[i]; j++){
+				index[k] = (unsigned int)i;
+				k++;
+			}
+		}
+		return index;
+	}
+
+	void set_start_count(const std::vector<unsigned int>& line_index)
+	{
+		line_index_start = compute_start_from_line_index(line_index);		
+		line_index_count = compute_count_from_start(line_index_start,line_index.size());
+		return;
+	}
+
+	static std::vector<unsigned int> compute_start_from_line_index(const std::vector<unsigned int>& line_index)
+	{
+		size_t ns = line_index.size();
+		std::vector<unsigned int> start;		
+		start.push_back(0);
+		for (size_t i = 1; i<ns; i++){
+			if (line_index[i] != line_index[i - 1]){
+				start.push_back((unsigned int)i);
+			}
+		}		
+		return start;
+	}
+
+	static std::vector<unsigned int> compute_start_from_count(const std::vector<unsigned int>& count)
+	{
+		size_t nl = count.size();
+		std::vector<unsigned int> start(nl);
+		start[0] = 0;
+		for (size_t i = 1; i<nl; i++){
+			start[i] = start[i-1] + count[i];
+		}		
+		return start;
+	}
+
+	static std::vector<unsigned int> compute_count_from_start(const std::vector<unsigned int>& start, size_t nsamplestotal)
+	{
+		size_t nl = start.size();
+		std::vector<unsigned int> count(nl);
+		for (size_t i = 0; i<nl - 1; i++){
+			count[i] = start[i + 1] - start[i];
+		}
+		count[nl - 1] = nsamplestotal - start[nl - 1];		
+		return count;
+	}
+
+	static size_t nelements(const NcVar& v)
+	{
+		std::vector<NcDim> dims = v.getDims();
+		size_t n = 0;
+		for (size_t di = 0; di < dims.size(); di++){
+			if (di == 0) n = 1;
+			n *= dims[di].getSize();
+		}		
+		return n;
+	}
+
+	static size_t nbytes(const NcVar& v)
+	{
+		size_t n = nelements(v);
+		n *= v.getType().getSize();
+		return n;
+	}
+
+	static size_t nbytes(const NcAtt& a)
+	{
+		size_t n = a.getAttLength() * a.getType().getSize();		
+		return n;
+	}
+
+	
 
 public:
 
@@ -635,9 +721,9 @@ public:
 
 	size_t get_line_index_start(const size_t& i) const { return line_index_start[i]; }
 	size_t get_line_index_count(const size_t& i) const { return line_index_count[i]; }
-
-	//Open existing file
-	cGeophysicsNcFile(const std::string& ncpath, const FileMode& filemode)
+	
+	//Open existing file constructor
+	cGeophysicsNcFile(const std::string& ncpath, const FileMode& filemode = NcFile::FileMode::read)
 		: NcFile(ncpath, filemode)
 	{
 		if (filemode == NcFile::read){
@@ -657,59 +743,15 @@ public:
 		}
 	};
 
-	cGeophysicsNcFile(cGeophysicsNcFile& infile, const std::string& newfilename)
-		: NcFile(newfilename, NcFile::FileMode::newFile)
+	//Convert legacy file constructor
+	cGeophysicsNcFile(const std::string& filename, const cGeophysicsNcFile& srcfile)
+		: NcFile(filename, NcFile::FileMode::newFile)
 	{
-		InitialiseNew(infile.line_number, infile.line_index_count);
-		
-		auto dm = infile.getDims();
-		for (auto dit = dm.begin(); dit != dm.end(); dit++){		
-			NcDim& srcdim = dit->second;
-			if(hasDim(srcdim.getName())) continue;
-			addDim(srcdim.getName(), srcdim.getSize());
-		}
-
-		auto vm = infile.getVars();			
-		for (auto vit = vm.begin(); vit != vm.end(); vit++){		
-			NcVar& srcvar = vit->second;
-			std::cout << srcvar.getName() << std::endl;
-
-			if (hasVar(srcvar.getName())) continue;
-			NcVar v = addVar(srcvar.getName(), srcvar.getType(), srcvar.getDims());
-			
-			auto am = srcvar.getAtts();
-			for (auto ait = am.begin(); ait != am.end(); ait++){
-				NcVarAtt& srcatt = ait->second;
-				size_t attlen = srcatt.getAttLength() * srcatt.getType().getSize();
-				if (attlen > 0){
-					const std::vector<uint8_t> buf(attlen);
-					srcatt.getValues((void*)buf.data());
-					v.putAtt(srcatt.getName(), srcatt.getType(), srcatt.getAttLength(), (void*)buf.data());
-				}
-			}
-
-			std::vector<NcDim> dims = srcvar.getDims();
-			size_t len = 0;
-			for (size_t di = 0; di < dims.size(); di++){
-				if (di == 0)len = 1;
-				len *= dims[di].getSize();
-			}
-			len *= srcvar.getType().getSize();
-			
-			if (len > 0){			
-				std::vector<uint8_t> buf(len);
-				srcvar.getVar((void*)buf.data());
-				v.putVar((void*)buf.data());
-			}
-		}		
+		bool status  = convert_legacy(srcfile);
 	};
-
 	
-
-	~cGeophysicsNcFile()
-	{
-		
-	};	
+	//Destructor
+	~cGeophysicsNcFile(){};	
 
 	bool InitialiseNew(const std::vector<size_t>& linenumbers, const std::vector<size_t>& linesamplecount){
 		size_t n = linenumbers.size();
@@ -723,64 +765,163 @@ public:
 	}
 
 	bool InitialiseNew(const std::vector<unsigned int>& linenumbers, const std::vector<unsigned int>& linesamplecount){
-
 		size_t nl = linenumbers.size();
 		line_number = linenumbers;
 		line_index_count = linesamplecount;
-		line_index_start.resize(nl);
-
-		unsigned int ns = sum(line_index_count);
-		std::vector<unsigned int> line_index(ns);
-
-		size_t k = 0;
-		size_t nsamples = 0;
-		for (size_t i = 0; i < line_number.size(); i++){
-			line_index_start[i] = (unsigned int)nsamples;
-			nsamples += line_index_count[i];			
-			for (size_t j = 0; j < line_index_count[i]; j++){
-				line_index[k] = (unsigned int)i;
-				k++;
-			}
-		}						
+		line_index_start = compute_start_from_count(line_index_count);
 		
-
+		size_t nsamples = sum(line_index_count);		
 		NcDim ds = addDim(DN_POINT, nsamples);
 		NcDim dl = addDim(DN_LINE, nl);
 
+		std::vector<unsigned int> line_index = compute_line_index(line_index_count);
+		add_line_index(line_index);
+		//add_line_index_start(line_index);
+		//add_line_index_count(line_index);
+		//add_point_variable();		
+		add_line_number_variable(linenumbers);
+						
+		return true;
+	}
+
+	void add_line_index(const std::vector<unsigned int> line_index)
+	{
+		cSampleVar vindex = addSampleVar(VN_LINE_INDEX, ncUint);
+		vindex.putVar(line_index.data());
+		vindex.add_standard_name(VN_LINE_INDEX);
+		vindex.add_description("zero based index of line associated with point");
+		vindex.add_units("1");
+	}
+
+	//Deprecated
+	void add_line_index_start(const std::vector<unsigned int> line_index_start)
+	{
 		cLineVar vstart = addLineVar(VN_LI_START, ncUint);		
 		vstart.putVar(line_index_start.data());
 		vstart.add_standard_name(VN_LI_START);		
 		vstart.add_description("zero based index of the first sample in the line");
 		vstart.add_units("1");
+	}
 
+	//Deprecated
+	void add_line_index_count(const std::vector<unsigned int> line_index_count)
+	{
 		cLineVar vcount = addLineVar(VN_LI_COUNT, ncUint);
 		vcount.putVar(line_index_count.data());
 		vcount.add_standard_name(VN_LI_COUNT);
 		vcount.add_description("number of samples in the line");
 		vcount.add_units("1");
+	}
 
-		cSampleVar vindex = addSampleVar(VN_LI_INDEX, ncUint);
-		vindex.putVar(line_index.data());
-		vindex.add_standard_name(VN_LI_INDEX);
-		vindex.add_description("zero based index of line associated with point");
-		vindex.add_units("1");
+	//Deprecated
+	void add_point_variable()
+	{
+		std::vector<unsigned int> sample = increment((unsigned int)ntotalsamples(), (unsigned int)0, (unsigned int)1);
+		cSampleVar v = addSampleVar(DN_POINT, ncUint);		
+		v.putVar(sample.data());
+		v.add_standard_name(SN_SAMPLE_NUMBER);
+		v.add_description("sequential point number");
+		v.add_units("1");
+	}
 
+	void add_line_number_variable(const std::vector<unsigned int> linenumbers)
+	{
 		cLineVar vline = addLineVar(DN_LINE, ncUint);
-		vline.putVar(line_number.data());
+		vline.putVar(linenumbers.data());
 		vline.add_standard_name(SN_LINE_NUMBER);
 		vline.add_description("flight line number");
-		vline.add_units("1");
+		vline.add_units("1");		
+	}
 
-		//std::vector<unsigned int> sample = increment((unsigned int)ntotalsamples(), (unsigned int)0, (unsigned int)1);
-		//cSampleVar vsample = addSampleVar(DN_POINT, ncUint);
-		//bool status = vsample.isNull();
-		//vsample.putVar(sample.data());
-		//vsample.add_standard_name(SN_SAMPLE_NUMBER);
-		//vsample.add_description("sequential point number");
-		//vsample.add_units("1");
+	
+	//Convert legacy file
+	static bool convert_legacy(const std::string& srcpathname, const std::string& dstpathname)
+	{
+		cGeophysicsNcFile srcfile(srcpathname);
+		cGeophysicsNcFile dstfile(dstpathname, NcFile::FileMode::newFile);
+		bool status = dstfile.convert_legacy(srcfile);
+		return status;
+	}
+
+	//Convert legacy file
+	bool convert_legacy(const cGeophysicsNcFile& srcfile)
+	{
+		//bookmark
+		InitialiseNew(srcfile.line_number, srcfile.line_index_count);
+		copy_global_atts(srcfile);
+		copy_dims(srcfile);
+		auto vm = srcfile.getVars();
+		for (auto vit = vm.begin(); vit != vm.end(); vit++){
+			NcVar& srcvar = vit->second;			
+			if (srcvar.getName() == VN_LI_START) continue;
+			if (srcvar.getName() == VN_LI_COUNT) continue;			
+			copy_var(srcvar);
+		}		
 		return true;
 	}
-	
+
+	bool copy_global_atts(const cGeophysicsNcFile& srcfile)
+	{
+		auto m = srcfile.getAtts();
+		for (auto it = m.begin(); it != m.end(); it++){
+			NcGroupAtt& srcatt = it->second;			
+			size_t len = nbytes(srcatt);
+			if (len > 0){
+				const std::vector<uint8_t> buf(len);
+				srcatt.getValues((void*)buf.data());
+				putAtt(srcatt.getName(), srcatt.getType(), srcatt.getAttLength(), (void*)buf.data());				
+			}
+			
+		}
+		return true;
+	}
+
+	bool copy_dims(const cGeophysicsNcFile& srcfile)
+	{
+		auto dm = srcfile.getDims();
+		for (auto dit = dm.begin(); dit != dm.end(); dit++){
+			NcDim& srcdim = dit->second;
+			if (hasDim(srcdim.getName())) continue;
+			addDim(srcdim.getName(), srcdim.getSize());
+		}
+		return true;
+	}
+
+	bool copy_var(const NcVar& srcvar, std::string newname=std::string())
+	{				
+		std::string name = newname;
+		if (name.size() == 0){
+			name = srcvar.getName();
+		}
+
+		if (hasVar(name)) return false;
+		NcVar v = addVar(name, srcvar.getType(), srcvar.getDims());
+		copy_varatts(srcvar, v);
+
+		size_t len = nbytes(srcvar);
+		if (len > 0){
+			std::vector<uint8_t> buf(len);
+			srcvar.getVar((void*)buf.data());
+			v.putVar((void*)buf.data());
+		}
+		return true;
+	}
+		
+	bool copy_varatts(const NcVar& srcvar, const NcVar& dstvar)
+	{
+		auto am = srcvar.getAtts();
+		for (auto ait = am.begin(); ait != am.end(); ait++){
+			NcVarAtt& srcatt = ait->second;
+			size_t len = nbytes(srcatt);
+			if (len > 0){
+				const std::vector<uint8_t> buf(len);
+				srcatt.getValues((void*)buf.data());
+				dstvar.putAtt(srcatt.getName(), srcatt.getType(), srcatt.getAttLength(), (void*)buf.data());
+			}
+		}
+		return true;
+	}
+
 	size_t nlines(){ return line_index_start.size(); }
 	size_t ntotalsamples(){ return sum(line_index_count); }
 	size_t nlinesamples(const size_t lineindex){ return line_index_count[lineindex]; }
@@ -803,7 +944,6 @@ public:
 	}
 
 	NcVar getVarByAtt(const std::string& att_name, const std::string& att_value){
-
 		std::multimap<std::string, NcVar> vars = getVars();
 		for (auto vit = vars.begin(); vit != vars.end(); vit++){
 			std::map<std::string, NcVarAtt> atts = vit->second.getAtts();
