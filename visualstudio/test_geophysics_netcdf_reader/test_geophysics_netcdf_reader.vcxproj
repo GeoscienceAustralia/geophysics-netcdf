@@ -106,6 +106,7 @@
     <ClCompile Include="..\..\src\cpp\geophysics_netcdf.cpp" />
     <ClCompile Include="..\..\src\cpp\test_geophysics_netcdf_reader.cpp" />
     <ClCompile Include="..\..\submodules\cpp-utils\src\file_utils.cpp" />
+    <ClCompile Include="..\..\submodules\cpp-utils\src\gdal_utils.cpp" />
     <ClCompile Include="..\..\submodules\cpp-utils\src\general_utils.cpp" />
   </ItemGroup>
   <ItemGroup>
@@ -114,6 +115,7 @@
     <ClInclude Include="..\..\src\cpp\metadata.h" />
     <ClInclude Include="..\..\submodules\cpp-utils\src\asciicolumnfile.h" />
     <ClInclude Include="..\..\submodules\cpp-utils\src\file_formats.h" />
+    <ClInclude Include="..\..\submodules\cpp-utils\src\gdal_utils.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

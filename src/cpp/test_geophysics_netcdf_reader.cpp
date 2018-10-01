@@ -59,9 +59,9 @@ bool example_magnetics(){
 	std::string stdname_mlev      = "total_magnetic_intensity_anomaly_micro_levelled";
 	std::string stdname_awagslev  = "total_magnetic_intensity_anomaly_datum_levelled";
 	
-	std::string xvarname = ncfile.getVarNameByStandardName(stdname_x);
-	std::string yvarname = ncfile.getVarNameByStandardName(stdname_y);
-	std::string mvarname = ncfile.getVarNameByStandardName(stdname_awagslev);
+	std::string xvarname = ncfile.getVarNameByLongName(stdname_x);
+	std::string yvarname = ncfile.getVarNameByLongName(stdname_y);
+	std::string mvarname = ncfile.getVarNameByLongName(stdname_awagslev);
 
 	//Get 21th line number and index
 	size_t lnum = linenumber[20];
@@ -112,7 +112,7 @@ bool example_aem_conductivity(){
 	std::vector<int> linenumber = ncfile.getLineNumbers();
 	//Determine conductivity variable name by its standard name attribute
 	std::string stdname_conductivity = "layer_conductivity";
-	std::string varname = ncfile.getVarNameByStandardName(stdname_conductivity);	
+	std::string varname = ncfile.getVarNameByLongName(stdname_conductivity);	
 	//Get conductivity variable
 	cSampleVar vc = ncfile.getSampleVar(varname);
 	//Get conductivity data all at once in 1d array
@@ -160,13 +160,12 @@ bool test_create(){
 	NcDim dim_layer  = nc.addDimVar("layers", layers);
 	
 	cSampleVar vfid = nc.addSampleVar("fiducial", ncInt);
-	vfid.add_standard_name("fiducial");
+	vfid.add_long_name("fiducial");
 	vfid.add_units("1");
 	vfid.add_missing_value(34);
 
-
 	cSampleVar vx   = nc.addSampleVar("easting",  ncDouble);
-	vx.add_standard_name("X");
+	vx.add_long_name("X");
 	vx.add_units("m");
 	
 
@@ -174,11 +173,11 @@ bool test_create(){
 	cSampleVar vconductivity = nc.addSampleVar("conductivity", ncDouble, dim_layer);
 	cSampleVar vthickness    = nc.addSampleVar("thickness", ncDouble, dim_layer);
 		
-	vconductivity.add_standard_name("conductivity");
+	vconductivity.add_long_name("conductivity");
 	vconductivity.add_units("mS/m");
 	vconductivity.add_missing_value(-999);
 	
-	vthickness.add_standard_name("thickness");
+	vthickness.add_long_name("thickness");
 	vthickness.add_units("m");
 	vthickness.add_missing_value(-999);
 
@@ -322,7 +321,6 @@ bool test_convert(){
 	sw.reportnow();
 	cGeophysicsNcFile nc(outpath);
 	//prompttocontinue();
-
 	return true;
 };
 

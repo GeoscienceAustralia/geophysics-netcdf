@@ -23,6 +23,9 @@
     <ClCompile Include="..\..\src\cpp\test_geophysics_netcdf_reader.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\submodules\cpp-utils\src\gdal_utils.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\src\cpp\geophysics_netcdf.h">
@@ -38,6 +41,9 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="..\..\..\marray\include\andres\marray.hxx">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\submodules\cpp-utils\src\gdal_utils.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

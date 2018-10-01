@@ -40,11 +40,12 @@ using namespace andres;
 #define VN_LI_COUNT "index_count"
 #define VN_LINE_INDEX "line_index"
 
+#define SN_LINE_INDEX "zero-based index of variable in line"
 #define SN_LINE_NUMBER   "line_number"
 #define SN_SAMPLE_NUMBER "point_number"
 #define SN_FLIGHT_NUMBER "flight_number"
 
-#define AN_STANDARD_NAME "standard_name"
+#define AN_LONG_NAME "long_name"
 #define AN_UNITS "units"
 #define AN_DESCRIPTION "description"
 #define AN_MISSINGVALUE "_FillValue"
@@ -163,8 +164,8 @@ public:
 		return putAtt(att, value);
 	}
 
-	NcVarAtt add_standard_name(const std::string& value){
-		return putAtt(AN_STANDARD_NAME, value);
+	NcVarAtt add_long_name(const std::string& value){
+		return putAtt(AN_LONG_NAME, value);
 	}
 
 	NcVarAtt add_original_name(const std::string& value){
@@ -624,7 +625,10 @@ private:
 			std::vector<unsigned int> line_index;
 			if (vl.getAll(line_index) == false)return false;
 			set_start_count(line_index);
-		}				
+		}			
+
+		cLineVar v = getLineVar(DN_LINE);
+		v.getAll(line_number);
 		return true;
 	}
 
@@ -780,17 +784,17 @@ public:
 		//add_line_index_count(line_index);
 		//add_point_variable();		
 		add_line_number_variable(linenumbers);
-						
 		return true;
 	}
 
 	void add_line_index(const std::vector<unsigned int> line_index)
 	{
-		cSampleVar vindex = addSampleVar(VN_LINE_INDEX, ncUint);
-		vindex.putVar(line_index.data());
-		vindex.add_standard_name(VN_LINE_INDEX);
-		vindex.add_description("zero based index of line associated with point");
-		vindex.add_units("1");
+		cSampleVar v = addSampleVar(VN_LINE_INDEX, ncUint);
+		v.putVar(line_index.data());
+		v.add_long_name(SN_LINE_INDEX);
+		v.add_attribute("lookup", "line");
+		v.add_description("zero based index of line associated with point");
+		v.add_units("1");		
 	}
 
 	//Deprecated
@@ -798,7 +802,7 @@ public:
 	{
 		cLineVar vstart = addLineVar(VN_LI_START, ncUint);		
 		vstart.putVar(line_index_start.data());
-		vstart.add_standard_name(VN_LI_START);		
+		vstart.add_long_name(VN_LI_START);		
 		vstart.add_description("zero based index of the first sample in the line");
 		vstart.add_units("1");
 	}
@@ -808,7 +812,7 @@ public:
 	{
 		cLineVar vcount = addLineVar(VN_LI_COUNT, ncUint);
 		vcount.putVar(line_index_count.data());
-		vcount.add_standard_name(VN_LI_COUNT);
+		vcount.add_long_name(VN_LI_COUNT);
 		vcount.add_description("number of samples in the line");
 		vcount.add_units("1");
 	}
@@ -819,7 +823,7 @@ public:
 		std::vector<unsigned int> sample = increment((unsigned int)ntotalsamples(), (unsigned int)0, (unsigned int)1);
 		cSampleVar v = addSampleVar(DN_POINT, ncUint);		
 		v.putVar(sample.data());
-		v.add_standard_name(SN_SAMPLE_NUMBER);
+		v.add_long_name(SN_SAMPLE_NUMBER);
 		v.add_description("sequential point number");
 		v.add_units("1");
 	}
@@ -828,7 +832,7 @@ public:
 	{
 		cLineVar vline = addLineVar(DN_LINE, ncUint);
 		vline.putVar(linenumbers.data());
-		vline.add_standard_name(SN_LINE_NUMBER);
+		vline.add_long_name(SN_LINE_NUMBER);
 		vline.add_description("flight line number");
 		vline.add_units("1");		
 	}
@@ -854,8 +858,28 @@ public:
 		for (auto vit = vm.begin(); vit != vm.end(); vit++){
 			NcVar& srcvar = vit->second;			
 			if (srcvar.getName() == VN_LI_START) continue;
-			if (srcvar.getName() == VN_LI_COUNT) continue;			
-			copy_var(srcvar);
+			if (srcvar.getName() == VN_LI_COUNT) continue;
+			
+			if (srcvar.getName() == "crs"){
+				NcVarAtt a = srcvar.getAtt("epsg_code");
+				std::string epsg_string;
+				a.getValues(epsg_string);
+				int epsgcode = cCRS::epsgcode(epsg_string);
+				addCRS(epsgcode);
+			}
+			else{
+				copy_var(srcvar);
+				NcVar v = getVar(srcvar.getName());
+				int status = nc_rename_att(getId(), v.getId(), "standard_name", "long_name");								
+				
+				if (v.getName() == "latitude"){
+					v.putAtt("standard_name", "latitude");
+				}
+
+				if (v.getName() == "longitude"){
+					v.putAtt("standard_name", "longitude");
+				}
+			}		
 		}		
 		return true;
 	}
@@ -895,6 +919,7 @@ public:
 		}
 
 		if (hasVar(name)) return false;
+		
 		NcVar v = addVar(name, srcvar.getType(), srcvar.getDims());
 		copy_varatts(srcvar, v);
 
@@ -961,8 +986,8 @@ public:
 		return NcVar();
 	}
 
-	NcVar getVarByStandardName(const std::string& att_value){
-		return getVarByAtt(AN_STANDARD_NAME, att_value);
+	NcVar getVarByLongName(const std::string& att_value){
+		return getVarByAtt(AN_LONG_NAME, att_value);
 	}
 
 	std::string getVarNameByAtt(const std::string& att_name, const std::string& att_value){
@@ -973,13 +998,13 @@ public:
 		else return var.getName();
 	}
 
-	std::string getVarNameByStandardName(const std::string& att_value){
-		return getVarNameByAtt(AN_STANDARD_NAME, att_value);
+	std::string getVarNameByLongName(const std::string& att_value){
+		return getVarNameByAtt(AN_LONG_NAME, att_value);
 	}
 
 	template<typename T>
 	bool getLineNumbers(std::vector<T>& vals){
-		NcVar v = getVarByStandardName(SN_LINE_NUMBER);
+		NcVar v = getVarByLongName(SN_LINE_NUMBER);
 		if (v.isNull() == false){
 			cLineVar var(this, v);
 			return var.getAll(vals);
@@ -995,7 +1020,7 @@ public:
 
 	template<typename T>
 	bool getFlightNumbers(std::vector<T>& vals){
-		NcVar v = getVarByStandardName(SN_FLIGHT_NUMBER);
+		NcVar v = getVarByLongName(SN_FLIGHT_NUMBER);
 		if (v.isNull() == false){
 			cLineVar var(this, v);
 			return var.getAll(vals);
@@ -1190,18 +1215,23 @@ public:
 		return true;
 	}
 
-	bool addCRS(const cCRS& crs){
+	bool addCRS(const int epsgcode){
 
 		#ifdef _WIN32 
-			NcVar v = NcFile::addVar("crs", ncInt);
+			NcVar v = NcFile::addVar("crs", ncByte);
 		#else 			
 			std::vector<NcDim> d;
-			NcVar v = NcFile::addVar("crs", ncInt, d);
+			NcVar v = NcFile::addVar("crs", ncByte, d);
 		#endif
-		v.putAtt("grid_mapping_name", "latitude_longitude");
-		v.putAtt("epsg_code", crs.epsg_code.c_str());
-		v.putAtt("semi_major_axis", ncDouble, crs.semi_major_axis);
-		v.putAtt("inverse_flattening", ncDouble, crs.inverse_flattening);
+
+		OGRSpatialReference srs = getsrs(epsgcode);			
+		char* wkt = NULL;
+		OGRErr err = srs.exportToWkt(&wkt);		
+		err = srs.importFromEPSG(epsgcode);		
+		v.putAtt("spatial_ref", wkt);
+		v.putAtt("inverse_flattening", ncDouble, srs.GetInvFlattening());
+		v.putAtt("semi_major_axis", ncDouble, srs.GetSemiMajor());
+		v.putAtt("longitude_of_prime_meridian", ncDouble, srs.GetPrimeMeridian());
 		return true;
 	}
 
@@ -1227,28 +1257,28 @@ public:
 
 		cLineVar vx1 = addLineVar("longitude_first", ncDouble);
 		vx1.add_missing_value(vx1.preferred_double_missing_value());
-		vx1.add_standard_name("longitude_first");
+		vx1.add_long_name("longitude_first");
 		vx1.add_description("first non-null longitude coordinate in the line");
 		vx1.add_units("degree_east");
 		vx1.putAll(x1);
 
 		cLineVar vx2 = addLineVar("longitude_last", ncDouble);
 		vx2.add_missing_value(vx2.preferred_double_missing_value());
-		vx2.add_standard_name("longitude_last");
+		vx2.add_long_name("longitude_last");
 		vx2.add_description("last non-null longitude coordinate in the line");
 		vx2.add_units("degree_east");
 		vx2.putAll(x2);
 
 		cLineVar vy1 = addLineVar("latitude_first", ncDouble);
 		vy1.add_missing_value(vy1.preferred_double_missing_value());
-		vy1.add_standard_name("latitude_first");
+		vy1.add_long_name("latitude_first");
 		vy1.add_description("first non-null latitude coordinate in the line");
 		vy1.add_units("degree_north");
 		vy1.putAll(y1);
 
 		cLineVar vy2 = addLineVar("latitude_last", ncDouble);
 		vy2.add_missing_value(vy2.preferred_double_missing_value());
-		vy2.add_standard_name("latitude_last");
+		vy2.add_long_name("latitude_last");
 		vy2.add_description("last non-null latitude coordinate in the line");
 		vy2.add_units("degree_north");
 		vy2.putAll(y2);
@@ -1279,28 +1309,28 @@ public:
 
 		cLineVar vx1 = addLineVar("easting_first", ncDouble);
 		vx1.add_missing_value(vx1.preferred_double_missing_value());
-		vx1.add_standard_name("easting_first");
+		vx1.add_long_name("easting_first");
 		vx1.add_description("first non-null easting coordinate in the line");
 		vx1.add_units("m");
 		vx1.putAll(x1);
 
 		cLineVar vx2 = addLineVar("easting_last", ncDouble);
 		vx2.add_missing_value(vx2.preferred_double_missing_value());
-		vx2.add_standard_name("easting_last");
+		vx2.add_long_name("easting_last");
 		vx2.add_description("last non-null easting coordinate in the line");
 		vx2.add_units("m");
 		vx2.putAll(x2);
 
 		cLineVar vy1 = addLineVar("northing_first", ncDouble);
 		vy1.add_missing_value(vy1.preferred_double_missing_value());
-		vy1.add_standard_name("northing_first");
+		vy1.add_long_name("northing_first");
 		vy1.add_description("first non-null northing coordinate in the line");
 		vy1.add_units("m");
 		vy1.putAll(y1);
 
 		cLineVar vy2 = addLineVar("northing_last", ncDouble);
 		vy2.add_missing_value(vy2.preferred_double_missing_value());
-		vy2.add_standard_name("northing_last");
+		vy2.add_long_name("northing_last");
 		vy2.add_description("last non-null northing coordinate in the line");
 		vy2.add_units("m");
 		vy2.putAll(y2);
@@ -1335,7 +1365,7 @@ public:
 		dims.push_back(addDim("polygonordinate", 2));
 
 		cGeophysicsVar v(this, addVar("bounding_polygon", ncDouble, dims));
-		v.add_standard_name("bounding_polygon");
+		v.add_long_name("bounding_polygon");
 		v.add_description("bounding polygon of survey");
 		v.add_units("degree");
 		v.putVar(poly.data());
@@ -1374,19 +1404,16 @@ public:
 			if (status == false)return status;
 			
 			status = addGeospatialMetadataItem("latitude", "lat", "degrees_north");
-			if (status == false)return status;
-			cCRS crs("GDA94");
-			addCRS(crs);
+			if (status == false)return status;			
+			addCRS(erm2epsgcode("GDA94"));
 		}
 		else if (hasVar("easting") && hasVar("northing")){
 			status = addGeospatialMetadataItem("easting", "east", "m");
 			if (status == false)return status;
 			
 			status = addGeospatialMetadataItem("northing", "north", "m");
-			if (status == false)return status;
-
-			cCRS crs("GDA94");
-			addCRS(crs);			
+			if (status == false)return status;			
+			addCRS(erm2epsgcode("GDA94"));
 		}
 		else return false;
 
@@ -1504,7 +1531,7 @@ public:
 			if (units != "1") I.setunits(units);
 
 			std::string desc = v.getDescription();
-			desc = v.getStringAtt(AN_STANDARD_NAME);
+			desc = v.getStringAtt(AN_LONG_NAME);
 			I.setcomment(desc);
 		}
 		I.write_aseggdf_header(dfnfilepath);
