@@ -330,6 +330,17 @@ int main(int argc, char** argv)
 	logmsg("Opening log file\n");
 	global_log_file = fopen("test.log", "w");
 	logmsg("Log file opened\n");	
+	
+	OGRSpatialReference srs;	
+	//OGRErr err = srs.importFromERM("GEODETIC","GDA94","METERS");
+	OGRErr err = srs.importFromERM("GEODETIC","WGS84","METERS");	
+	int epsgcode = srs.GetEPSGGeogCS();
+	double sma = srs.GetSemiMajor();
+	double inv = srs.GetInvFlattening();
+	
+	//const char* AuthName = srs.GetAuthorityName("PROJCS");
+	const char* AuthName = srs.GetAuthorityName("GEOGCS");
+	int a = atoi(srs.GetAuthorityCode("GEOGCS"));
 
 	try{	
 

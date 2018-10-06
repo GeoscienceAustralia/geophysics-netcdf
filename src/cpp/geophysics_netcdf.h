@@ -859,7 +859,8 @@ public:
 			NcVar& srcvar = vit->second;			
 			if (srcvar.getName() == VN_LI_START) continue;
 			if (srcvar.getName() == VN_LI_COUNT) continue;
-			
+			if (srcvar.getName() == DN_POINT) continue;
+
 			if (srcvar.getName() == "crs"){
 				NcVarAtt a = srcvar.getAtt("epsg_code");
 				std::string epsg_string;
