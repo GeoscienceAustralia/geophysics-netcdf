@@ -794,7 +794,7 @@ public:
 		v.add_long_name(SN_LINE_INDEX);
 		v.add_attribute("lookup", "line");
 		v.add_description("zero based index of line associated with point");
-		v.add_units("1");		
+		//v.add_units("1");		
 	}
 
 	//Deprecated
@@ -804,7 +804,7 @@ public:
 		vstart.putVar(line_index_start.data());
 		vstart.add_long_name(VN_LI_START);		
 		vstart.add_description("zero based index of the first sample in the line");
-		vstart.add_units("1");
+		//vstart.add_units("1");
 	}
 
 	//Deprecated
@@ -814,7 +814,7 @@ public:
 		vcount.putVar(line_index_count.data());
 		vcount.add_long_name(VN_LI_COUNT);
 		vcount.add_description("number of samples in the line");
-		vcount.add_units("1");
+		//vcount.add_units("1");
 	}
 
 	//Deprecated
@@ -825,7 +825,7 @@ public:
 		v.putVar(sample.data());
 		v.add_long_name(SN_SAMPLE_NUMBER);
 		v.add_description("sequential point number");
-		v.add_units("1");
+		//v.add_units("1");
 	}
 
 	void add_line_number_variable(const std::vector<unsigned int> linenumbers)
@@ -834,7 +834,7 @@ public:
 		vline.putVar(linenumbers.data());
 		vline.add_long_name(SN_LINE_NUMBER);
 		vline.add_description("flight line number");
-		vline.add_units("1");		
+		//vline.add_units("1");		
 	}
 
 	
@@ -870,7 +870,7 @@ public:
 			else{
 				copy_var(srcvar);
 				NcVar v = getVar(srcvar.getName());
-				int status = nc_rename_att(getId(), v.getId(), "standard_name", "long_name");								
+				int status = nc_rename_att(getId(), v.getId(), "standard_name", "long_name");
 				
 				if (v.getName() == "latitude"){
 					v.putAtt("standard_name", "latitude");
@@ -879,7 +879,17 @@ public:
 				if (v.getName() == "longitude"){
 					v.putAtt("standard_name", "longitude");
 				}
-			}		
+				
+				printf("%s\n", v.getName().c_str());				
+				NcVarAtt a = v.getAtt(AN_UNITS);
+				if (!a.isNull()){
+					std::string units;
+					a.getValues(units);
+					if (units == "1"){
+						status = nc_del_att(getId(), v.getId(), AN_UNITS);
+					}
+				}
+			}					
 		}		
 		return true;
 	}
@@ -1224,6 +1234,7 @@ public:
 			NcVar v = NcFile::addVar("crs", ncByte, d);
 		#endif
 
+		v.putAtt(AN_LONG_NAME,"coordinate_reference_system");		
 		OGRSpatialReference srs = getsrs(epsgcode);			
 		char* wkt = NULL;
 		OGRErr err = srs.exportToWkt(&wkt);		

@@ -38,14 +38,9 @@ bool example_magnetics(){
 
 	bool status;		
 	std::string indir,ncpath;
-	//indir = "z:\\projects\\geophysics_netcdf\\conversion_scripts\\ncfiles\\";
-	//indir = "http://dapds00.nci.org.au/thredds/dodsC/uc0/rr2_dev/rcb547/AWAGS_Levelled_Line_Databases/mag_database_reformat_2016_adjusted/netcdf/";
-	//ncpath = indir + "GSSA_P1255MAG_Marree.nc";
-	//ncpath = "http://dapds00.nci.org.au/thredds/dodsC/uc0/rr2_dev/rcb547/AWAGS_Levelled_Line_Databases/mag_database_reformat_2016_adjusted/netcdf/GSSA_P1255MAG_Marree.nc";
-
-	indir = "Y:\\ops\\gap\\geophysical_methods\\mag_rad\\AWAGS_Levelled_Databases\\awags_survey_reformat\\netcdf\\";
-	ncpath = indir + "P1152MAG.nc";
-
+	indir   = "http://dapds00.nci.org.au/thredds/dodsC/uc0/rr2_dev/rcb547/AWAGS_Levelled_Line_Databases/mag_database_reformat_2016_adjusted/netcdf/";
+	ncpath  = indir + "GSSA_P1255MAG_Warrina.nc";
+              	
 	//Open the file and initialise the indexes
 	cGeophysicsNcFile ncfile(ncpath, NcFile::read);
 
@@ -310,8 +305,8 @@ void test_marray(){
 
 bool test_convert(){
 
-	//std::string indir = R"(Z:\projects\geophysics_netcdf\ncfiles\)";
-	std::string indir   = R"(Y:\ops\gap\geophysical_methods\mag_rad\AWAGS_Levelled_Databases\rb_working\awags_conversions\ncfiles\)";
+	std::string indir = R"(Z:\projects\geophysics_netcdf\ncfiles\)";
+	//std::string indir   = R"(Y:\ops\gap\geophysical_methods\mag_rad\AWAGS_Levelled_Databases\rb_working\awags_conversions\ncfiles\)";
 	std::string inpath  = indir + "P1152RAD.nc";
 	std::string outpath = indir + "P1152RAD_v2.nc";
 	deletefile(outpath);
@@ -332,7 +327,6 @@ int main(int argc, char** argv)
 	logmsg("Log file opened\n");	
 
 	try{	
-
 		//example_magnetics();
 		//example_aem_conductivity();	
 		//test_create();
