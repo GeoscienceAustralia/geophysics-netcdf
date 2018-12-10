@@ -38,14 +38,19 @@ bool example_magnetics(){
 
 	bool status;		
 	std::string indir,ncpath;
+	
 	indir   = "http://dapds00.nci.org.au/thredds/dodsC/uc0/rr2_dev/rcb547/AWAGS_Levelled_Line_Databases/mag_database_reformat_2016_adjusted/netcdf/";
 	ncpath  = indir + "GSSA_P1255MAG_Warrina.nc";
-              	
+             
+	//indir  = R"(Z:\projects\geophysics_netcdf\ncfiles\)";	
+	//ncpath = indir + "P1152MAG_V2.nc";
+
+
 	//Open the file and initialise the indexes
 	cGeophysicsNcFile ncfile(ncpath, NcFile::read);
 
 	//Get the line numbers using the standard_name attributes
-	std::vector<int> linenumber = ncfile.getLineNumbers();
+	std::vector<int> linenumber   = ncfile.getLineNumbers();
 	std::vector<int> flightnumber = ncfile.getFlightNumbers();
 
 	std::string stdname_x         = "longitude";
@@ -134,8 +139,8 @@ bool example_aem_conductivity(){
 bool test_create(){
 	std::string ncpath = "test.nc";
 	deletefile(ncpath);
-	std::vector<size_t> linenumbers  = { 100, 200, 300, 400 };
-	std::vector<size_t> linensamples = { 10,   20,  30,  40 };
+	std::vector<size_t> linenumbers   = { 100, 200, 300, 400 };
+	std::vector<size_t> linensamples  = { 10,   20,  30,  40 };
 	std::vector<size_t> flightnumbers = {11, 22, 33, 44 };
 
 	cGeophysicsNcFile   nc(ncpath,NcFile::FileMode::replace);
@@ -232,8 +237,7 @@ bool test_update(){
 	status = vem.getAll(em);
 	status = vem.getLine(0,em);
 	em *= 0.0;	
-	status = vem.putLine(0,em);
-
+	status = vem.putLine(0,em);	
 	return true;
 };
 
@@ -307,15 +311,15 @@ bool test_convert(){
 
 	std::string indir = R"(Z:\projects\geophysics_netcdf\ncfiles\)";
 	//std::string indir   = R"(Y:\ops\gap\geophysical_methods\mag_rad\AWAGS_Levelled_Databases\rb_working\awags_conversions\ncfiles\)";
-	std::string inpath  = indir + "P1152RAD.nc";
-	std::string outpath = indir + "P1152RAD_v2.nc";
+	//std::string inpath  = indir + "P1152MAG.nc"; std::string outpath = indir + "P1152MAG_v2.nc";
+	std::string inpath = indir + "P1152RAD.nc";  std::string outpath = indir + "P1152RAD_v2.nc";
 	deletefile(outpath);
 	
 	cStopWatch sw;
 	bool status = cGeophysicsNcFile::convert_legacy(inpath, outpath);
 	sw.reportnow();
 	cGeophysicsNcFile nc(outpath);
-	//prompttocontinue();
+	prompttocontinue();
 	return true;
 };
 
@@ -327,7 +331,7 @@ int main(int argc, char** argv)
 	logmsg("Log file opened\n");	
 
 	try{	
-		//example_magnetics();
+		example_magnetics();
 		//example_aem_conductivity();	
 		//test_create();
 		//test_update();
@@ -336,7 +340,7 @@ int main(int argc, char** argv)
 		//test_columnfile();
 		//test_aseggdfheader();
 		//test_marray();
-		test_convert();
+		//test_convert();
 		logmsg("Closing log file\n");
 		fclose(global_log_file);
 	}
