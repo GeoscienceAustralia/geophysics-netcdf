@@ -40,10 +40,10 @@ using namespace andres;
 #define VN_LI_COUNT "index_count"
 #define VN_LINE_INDEX "line_index"
 
-#define SN_LINE_INDEX "zero-based index of variable in line"
-#define SN_LINE_NUMBER   "line_number"
-#define SN_SAMPLE_NUMBER "point_number"
-#define SN_FLIGHT_NUMBER "flight_number"
+#define LN_LINE_INDEX "zero-based index of variable in line"
+#define LN_LINE_NUMBER   "line_number"
+#define LN_SAMPLE_NUMBER "point_number"
+#define LN_FLIGHT_NUMBER "flight_number"
 
 #define AN_LONG_NAME "long_name"
 #define AN_UNITS "units"
@@ -90,7 +90,7 @@ private:
 	cGeophysicsNcFile* FilePtr = NULL;
 	
 public:
-
+	
 	cGeophysicsVar(cGeophysicsNcFile* parentptr, const NcVar& var) : NcVar(var) {
 		FilePtr = parentptr;
 	};
@@ -180,13 +180,16 @@ public:
 		return putAtt(AN_DESCRIPTION, value);
 	}
 
-	bool hasAtt(const std::string& name) const {
-		std::map<std::string, NcVarAtt> m = NcVar::getAtts();
-		auto it = m.find(name);
-		if (it == m.end()){
-			return false;
-		}
-		return true;
+	static bool hasAtt(const NcVar& var, const std::string& name) {		
+		nc_type vr_type;
+		size_t  vr_len;
+		int status = nc_inq_att(var.getParentGroup().getId(), var.getId(), name.c_str(), &vr_type, &vr_len);
+		if (status == NC_NOERR) return true;
+		else return false;				
+	};
+
+	bool hasAtt(const std::string& name) const {		
+		return cGeophysicsVar::hasAtt(*this, name);		
 	}
 
 	std::string getStringAtt(const std::string& attname) const {
@@ -791,10 +794,10 @@ public:
 	{
 		cSampleVar v = addSampleVar(VN_LINE_INDEX, ncUint);
 		v.putVar(line_index.data());
-		v.add_long_name(SN_LINE_INDEX);
+		v.add_long_name(LN_LINE_INDEX);
 		v.add_attribute("lookup", "line");
 		v.add_description("zero based index of line associated with point");
-		v.add_units("1");		
+		//v.add_units("1");		
 	}
 
 	//Deprecated
@@ -804,7 +807,7 @@ public:
 		vstart.putVar(line_index_start.data());
 		vstart.add_long_name(VN_LI_START);		
 		vstart.add_description("zero based index of the first sample in the line");
-		vstart.add_units("1");
+		//vstart.add_units("1");
 	}
 
 	//Deprecated
@@ -814,7 +817,7 @@ public:
 		vcount.putVar(line_index_count.data());
 		vcount.add_long_name(VN_LI_COUNT);
 		vcount.add_description("number of samples in the line");
-		vcount.add_units("1");
+		//vcount.add_units("1");
 	}
 
 	//Deprecated
@@ -823,18 +826,18 @@ public:
 		std::vector<unsigned int> sample = increment((unsigned int)ntotalsamples(), (unsigned int)0, (unsigned int)1);
 		cSampleVar v = addSampleVar(DN_POINT, ncUint);		
 		v.putVar(sample.data());
-		v.add_long_name(SN_SAMPLE_NUMBER);
+		v.add_long_name(LN_SAMPLE_NUMBER);
 		v.add_description("sequential point number");
-		v.add_units("1");
+		//v.add_units("1");
 	}
 
 	void add_line_number_variable(const std::vector<unsigned int> linenumbers)
 	{
 		cLineVar vline = addLineVar(DN_LINE, ncUint);
 		vline.putVar(linenumbers.data());
-		vline.add_long_name(SN_LINE_NUMBER);
+		vline.add_long_name(LN_LINE_NUMBER);
 		vline.add_description("flight line number");
-		vline.add_units("1");		
+		//vline.add_units("1");		
 	}
 
 	
@@ -871,7 +874,7 @@ public:
 			else{
 				copy_var(srcvar);
 				NcVar v = getVar(srcvar.getName());
-				int status = nc_rename_att(getId(), v.getId(), "standard_name", "long_name");								
+				int status = nc_rename_att(getId(), v.getId(), "standard_name", "long_name");
 				
 				if (v.getName() == "latitude"){
 					v.putAtt("standard_name", "latitude");
@@ -880,7 +883,19 @@ public:
 				if (v.getName() == "longitude"){
 					v.putAtt("standard_name", "longitude");
 				}
-			}		
+							
+				//Remove units = "1"				
+				if (cGeophysicsVar::hasAtt(v,AN_UNITS)){					
+					NcVarAtt a = v.getAtt(AN_UNITS);
+					if (!a.isNull()){
+						std::string units;
+						a.getValues(units);
+						if (units == "1"){
+							status = nc_del_att(getId(), v.getId(), AN_UNITS);
+						}
+					}
+				}
+			}					
 		}		
 		return true;
 	}
@@ -922,6 +937,7 @@ public:
 		if (hasVar(name)) return false;
 		
 		NcVar v = addVar(name, srcvar.getType(), srcvar.getDims());
+		v.setCompression(true, true, 9);
 		copy_varatts(srcvar, v);
 
 		size_t len = nbytes(srcvar);
@@ -1005,7 +1021,7 @@ public:
 
 	template<typename T>
 	bool getLineNumbers(std::vector<T>& vals){
-		NcVar v = getVarByLongName(SN_LINE_NUMBER);
+		NcVar v = getVarByLongName(LN_LINE_NUMBER);
 		if (v.isNull() == false){
 			cLineVar var(this, v);
 			return var.getAll(vals);
@@ -1021,7 +1037,7 @@ public:
 
 	template<typename T>
 	bool getFlightNumbers(std::vector<T>& vals){
-		NcVar v = getVarByLongName(SN_FLIGHT_NUMBER);
+		NcVar v = getVarByLongName(LN_FLIGHT_NUMBER);
 		if (v.isNull() == false){
 			cLineVar var(this, v);
 			return var.getAll(vals);
@@ -1225,6 +1241,7 @@ public:
 			NcVar v = NcFile::addVar("crs", ncByte, d);
 		#endif
 
+		v.putAtt(AN_LONG_NAME,"coordinate_reference_system");		
 		OGRSpatialReference srs = getsrs(epsgcode);			
 		char* wkt = NULL;
 		OGRErr err = srs.exportToWkt(&wkt);		
