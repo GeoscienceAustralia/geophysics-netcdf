@@ -1,5 +1,5 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
-<Project DefaultTargets="Build" ToolsVersion="12.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+<Project DefaultTargets="Build" ToolsVersion="15.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup Label="ProjectConfigurations">
     <ProjectConfiguration Include="Debug|x64">
       <Configuration>Debug</Configuration>
@@ -14,18 +14,19 @@
     <ProjectGuid>{7B2ABFFB-3AD0-4546-A41B-67F78766418F}</ProjectGuid>
     <Keyword>Win32Proj</Keyword>
     <RootNamespace>intrepid2netcdf</RootNamespace>
+    <WindowsTargetPlatformVersion>10.0.17763.0</WindowsTargetPlatformVersion>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
     <ConfigurationType>Application</ConfigurationType>
     <UseDebugLibraries>true</UseDebugLibraries>
-    <PlatformToolset>v120</PlatformToolset>
+    <PlatformToolset>v141</PlatformToolset>
     <CharacterSet>Unicode</CharacterSet>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
     <ConfigurationType>Application</ConfigurationType>
     <UseDebugLibraries>false</UseDebugLibraries>
-    <PlatformToolset>v120</PlatformToolset>
+    <PlatformToolset>v141</PlatformToolset>
     <WholeProgramOptimization>true</WholeProgramOptimization>
     <CharacterSet>Unicode</CharacterSet>
   </PropertyGroup>
@@ -34,21 +35,23 @@
   </ImportGroup>
   <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="PropertySheets">
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+    <Import Project="..\propertysheets\msmpi.x64.props" />
     <Import Project="..\propertysheets\netcdf4.props" />
     <Import Project="..\propertysheets\netcdf4-cxx.props" />
+    <Import Project="..\propertysheets\geophysics-netcdf.props" />
+    <Import Project="..\propertysheets\gdal.props" />
     <Import Project="..\propertysheets\boost.props" />
     <Import Project="..\propertysheets\cgal.props" />
-    <Import Project="..\propertysheets\msmpi.x64.props" />
-    <Import Project="..\propertysheets\geophysics-netcdf.props" />
   </ImportGroup>
   <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="PropertySheets">
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+    <Import Project="..\propertysheets\msmpi.x64.props" />
     <Import Project="..\propertysheets\netcdf4.props" />
     <Import Project="..\propertysheets\netcdf4-cxx.props" />
+    <Import Project="..\propertysheets\geophysics-netcdf.props" />
+    <Import Project="..\propertysheets\gdal.props" />
     <Import Project="..\propertysheets\boost.props" />
     <Import Project="..\propertysheets\cgal.props" />
-    <Import Project="..\propertysheets\msmpi.x64.props" />
-    <Import Project="..\propertysheets\geophysics-netcdf.props" />
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
@@ -93,6 +96,7 @@
       <WarningLevel Condition="'$(Configuration)|$(Platform)'=='Release|x64'">TurnOffAllWarnings</WarningLevel>
     </ClCompile>
     <ClCompile Include="..\..\submodules\cpp-utils\src\file_utils.cpp" />
+    <ClCompile Include="..\..\submodules\cpp-utils\src\gdal_utils.cpp" />
     <ClCompile Include="..\..\submodules\cpp-utils\src\general_utils.cpp" />
   </ItemGroup>
   <ItemGroup>

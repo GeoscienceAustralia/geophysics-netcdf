@@ -686,7 +686,7 @@ private:
 		for (size_t i = 0; i<nl - 1; i++){
 			count[i] = start[i + 1] - start[i];
 		}
-		count[nl - 1] = nsamplestotal - start[nl - 1];		
+		count[nl - 1] = (unsigned int)(nsamplestotal - start[nl - 1]);
 		return count;
 	}
 

@@ -97,7 +97,7 @@ public:
 	~cASEGGDF2Converter(){						
 		logmsg("Finished at %s\n", timestamp().c_str());
 		fclose(global_log_file);
-		global_log_file == NULL;
+		global_log_file = NULL;
 	};
 
 	bool process(){
@@ -126,7 +126,7 @@ public:
 		std::ifstream in(DatPath);
 		std::string s;
 
-		int width = i2 - i1 + 1;
+		int width = (int)(i2 - i1 + 1);
 		unsigned int lastline = 0;
 		size_t nlines = 0;
 		while (std::getline(in, s)){
@@ -188,7 +188,7 @@ public:
 		std::string s;
 		size_t i1 = D.fields[fi].startchar;
 		size_t i2 = D.fields[fi].endchar;
-		int width = i2 - i1 + 1;				
+		int width = (int)(i2 - i1 + 1);
 		std::getline(in, s);
 		std::string t = s.substr(i1, width);
 		project = atoi(t.data());		
@@ -349,13 +349,13 @@ public:
 
 			if (isgroupby[fi]){
 				cLineVar var = ncFile.addLineVar(varname, vartype, vardims);
-				var.add_standard_name(fieldname);
+				var.add_long_name(fieldname);
 				var.add_original_name(fieldname);
 				var.add_units(D.fields[fi].units);
 			}
 			else{
 				cSampleVar var = ncFile.addSampleVar(varname, vartype, vardims);
-				var.add_standard_name(fieldname);
+				var.add_long_name(fieldname);
 				var.add_original_name(fieldname);
 				var.add_units(D.fields[fi].units);
 			}			

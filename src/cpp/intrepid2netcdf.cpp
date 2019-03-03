@@ -442,7 +442,7 @@ public:
 
 			cLineVar var = ncFile.addLineVar(variable_name,nc_datatype(F),dims);
 			set_intrepid_nullvalue(var);
-			var.add_standard_name(standard_name);			
+			var.add_long_name(standard_name);
 			var.add_original_name(F.Name);
 			var.add_units(units);						
 			
@@ -526,7 +526,7 @@ public:
 
 			cSampleVar var = ncFile.addSampleVar(variable_name, nc_datatype(F), dims);			
 			set_intrepid_nullvalue(var);
-			var.add_standard_name(standard_name);
+			var.add_long_name(standard_name);
 			var.add_original_name(F.Name);
 			var.add_units(units);
 						
@@ -662,9 +662,9 @@ public:
 			}
 		}
 
-		if (datum.size() > 0){
-			cCRS crs(datum);
-			ncFile.addCRS(crs);
+		if (datum.size() > 0){			
+			int epsgcode = getepsgcode(datum);
+			ncFile.addCRS(epsgcode);
 		}
 
 		n.resize(0);

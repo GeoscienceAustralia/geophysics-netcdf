@@ -2,7 +2,7 @@
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ImportGroup Label="PropertySheets" />
   <PropertyGroup Label="UserMacros">
-    <BOOST_ROOT>Z:\code\third_party\boost_1_59_0</BOOST_ROOT>
+    <BOOST_ROOT>Z:\code\third_party\boost_1_69_0</BOOST_ROOT>
   </PropertyGroup>
   <PropertyGroup>
     <IncludePath>$(BOOST_ROOT)\include;$(IncludePath)</IncludePath>
@@ -16,6 +16,7 @@
   <ItemGroup>
     <BuildMacro Include="BOOST_ROOT">
       <Value>$(BOOST_ROOT)</Value>
+      <EnvironmentVariable>true</EnvironmentVariable>
     </BuildMacro>
   </ItemGroup>
 </Project>
