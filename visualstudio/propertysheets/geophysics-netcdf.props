@@ -21,10 +21,11 @@
     <PostBuildEvent>
       <Command>del $(OutDir)$(TargetName).lib
 del $(OutDir)$(TargetName).exp
+icacls $(OutDir)$(TargetName)$(TargetExt) /grant Everyone:RX
 </Command>
     </PostBuildEvent>
     <PostBuildEvent>
-      <Message>Delete .lib and .exp files</Message>
+      <Message>Delete .lib and .exp files, and grant read and execute permissions</Message>
     </PostBuildEvent>
   </ItemDefinitionGroup>
 </Project>
