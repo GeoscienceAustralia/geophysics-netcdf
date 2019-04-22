@@ -4,7 +4,6 @@
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup>
     <IncludePath>..\..\submodules\cpp-utils\src;$(IncludePath)</IncludePath>
-    <OutDir />
   </PropertyGroup>
   <ItemDefinitionGroup />
   <ItemGroup />

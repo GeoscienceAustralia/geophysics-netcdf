@@ -10,13 +10,14 @@ Author: Ross C. Brodie, Geoscience Australia.
 #include <netcdf>
 #include <vector>
 #include <limits>
-using namespace std;
+
+//using namespace std;
 using namespace netCDF;
 using namespace netCDF::exceptions;
 
 #ifdef USEGLOBALSTACKTRACE
 	#include "stacktrace.h"
-	cStackTrace globalstacktrace;
+	class cStackTrace gtrace;
 #endif
 
 #define _PROGRAM_ "intrepid2netcdf"
@@ -32,7 +33,10 @@ using namespace netCDF::exceptions;
 #include "metadata.h"
 #include "crs.h"
 #include "csvfile.h"
+#include "logger.h"
 #include "geophysics_netcdf.h"
+
+class cLogger glog; //The instance of the global log file manager
 
 class cIntrepidConverter{
 	
@@ -69,15 +73,15 @@ public:
 		std::string suffix = stringvalue(mpirank, ".%04lu");
 		LogFile = insert_after_filename(LogFile, suffix);
 				
-		open_global_log_file(LogFile);
-		logmsg("Log file opened at %s\n", timestamp().c_str());				
-		logmsg("Program %s \n", _PROGRAM_);
-		logmsg("Version %s Compiled at %s on %s\n", _VERSION_, __TIME__, __DATE__);
-		logmsg("Working directory %s\n", getcurrentdirectory().c_str());
-		logmsg("Control file %s\n", controlfile.c_str());				
-		logmsg("Processes %lu\n", mpisize);
-		logmsg("Rank      %lu\n", mpirank);	
-		B.write(global_log_file_pointer());
+		glog.open(LogFile);
+		glog.logmsg("Log file opened at %s\n", timestamp().c_str());				
+		glog.logmsg("Program %s \n", _PROGRAM_);
+		glog.logmsg("Version %s Compiled at %s on %s\n", _VERSION_, __TIME__, __DATE__);
+		glog.logmsg("Working directory %s\n", getcurrentdirectory().c_str());
+		glog.logmsg("Control file %s\n", controlfile.c_str());
+		glog.logmsg("Processes %zu\n", mpisize);
+		glog.logmsg("Rank      %zu\n", mpirank);
+		glog.log(B.get_as_string());
 
 		M = cMetaDataRecord(B, "Metadata");
 		std::string argusfile = B.getstringvalue("ArgusMetaData");
@@ -97,8 +101,8 @@ public:
 
 		process_databases();
 
-		logmsg("Finished at %s\n", timestamp().c_str());
-		close_global_log_file();
+		glog.logmsg("Finished at %s\n", timestamp().c_str());
+		glog.close();
 	};
 
 	~cIntrepidConverter(){
@@ -119,95 +123,95 @@ public:
 
 				if(exists(NCPath)){
 					if (OverWriteExistingNcFiles == false){
-						logmsg("Warning 0: NetCDF file %s already exists - skipping this database\n", NCPath.c_str());
+						glog.logmsg("Warning 0: NetCDF file %s already exists - skipping this database\n", NCPath.c_str());
 						continue;
 					}
 				}
 
-				logmsg("\nConverting database %lu of %lu: %s\n", di + 1, dlist.size(), dlist[di].c_str());
+				glog.logmsg("\nConverting database %zu of %zu: %s\n", di + 1, dlist.size(), dlist[di].c_str());
 
 				bool datasetexists = exists(IDBPath);
 				if (datasetexists == false){
-					logmsg("Error 0: Database %lu does not exist: %s\n", di, IDBPath.c_str());
+					glog.logmsg("Error 0: Database %zu does not exist: %s\n", di, IDBPath.c_str());
 					continue;
 				}
 
-				logmsg("Opening Intrepid database\n");
+				glog.logmsg("Opening Intrepid database\n");
 				ILDataset D(IDBPath);
 				if (D.valid == false){
-					logmsg("Error 1: problem opening database = skipping this database\n");
+					glog.logmsg("Error 1: problem opening database = skipping this database\n");
 					continue;
 				}
 
 				if (D.fieldexists("longitude_GDA94") == false){
-					logmsg("Error 2: field longitude_GDA94 does not exist = skipping this database\n");
+					glog.logmsg("Error 2: field longitude_GDA94 does not exist = skipping this database\n");
 					continue;
 				}
 
 				if (D.fieldexists("latitude_GDA94") == false){
-					logmsg("Error 3: field latitude_GDA94 does not exist = skipping this database\n");
+					glog.logmsg("Error 3: field latitude_GDA94 does not exist = skipping this database\n");
 					continue;
 				}
 
 				if (D.hassurveyinfoid_fieldexists("X") == false){
-					logmsg("Warning 1: could not determine the X field in the SurveyInfo file\n");
+					glog.logmsg("Warning 1: could not determine the X field in the SurveyInfo file\n");
 				}
 
 				if (D.hassurveyinfoid_fieldexists("Y") == false){
-					logmsg("Warning 2: could not determine the Y field in the SurveyInfo file\n");
+					glog.logmsg("Warning 2: could not determine the Y field in the SurveyInfo file\n");
 				}
 
-				logmsg("Determining GA project number\n");
+				glog.logmsg("Determining GA project number\n");
 				int projectnumber = determineprojectnumber(D);
 				if (projectnumber < 0){
-					logmsg("Error 3: could not determinine GA project number - skipping this database\n");
+					glog.logmsg("Error 3: could not determinine GA project number - skipping this database\n");
 					continue;
 				}
 
-				logmsg("Populating metadata\n");
+				glog.logmsg("Populating metadata\n");
 				cMetaDataRecord R = M;
 				bool status = populate_metadata(R, projectnumber);
 				if (status == false){
-					logmsg("Error 4: could not find the Argus metadata record for this project %d - skipping this database\n",projectnumber);
+					glog.logmsg("Error 4: could not find the Argus metadata record for this project %d - skipping this database\n",projectnumber);
 					continue;
 				}
 
-				logmsg("Creating NetCDF file\n");
+				glog.logmsg("Creating NetCDF file\n");
 				cGeophysicsNcFile ncFile(NCPath, NcFile::replace);
 
-				logmsg("Adding line index variables\n");
+				glog.logmsg("Adding line index variables\n");
 				bool lstatus = add_lineindex(ncFile, D);
 				if (lstatus == false){
-					logmsg("Error 5: could not determine the line numbers\n");
+					glog.logmsg("Error 5: could not determine the line numbers\n");
 					continue;
 				}
 
-				logmsg("Adding global metadata\n");
+				glog.logmsg("Adding global metadata\n");
 				add_global_metadata(ncFile, R);
 				
-				logmsg("Adding groupbyline varaibles\n");
+				glog.logmsg("Adding groupbyline varaibles\n");
 				add_groupbyline_variables(ncFile, D);
 
-				logmsg("Adding indexed varaibles\n");
+				glog.logmsg("Adding indexed varaibles\n");
 				add_indexed_variables(ncFile, D);					
 
 				if (DummyRun == false){
 					if (AddGeospatialMetadata){
-						logmsg("Adding geospatial metadata\n");
+						glog.logmsg("Adding geospatial metadata\n");
 						add_geospatial_metadata(ncFile, D);
 					}
 
 					if (AddLineStartEndPoints){
-						logmsg("Adding line start and end points\n");
+						glog.logmsg("Adding line start and end points\n");
 						ncFile.addLineStartEndPointsLL();
 					}
 
 					if (AddAlphaShapePolygon){
-						logmsg("Adding alphashape polygon\n");
+						glog.logmsg("Adding alphashape polygon\n");
 						ncFile.addAlphaShapePolygon("longitude","latitude");
 					}
 				}
-				logmsg("Conversion complete\n");
+				glog.logmsg("Conversion complete\n");
 			}			
 		}		
 		return true;
@@ -235,7 +239,7 @@ public:
 			cStats<double> s = D.fieldstats(sfname);
 			pmin = (int)s.min;
 			if (s.min != s.max){
-				logmsg("Warning 1a: %s Database has more than one survey number (%d to %d)\n", IDBPath.c_str(), (int)s.min, (int)s.max);
+				glog.logmsg("Warning 1a: %s Database has more than one survey number (%d to %d)\n", IDBPath.c_str(), (int)s.min, (int)s.max);
 			}
 		}
 
@@ -256,7 +260,7 @@ public:
 							size_t pindex = (size_t)A.findkeyindex("PROJECT");
 							GApnumberguess = std::atoi((A.records[i][pindex]).c_str());
 							GAguessed = true;
-							logmsg("Warning 1b: GA Project number taken from GSV number (GSV=%d -> GA=%d)\n", GSVpnumberguess, GApnumberguess);
+							glog.logmsg("Warning 1b: GA Project number taken from GSV number (GSV=%d -> GA=%d)\n", GSVpnumberguess, GApnumberguess);
 							break;
 						}
 					}
@@ -266,13 +270,13 @@ public:
 
 		if(GAguessed == true){
 			if (hassurvey == true && pmin != GApnumberguess){
-				logmsg("Warning 1c: Project number guessed from database name does not match that from the survey field in database (%d and %d) using %d\n",GApnumberguess, pmin, GApnumberguess);
+				glog.logmsg("Warning 1c: Project number guessed from database name does not match that from the survey field in database (%d and %d) using %d\n",GApnumberguess, pmin, GApnumberguess);
 			}
 			return GApnumberguess;
 		}
 		else{
 			if (hassurvey==false){
-				logmsg("Warning 1d: Could not determine a project from the database name or survey field\n");
+				glog.logmsg("Warning 1d: Could not determine a project from the database name or survey field\n");
 				return -1;
 			}			
 			return pmin;
@@ -312,12 +316,12 @@ public:
 		std::vector<size_t> arecords = A.findmatchingrecords("PROJECT", projectnumber);
 
 		if (arecords.size() == 0){
-			logmsg("Warning 2a: Could not find a matching PROJECT for project number %d\n", projectnumber);
+			glog.logmsg("Warning 2a: Could not find a matching PROJECT for project number %d\n", projectnumber);
 			return false;
 		}
 
 		if (arecords.size() > 1){
-			logmsg("Warning 2b: Found more than 1 matching PROJECT for project number %d\n",projectnumber);
+			glog.logmsg("Warning 2b: Found more than 1 matching PROJECT for project number %d\n",projectnumber);
 			return false;
 		}
 		size_t argusrecord = arecords[0];
@@ -354,7 +358,7 @@ public:
 		else if (F.datatype().isdouble())return NcType(ncDouble);			
 		else{
 			std::string msg = "Error 6: Unknown Intrepid data type\n";
-			logmsg(msg.c_str());
+			glog.logmsg(msg.c_str());
 			throw(msg);
 		}
 	}
@@ -370,7 +374,7 @@ public:
 		else if (t == ncDouble) v.add_missing_value(v.preferred_double_missing_value());
 		else{
 			std::string msg = "Error 7: Unsupported data type\n";
-			logmsg(msg.c_str());
+			glog.logmsg(msg.c_str());
 			throw(msg);
 		}
 		return true;
@@ -409,23 +413,23 @@ public:
 			if (F.isgroupbyline() == false) continue;
 
 			if (F.datatype().name() == "UNKNOWN"){
-				logmsg("Warning 5: skipping field %s: unsupported Intrepid datatype\n", F.Name.c_str());
+				glog.logmsg("Warning 5: skipping field %s: unsupported Intrepid datatype\n", F.Name.c_str());
 				continue;
 			}
 
 			std::vector<size_t> recs = V.findmatchingrecords(i_field, F.Name);
 			if (recs.size() == 0){
-				logmsg("Warning 6: skipping field %s: could not find a match in the vocabulary file\n", F.Name.c_str());
+				glog.logmsg("Warning 6: skipping field %s: could not find a match in the vocabulary file\n", F.Name.c_str());
 				continue;
 			}
 
 			size_t vi = recs[0];
 			std::string convert = V.records[vi][i_convert];
 			if (convert == "no"){
-				logmsg("Warning 7: skipping ignored field %s\n", F.Name.c_str());
+				glog.logmsg("Warning 7: skipping ignored field %s\n", F.Name.c_str());
 				continue;
 			}
-			logmsg("Converting field %s\n", F.Name.c_str());
+			glog.logmsg("Converting field %s\n", F.Name.c_str());
 
 			std::string variable_name = V.records[vi][i_variable_name];
 			std::string standard_name = V.records[vi][i_standard_name];
@@ -450,7 +454,7 @@ public:
 				ILSegment& S = F.Segments[li];
 				
 				if (S.readbuffer() == false){
-					logmsg("Error 8: could not read buffer for line sequence number %lu in field %s\n", li, F.Name.c_str());
+					glog.logmsg("Error 8: could not read buffer for line sequence number %zu in field %s\n", li, F.Name.c_str());
 					return false;
 				}
 
@@ -489,23 +493,23 @@ public:
 			if (F.isgroupbyline() == true)continue;
 
 			if (F.datatype().name() == "UNKNOWN"){
-				logmsg("Warning 5: skipping field %s: unsupported Intrepid datatype\n", F.Name.c_str());
+				glog.logmsg("Warning 5: skipping field %s: unsupported Intrepid datatype\n", F.Name.c_str());
 				continue;
 			}
 
 			std::vector<size_t> recs = V.findmatchingrecords(i_field, F.Name);
 			if (recs.size() == 0){
-				logmsg("Warning 6: skipping field %s: could not find a match in the vocabulary file\n", F.Name.c_str());
+				glog.logmsg("Warning 6: skipping field %s: could not find a match in the vocabulary file\n", F.Name.c_str());
 				continue;
 			}
 
 			size_t vi = recs[0];
 			std::string convert = V.records[vi][i_convert];
 			if (convert == "no"){
-				logmsg("Warning 7: skipping ignored field %s\n", F.Name.c_str());
+				glog.logmsg("Warning 7: skipping ignored field %s\n", F.Name.c_str());
 				continue;
 			}
-			logmsg("Converting field %s\n", F.Name.c_str());
+			glog.logmsg("Converting field %s\n", F.Name.c_str());
 
 			std::string variable_name = V.records[vi][i_variable_name];
 			std::string standard_name = V.records[vi][i_standard_name];
@@ -513,7 +517,7 @@ public:
 
 			NcVar tmp = ncFile.getVar(variable_name);
 			if (tmp.isNull() == false){
-				logmsg("Error 9: variable name %s for field %s already exists in this NC file - skipping this field\n", variable_name.c_str(), F.Name.c_str());
+				glog.logmsg("Error 9: variable name %s for field %s already exists in this NC file - skipping this field\n", variable_name.c_str(), F.Name.c_str());
 				continue;
 			}
 
@@ -537,7 +541,7 @@ public:
 				ILSegment& S = F.Segments[li];
 				
 				if (S.readbuffer() == false){
-					logmsg("Error 8: could not read buffer for line sequence number %lu in field %s\n", li, F.Name.c_str());
+					glog.logmsg("Error 8: could not read buffer for line sequence number %zu in field %s\n", li, F.Name.c_str());
 					return false;
 				}
 
@@ -708,13 +712,13 @@ int main(int argc, char** argv)
 	catch (NcException& e)
 	{
 		_GSTPRINT_		
-		std::cout << e.what() << endl;
+		std::cout << e.what() << std::endl;
 		return 1;
 	}
 	catch (std::exception& e)
 	{
 		_GSTPRINT_
-		std::cout << e.what() << endl;
+		std::cout << e.what() << std::endl;
 		return 1;
 	}
 

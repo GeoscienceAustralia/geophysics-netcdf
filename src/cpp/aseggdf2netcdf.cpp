@@ -15,11 +15,6 @@ using namespace std;
 using namespace netCDF;
 using namespace netCDF::exceptions;
 
-#include "stacktrace.h"
-#ifdef USEGLOBALSTACKTRACE	
-	cStackTrace globalstacktrace;
-#endif
-
 #include <fstream>
 #include <mpi.h>
 #include "general_utils.h"
@@ -32,7 +27,16 @@ using namespace netCDF::exceptions;
 #include "csvfile.h"
 #include "geophysics_netcdf.h"
 
-FILE* global_log_file = NULL;
+#include "stacktrace.h"
+#ifdef USEGLOBALSTACKTRACE	
+cStackTrace gtrace;
+#endif
+
+#ifdef USEGLOBALSTACKTRACE
+	#include "stacktrace.h"
+	cStackTrace globalstacktrace;
+#endif
+class cLogger glog; //The instance of the global log file manager
 
 class cASEGGDF2Converter{
 
@@ -61,46 +65,51 @@ public:
 	size_t DataFileSubsample = 1;
 
 	cASEGGDF2Converter(const std::string& controlfile, int _mpisize = 1, int _mpirank = 0){		
+		_GSTITEM_
 		mpisize = _mpisize;
 		mpirank = _mpirank;
 		cBlock B(controlfile);
-		LogFile = B.getstringvalue("LogFile");
-
-		std::string suffix = stringvalue(mpirank, ".%04lu");
-		LogFile = insert_after_filename(LogFile, suffix);
-
-		global_log_file = fileopen(LogFile, "w");
 		
-		logmsg("Program starting at %s\n", timestamp().c_str());
-		B.write(global_log_file);
+		LogFile = B.getstringvalue("LogFile");				
+		std::string suffix = strprint(".%04d",mpirank);				
+		LogFile = insert_after_filename(LogFile,suffix);
+
+		glog.open(LogFile);				
+		glog.logmsg("Program starting at %s\n", timestamp().c_str());
+		glog.log(B.get_as_string());
 
 		M = cMetaDataRecord(B, "Metadata");
 		std::string argusfile = B.getstringvalue("ArgusMetaData");
 		Argus = cMetaDataTable(argusfile, 1);
 		V = cCSVFile(B.getstringvalue("VocabularyFile"));
+		
+		DataFileDir = B.getstringvalue("ASEGGDF2Dir");
+		fixseparator(DataFileDir);
+		addtrailingseparator(DataFileDir);
+
+		NetCDFOutputDir = B.getstringvalue("NetCDFOutputDir");		
+		fixseparator(NetCDFOutputDir);
+		addtrailingseparator(NetCDFOutputDir);
+
 		DataFileStart = B.getsizetvalue("DataFileStart");
 		DataFileSubsample = B.getsizetvalue("DataFileSubsample");
+		
 		OverWriteExistingNcFiles = B.getboolvalue("OverWriteExistingNcFiles");
 		DummyRun = B.getboolvalue("DummyRun");
 		AddGeospatialMetadata = B.getboolvalue("AddGeospatialMetadata");
 		AddLineStartEndPoints = B.getboolvalue("AddLineStartEndPoints");
 		AddAlphaShapePolygon = B.getboolvalue("AddAlphaShapePolygon");
-
-		DataFileDir = B.getstringvalue("ASEGGDF2Dir");
-		NetCDFOutputDir = B.getstringvalue("NetCDFOutputDir");
-		fixseparator(DataFileDir);
-		fixseparator(NetCDFOutputDir);
-
 		process();
+		glog.close();
 	};
 
 	~cASEGGDF2Converter(){						
-		logmsg("Finished at %s\n", timestamp().c_str());
-		fclose(global_log_file);
-		global_log_file = NULL;
+		glog.logmsg("Finished at %s\n", timestamp().c_str());
+		glog.close();					
 	};
 
 	bool process(){
+		_GSTITEM_
 		std::vector<std::string> dlist = getfilelist(DataFileDir, "dat");
 		int count = -1;
 		for (size_t di = DataFileStart - 1; di < dlist.size(); di = di + DataFileSubsample){
@@ -108,8 +117,8 @@ public:
 			if (count % mpisize == mpirank){
 				DatPath = dlist[di];
 				DatName = extractfilename_noextension(DatPath);
-				DfnPath = extractfiledirectory(DatPath) + DatName + ".dfn";								
-				NCPath = NetCDFOutputDir + DatName + ".nc";				
+				DfnPath = extractfiledirectory(DatPath) + DatName + ".dfn";												
+				NCPath  = NetCDFOutputDir + DatName + ".nc";				
 				convert_aseggdf2_file();
 			}
 		}
@@ -118,11 +127,12 @@ public:
 
 	size_t scan_for_line_index(const cAsciiColumnFile& D, std::vector<unsigned int>& line_index_start, std::vector<unsigned int>& line_index_count, std::vector<unsigned int>& line_number)
 	{
+		_GSTITEM_
 		size_t fi = D.fieldindexbyname("line");
 		size_t i1 = D.fields[fi].startchar;
 		size_t i2 = D.fields[fi].endchar;
 
-		size_t n = 0;
+		unsigned int n = 0;
 		std::ifstream in(DatPath);
 		std::string s;
 
@@ -147,7 +157,8 @@ public:
 	}
 
 	std::vector<bool>  scan_for_groupby_fields(const cAsciiColumnFile& D, const std::vector<unsigned int>& line_index_count)
-	{					
+	{		
+		_GSTITEM_
 		std::vector<bool> groupby(D.fields.size(),true);
 		std::ifstream infile(DatPath);
 		std::string s, t;			
@@ -172,12 +183,14 @@ public:
 	}
 
 	int determine_GA_project_number(const cAsciiColumnFile& D)
-	{		
+	{	
+		_GSTITEM_
 		int project = -1;
 		size_t fi = D.nullfieldindex();		
 		if (D.fieldindexbyname("project", fi)){}
 		else if (D.fieldindexbyname("ga_project", fi)){}
 		else if (D.fieldindexbyname("survey", fi)){}
+		else if (D.fieldindexbyname("Proj_Client", fi)) {}		
 		else if (parse_GA_projectnumber(DatName, project)){
 			return project;
 		}
@@ -196,6 +209,7 @@ public:
 	}
 
 	bool parse_GA_projectnumber(const std::string& str, int& pguess){
+		_GSTITEM_
 		bool status = false;
 		pguess = -1;
 		for (size_t i = 0; i < DatName.size(); i++){
@@ -210,15 +224,16 @@ public:
 	}
 	
 	bool populate_metadata(cMetaDataRecord& r, const int projectnumber){		
+		_GSTITEM_
 		std::vector<size_t> arecords = Argus.findmatchingrecords("PROJECT", projectnumber);
 
 		if (arecords.size() == 0){
-			logmsg("Warning 2a: Could not find a matching PROJECT for project number %d\n", projectnumber);
+			glog.logmsg("Warning 2a: Could not find a matching PROJECT for project number %d\n", projectnumber);
 			return false;
 		}
 
 		if (arecords.size() > 1){
-			logmsg( "Warning 2b: Found more than 1 matching PROJECT for project number %d\n", projectnumber);
+			glog.logmsg( "Warning 2b: Found more than 1 matching PROJECT for project number %d\n", projectnumber);
 			return false;
 		}
 		size_t argusrecord = arecords[0];
@@ -246,88 +261,87 @@ public:
 	};
 
 	bool convert_aseggdf2_file(){
+		_GSTITEM_
 
 		if (exists(DatPath) == false){
-			logmsg( "Error 1: Data file %s does not exist\n", DatPath.c_str());
+			glog.logmsg("Error 1: Data file %s does not exist\n", DatPath.c_str());
 			return false;
 		}
 
 		if (exists(DatPath) == false){
-			logmsg( "Error 2: DFN file %s does not exist\n", DfnPath.c_str());
+			glog.logmsg("Error 2: DFN file %s does not exist\n", DfnPath.c_str());
 			return false;
 		}
 
 		if (exists(NCPath)){
 			if (OverWriteExistingNcFiles == false){
-				logmsg( "Warning 1: NetCDF file %s already exists - skipping this data file\n", NCPath.c_str());
+				glog.logmsg("Warning 1: NetCDF file %s already exists - skipping this data file\n", NCPath.c_str());
 				return false;
 			}
 		}
 
-		logmsg( "\nConverting data file %s\n", DatPath.c_str());
+		glog.logmsg("\nConverting data file %s\n", DatPath.c_str());
 
-		logmsg( "Opening data file\n");
+		glog.logmsg("Opening data file\n");
 		cAsciiColumnFile D(DatPath);
 		
-		logmsg( "Parsing ASEGGDF2 header\n");
+		glog.logmsg("Parsing ASEGGDF2 header\n");
 		D.parse_aseggdf2_header(DfnPath);
 
-		logmsg( "Determining GA project number\n");
+		glog.logmsg( "Determining GA project number\n");
 		int projectnumber = determine_GA_project_number(D);
 		if (projectnumber < 0){
-			logmsg( "Error 3: could not determinine GA project number - skipping this database\n");
+			glog.logmsg( "Error 3: could not determinine GA project number - skipping this database\n");
 			return false;
 		}
 
-		logmsg( "Populating metadata\n");
+		glog.logmsg( "Populating metadata\n");
 		cMetaDataRecord R = M;
 		bool status = populate_metadata(R, projectnumber);
 		if (status == false){
-			logmsg( "Error 4: could not find the Argus metadata record for this project %d - skipping this database\n", projectnumber);
+			glog.logmsg( "Error 4: could not find the Argus metadata record for this project %d - skipping this database\n", projectnumber);
 			return false;
 		}
 
 		std::vector<unsigned int> line_number;
 		std::vector<unsigned int> line_index_start;
 		std::vector<unsigned int> line_index_count;
-		logmsg( "Scanning for line index\n");
+		glog.logmsg("Scanning for line index\n");
 		size_t npoints = scan_for_line_index(D,line_index_start, line_index_count, line_number);
-		logmsg( "Total number of points is %lu\n", npoints);
+		glog.logmsg("Total number of points is %lu\n", npoints);
 
-		logmsg( "Scanning for groupby fields\n");
+		glog.logmsg("Scanning for groupby fields\n");
 		std::vector<bool> isgroupby = scan_for_groupby_fields(D,line_index_count);
 
-		logmsg( "Creating NetCDF file\n");
+		glog.logmsg("Creating NetCDF file\n");
 		cGeophysicsNcFile ncFile(NCPath, NcFile::replace);
 
-		logmsg( "Adding line index variables\n");
+		glog.logmsg("Adding line index variables\n");
 		ncFile.InitialiseNew(line_number, line_index_count);
-
-		logmsg( "Adding global metadata\n");
+		
+		glog.logmsg("Adding global metadata\n");
 		add_global_metadata(ncFile, R);
 		
 		//Pre process the fields
 		for (size_t fi = 0; fi < D.fields.size(); fi++){
 			std::string fieldname = D.fields[fi].name;
 			if (fieldname == DN_LINE){
-				logmsg("Skip processing field %3lu - %s (already in index)\n", fi, fieldname.c_str());
+				glog.logmsg("Skip processing field %3lu - %s (already in index)\n", fi, fieldname.c_str());
 				continue;
 			}
 			else{
-				logmsg("Pre processing field  %3lu - %s\n", fi, fieldname.c_str());
+				glog.logmsg("Pre processing field  %3lu - %s\n", fi, fieldname.c_str());
 			}
-			
-			
-			
+						
 			size_t nbands = D.fields[fi].nbands;
 
 			std::vector<NcDim> vardims;
 			if (nbands > 1){
-				std::string dimname = "layers";
+				std::string dimname = "window";
 				NcDim dimband = ncFile.getDim(dimname);
 				if (dimband.isNull()){
-					std::vector<unsigned int> layers = increment((unsigned int)nbands, (unsigned int)0, (unsigned int)1);
-					dimband = ncFile.addDimVar("layers", layers);					
+					std::vector<unsigned int> b = increment((unsigned int)nbands, (unsigned int)0, (unsigned int)1);
+					dimband = ncFile.addDimVar(dimname, b);
 				}
 				bool status = dimband.isNull();
 				vardims.push_back(dimband);
@@ -361,14 +375,12 @@ public:
 			}			
 		}
 
-		size_t fi_line = D.fieldindexbyname("line");
-		size_t fi_x    = D.fieldindexbyname("easting");
-		size_t fi_y    = D.fieldindexbyname("northing");
-		
+		size_t fi_line = D.fieldindexbyname("line");				
+
 		std::vector<std::vector<int>>    intfields;
 		std::vector<std::vector<double>> dblfields;
 		size_t lineindex = 0;
-		logmsg("Processing lines\n");
+		glog.logmsg("Processing lines\n");
 		while (size_t nsamples = D.readnextgroup(fi_line, intfields, dblfields)){			
 			for (size_t fi = 0; fi < D.fields.size(); fi++){								
 				std::string fieldname = D.fields[fi].name;
@@ -422,30 +434,44 @@ public:
 		}
 		D.closefile();
 
+
+		cSampleVar sv = ncFile.getSampleVar("Easting");
+		std::vector<int> d;
+		sv.getLine(0, d);
+
+		//bookmark
+		cLineVar lv = ncFile.getLineVar("line");
+		std::vector<int> i;
+		lv.getLine(0, i);
+
+		//std::vector<int> i;
+		//v1.getLine(0, i);
+
 		if (DummyRun == false){			
 			if (AddGeospatialMetadata){
-				logmsg("Adding geospatial metadata\n");
+				glog.logmsg("Adding geospatial metadata\n");
 				ncFile.addGeospatialMetadataXY();
 				ncFile.addGeospatialMetadataVertical();
 			}
 
 			if (AddLineStartEndPoints){
-				logmsg( "Adding line start and end points\n");
-				ncFile.addLineStartEndPointsEN();
+				glog.logmsg( "Adding line start and end points\n");				
+				ncFile.addLineStartEndPointsEN();				
 			}
 
 			if (AddAlphaShapePolygon){
-				logmsg( "Adding alphashape polygon\n");
+				glog.logmsg( "Adding alphashape polygon\n");
 				//ncFile.addAlphaShapePolygon("longitude","latitude");
-				ncFile.addAlphaShapePolygon("easting", "northing");
+				ncFile.addAlphaShapePolygon("Easting", "Northing");
 			}
 		}
-		logmsg( "Conversion complete\n");
+		glog.logmsg( "Conversion complete\n");
 
 		return true;
 	}
 	
 	bool add_global_metadata(cGeophysicsNcFile& ncFile, const cMetaDataRecord& m){		
+		_GSTITEM_
 		for (size_t j = 0; j < m.header.size(); j++){
 			if (m.header[j][0] == '/')continue;
 
@@ -485,6 +511,7 @@ public:
 	}
 
 	std::string standardize_date(const std::string& indate){		
+		_GSTITEM_
 		int day, month, year;
 		int n = sscanf(indate.c_str(), "%d/%d/%d", &day, &month, &year);
 		if (n == 3){
@@ -497,7 +524,7 @@ public:
 };
 
 int main(int argc, char** argv)
-{
+{		
 	_GSTITEM_
 	if (argc != 2){
 		printf("Usage: %s control_file_name\n", argv[0]);
@@ -511,7 +538,7 @@ int main(int argc, char** argv)
 	MPI_Comm_rank(MPI_COMM_WORLD, &mpirank);
 
 	try
-	{
+	{		
 		double t1 = gettime();
 		std::string controlfile = argv[1];
 		cASEGGDF2Converter C(controlfile, mpisize, mpirank);		
@@ -520,16 +547,18 @@ int main(int argc, char** argv)
 	}
 	catch (NcException& e)
 	{
-		_GSTPRINT_
-		std::cout << e.what() << endl;
+		_GSTPRINT_		
+		glog.logmsg(e.what());
+		glog.logmsg("\n");
 		return 1;
 	}
 	catch (std::exception& e)
 	{
 		_GSTPRINT_
-		std::cout << e.what() << endl;
+		glog.logmsg(e.what());
+		glog.logmsg("\n");
 		return 1;
-	}
+	}	
 
 	MPI_Barrier(MPI_COMM_WORLD);
 	MPI_Finalize();

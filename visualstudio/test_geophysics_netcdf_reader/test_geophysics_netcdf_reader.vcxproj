@@ -41,6 +41,7 @@
     <Import Project="..\propertysheets\cgal.props" />
     <Import Project="..\propertysheets\gdal.props" />
     <Import Project="..\propertysheets\msmpi.x64.props" />
+    <Import Project="..\propertysheets\cpp-utils.props" />
     <Import Project="..\propertysheets\geophysics-netcdf.props" />
   </ImportGroup>
   <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="PropertySheets">
@@ -52,6 +53,7 @@
     <Import Project="..\propertysheets\gdal.props" />
     <Import Project="..\propertysheets\msmpi.x64.props" />
     <Import Project="..\propertysheets\geophysics-netcdf.props" />
+    <Import Project="..\propertysheets\cpp-utils.props" />
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">

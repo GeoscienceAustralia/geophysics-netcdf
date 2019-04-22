@@ -13,8 +13,8 @@ Author: Ross C. Brodie, Geoscience Australia.
 #include <limits>
 
 #ifdef USEGLOBALSTACKTRACE
-#include "stacktrace.h"
-cStackTrace globalstacktrace;
+	#include "stacktrace.h"
+	cStackTrace gtrace;
 #endif
 
 #include "marray.hxx"
@@ -29,10 +29,9 @@ using namespace netCDF::exceptions;
 #include "file_formats.h"
 #include "geophysics_netcdf.h"
 #include "stopwatch.h"
+#include "logger.h"
 
-using namespace std;
-
-FILE* global_log_file = NULL;
+class cLogger glog;
 
 bool example_magnetics(){
 
@@ -80,11 +79,11 @@ bool example_magnetics(){
 	
 	double t, ta, tb;
 	ta = gettime(); status = xvar.getAll(x); tb = gettime();
-	logmsg("Get all of x (%lu doubles) - time=%lf s\n", x.size(), tb - ta);
+	glog.logmsg("Get all of x (%lu doubles) - time=%lf s\n", x.size(), tb - ta);
 	ta = gettime(); status = yvar.getAll(x); tb = gettime();
-	logmsg("Get all of y (%lu doubles) - time=%lf s\n", x.size(), tb - ta);
+	glog.logmsg("Get all of y (%lu doubles) - time=%lf s\n", x.size(), tb - ta);
 	ta = gettime(); status = mvar.getAll(mag); tb = gettime();
-	logmsg("Get all of mag (%lu floats) - time=%lf s\n", x.size(), tb - ta);
+	glog.logmsg("Get all of mag (%lu floats) - time=%lf s\n", x.size(), tb - ta);
 
 	t = 0;
 	for (size_t li = 0; li < ncfile.nlines(); li += 100){
@@ -93,10 +92,10 @@ bool example_magnetics(){
 		status = yvar.getLine(li, y);
 		status = mvar.getLine(li, mag);		
 		tb = gettime();
-		logmsg("%lu nsamples=%lu - time=%lf s\n", li, x.size(), tb - ta);
+		glog.logmsg("%lu nsamples=%lu - time=%lf s\n", li, x.size(), tb - ta);
 		t += (tb - ta);
 	}		
-	logmsg("Total every 100th line - time=%lf\n", t);
+	glog.logmsg("Total every 100th line - time=%lf\n", t);
 	return true;
 }
 
@@ -118,21 +117,22 @@ bool example_aem_conductivity(){
 	//Get conductivity data all at once in 1d array
 	std::vector<float> c1darray;
 	t1 = gettime();	status = vc.getAll(c1darray); t2 = gettime();
-	logmsg("Get all at once (%lu floats) - time=%lf s\n", c1darray.size(), t2-t1);
+	glog.logmsg("Get all at once (%lu floats) - time=%lf s\n", c1darray.size(), t2-t1);
 	//Get conductivity line by line and band by band in 1d array
 	t1 = gettime();
 	for (size_t li = 0; li < ncfile.nlines(); li++){	
 		for (size_t bi = 0; bi < vc.nbands(); bi++){			
 			//status = vc.getLine(li, bi, c1darray);
-			if (status == false)logmsg("Error");
+			if (status == false)glog.logmsg("Error");
 		}
-	} t2 = gettime(); logmsg("Get line by line and band by band in 1d array - time=%lf s\n", t2 - t1);
+	} t2 = gettime(); glog.logmsg("Get line by line and band by band in 1d array - time=%lf s\n", t2 - t1);
 	//Get conductivity line by line in 2d array
 	t1 = gettime();
 	std::vector<std::vector<float>> c2darray;
 	for (size_t li = 0; li < ncfile.nlines(); li++){	
-		status = ncfile.getDataByLineIndex(varname, li, c2darray); 	if (status == false)logmsg("Error");
-	} t2 = gettime(); logmsg("Get line by line in 2D array - time=%lf s\n", t2-t1);
+		status = ncfile.getDataByLineIndex(varname, li, c2darray);
+		if (status == false)glog.logmsg("Error");
+	} t2 = gettime(); glog.logmsg("Get line by line in 2D array - time=%lf s\n", t2-t1);
 	return true;	
 }
 
@@ -297,14 +297,14 @@ void test_marray(){
 	for (size_t j = 0; j<a.size(); ++j) a(j) = j;
 	
 	
-	cout << a.asString() << endl;
-	cout << a.size() << endl;
+	std::cout << a.asString() << std::endl;
+	std::cout << a.size() << std::endl;
 
 	dims = { 3, 2, 4 };
 	a.reshape(dims.data(), dims.data() + dims.size());
 
-	cout << a.asString() << endl;
-	cout << a.size() << endl;
+	std::cout << a.asString() << std::endl;
+	std::cout << a.size() << std::endl;
 };
 
 bool test_convert(){
@@ -326,10 +326,9 @@ bool test_convert(){
 int main(int argc, char** argv)
 {
 	_GSTITEM_
-	logmsg("Opening log file\n");
-	global_log_file = fopen("test.log", "w");
-	logmsg("Log file opened\n");	
-	
+	glog.logmsg("Opening log file\n");
+	glog.open("test.log");
+		
 	OGRSpatialReference srs;	
 	//OGRErr err = srs.importFromERM("GEODETIC","GDA94","METERS");
 	OGRErr err = srs.importFromERM("GEODETIC","WGS84","METERS");	
@@ -351,20 +350,19 @@ int main(int argc, char** argv)
 		//test_columnfile();
 		//test_aseggdfheader();
 		//test_marray();
-		//test_convert();
-		logmsg("Closing log file\n");
-		fclose(global_log_file);
+		//test_convert();		
+		glog.close();
 	}
 	catch (NcException& e)
 	{
 		_GSTPRINT_		
-		logmsg(e.what());
+		glog.logmsg(e.what());
 		return 1;
 	}
 	catch (std::exception& e)
 	{
 		_GSTPRINT_
-		logmsg(e.what());
+		glog.logmsg(e.what());
 		return 1;
 	}
 
