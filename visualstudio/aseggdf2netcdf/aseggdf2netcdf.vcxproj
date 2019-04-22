@@ -100,7 +100,6 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="..\..\src\cpp\aseggdf2netcdf.cpp" />
-    <ClCompile Include="..\..\src\cpp\geophysics_netcdf.cpp" />
     <ClCompile Include="..\..\submodules\cpp-utils\src\cgal_utils.cpp" />
     <ClCompile Include="..\..\submodules\cpp-utils\src\file_utils.cpp" />
     <ClCompile Include="..\..\submodules\cpp-utils\src\gdal_utils.cpp" />

@@ -10,8 +10,6 @@ Author: Ross C. Brodie, Geoscience Australia.
 #define _geophysics_netcdf_H
 
 #include "stacktrace.h"
-//#ifdef USEGLOBALSTACKTRACE
-//#endif
 
 #include <cassert>
 #include <stdexcept>
@@ -1761,6 +1759,23 @@ public:
 	};
 	
 };
+
+inline size_t cGeophysicsVar::line_index_start(const size_t& index) const {
+	size_t start = FilePtr->get_line_index_start(index);
+	return start;
+}
+
+inline size_t cGeophysicsVar::line_index_count(const size_t& index) const {
+	size_t count = FilePtr->get_line_index_count(index);
+	return count;
+}
+
+inline NcType nctype(const short) { return ncShort; }
+inline NcType nctype(const int) { return ncInt; }
+inline NcType nctype(const unsigned int) { return ncUint; }
+inline NcType nctype(const float) { return ncFloat; }
+inline NcType nctype(const double) { return ncDouble; }
+inline NcType nctype(const std::string) { return ncString; }
 
 #endif
 
