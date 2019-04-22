@@ -4,7 +4,7 @@ SHELL = /bin/sh
 .SUFFIXES: .cpp .o
 .DEFAULT_GOAL := allclean
 
-includes   = -I$(cpputilssrc) -I$(srcdir)
+includes   = -I$(srcdir) -I$(cpputilssrc) -I$(marray_include)
 
 #cxxflags  += -DUSEGLOBALSTACKTRACE
 cxxflags   += -D_MPI_ENABLED
@@ -14,7 +14,6 @@ executable =  $(exedir)/intrepid2netcdf.exe
 
 objects += $(cpputilssrc)/general_utils.o
 objects += $(cpputilssrc)/file_utils.o
-objects += $(cpputilssrc)/blocklanguage.o
 objects += $(cpputilssrc)/cgal_utils.o
 objects += $(srcdir)/geophysics_netcdf.o
 objects += $(srcdir)/intrepid2netcdf.o

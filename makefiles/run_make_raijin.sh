@@ -1,13 +1,13 @@
 #!/bin/sh
 
-module load cgal/4.6.3
-module load netcdf/4.3.3.1p
-module load openmpi/1.6.3
+
+module load geophysics-netcdf
 module list
 
 export srcdir='../src/cpp'
 export cpputilssrc='../submodules/cpp-utils/src'
 export netcdfcxxdir='../submodules/netcdf-cxx4'
+export marray_include='../submodules/marray/include/andres'
 
 #GNU compiler on raijin.nci.org.au
 #module load gcc/4.9.0 #netcdfc++ not linking with module load gcc/5.2.0 #module load gcc/6.2.0

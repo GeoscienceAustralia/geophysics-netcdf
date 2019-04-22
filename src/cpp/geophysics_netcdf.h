@@ -342,15 +342,6 @@ public:
 	}
 
 	template<typename T>
-	bool getLine(const size_t& lineindex, const size_t& bandindex, T& val) const = 0;
-
-	template<typename T>
-	bool getLine(const size_t& lineindex, T& val) const = 0;
-		
-	template<typename T>
-	bool getLine(const size_t& lineindex, std::vector<T>& vals) const = 0;
-		
-	template<typename T>
 	void getLine(const size_t& lineindex, Marray<T>& A) const {
 		_GSTITEM_
 		if (isNull()){
@@ -829,15 +820,16 @@ public:
 	//Destructor
 	~cGeophysicsNcFile(){};	
 
-	void open1(const std::string& ncpath, const FileMode& filemode = NcFile::FileMode::read)
+
+	void open(const std::string& ncpath, const FileMode& filemode = NcFile::FileMode::read)
 	{
-		_GSTITEM_		
+		_GSTITEM_
 		if (filemode == NcFile::read) {
-			NcFile::open(ncpath, NC_NOWRITE | NC_SHARE);
+			NcFile::open(ncpath, filemode);
 			InitialiseExisting();
 		}
 		else if (filemode == NcFile::write) {
-			NcFile::open(ncpath, NC_NOWRITE | NC_SHARE);
+			NcFile::open(ncpath, filemode);
 			InitialiseExisting();
 		}
 		else if (filemode == NcFile::replace) {
@@ -851,7 +843,7 @@ public:
 		}
 	}
 
-	void open(const std::string& ncpath, const FileMode& filemode = NcFile::FileMode::read)
+	/*void open(const std::string& ncpath, const FileMode& filemode = NcFile::FileMode::read)
 	{
 		_GSTITEM_
 		NcFile::open(ncpath, filemode);
@@ -870,7 +862,7 @@ public:
 		else {
 
 		}
-	}
+	}*/
 
 	bool InitialiseNew(const std::vector<size_t>& linenumbers, const std::vector<size_t>& linesamplecount){
 		_GSTITEM_
@@ -1089,9 +1081,9 @@ public:
 		return true;
 	}
 
-	const size_t nlines() const { return line_index_start.size(); }
-	const size_t ntotalsamples() const { return sum(line_index_count); }
-	const size_t nlinesamples(const size_t lineindex) const { return line_index_count[lineindex]; }
+	size_t nlines() const { return line_index_start.size(); }
+	 size_t ntotalsamples() const { return sum(line_index_count); }
+	size_t nlinesamples(const size_t lineindex) const { return line_index_count[lineindex]; }
 
 	size_t getLineIndexByPointIndex(const int& pointindex)
 	{		
