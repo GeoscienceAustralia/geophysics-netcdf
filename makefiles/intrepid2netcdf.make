@@ -4,18 +4,20 @@ SHELL = /bin/sh
 .SUFFIXES: .cpp .o
 .DEFAULT_GOAL := allclean
 
-includes   = -I$(srcdir) -I$(cpputilssrc) -I$(marray_include)
+includes  = -I$(srcdir)
+includes += -I$(cpputilssrc)
+includes += -I$(marray_include)
 
-#cxxflags  += -DUSEGLOBALSTACKTRACE
-cxxflags   += -D_MPI_ENABLED
+cxxflags  += -DUSEGLOBALSTACKTRACE
+cxxflags  += -D_MPI_ENABLED
 
-libs       =  -lnetcdf -lnetcdf_c++4 -lCGAL_Core
+libs       =  -lnetcdf -lnetcdf_c++4 -lgdal -lCGAL_Core
 executable =  $(exedir)/intrepid2netcdf.exe
 
-objects += $(cpputilssrc)/general_utils.o
+objects  = $(cpputilssrc)/general_utils.o
 objects += $(cpputilssrc)/file_utils.o
+objects += $(cpputilssrc)/gdal_utils.o
 objects += $(cpputilssrc)/cgal_utils.o
-objects += $(srcdir)/geophysics_netcdf.o
 objects += $(srcdir)/intrepid2netcdf.o
 
 %.o : %.cpp
