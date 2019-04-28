@@ -783,21 +783,19 @@ private:
 public:
 
 	//Do not allow implicit definition of copy constructor or assignment operators	
-	cGeophysicsNcFile& operator=(const NcGroup & rhs);
-	cGeophysicsNcFile& operator=(const NcFile & rhs);
-	cGeophysicsNcFile& operator=(const cGeophysicsNcFile & rhs);
+	cGeophysicsNcFile& operator=(const NcGroup & rhs) = delete;
+	cGeophysicsNcFile& operator=(const NcFile & rhs) = delete;
+	cGeophysicsNcFile& operator=(const cGeophysicsNcFile & rhs) = delete;
 
-	cGeophysicsNcFile(const NcGroup& rhs);
-	cGeophysicsNcFile(const NcFile& rhs);
-	cGeophysicsNcFile(const cGeophysicsNcFile& rhs);
+	cGeophysicsNcFile(const NcGroup& rhs) = delete;
+	cGeophysicsNcFile(const NcFile& rhs) = delete;
+	cGeophysicsNcFile(const cGeophysicsNcFile& rhs) = delete;
 
 	size_t get_line_index_start(const size_t& i) const { return line_index_start[i]; }
 	size_t get_line_index_count(const size_t& i) const { return line_index_count[i]; }
 
 	// Constructor generates a null object.
-	cGeophysicsNcFile() :
-		NcFile()  // invoke base class constructor
-	{}
+	cGeophysicsNcFile() : NcFile() {} // invoke base class constructor	
 
 	//Open existing file constructor
 	cGeophysicsNcFile(const std::string& ncpath, const FileMode& filemode = NcFile::FileMode::read)
@@ -839,28 +837,7 @@ public:
 		else {
 
 		}
-	}
-
-	/*void open(const std::string& ncpath, const FileMode& filemode = NcFile::FileMode::read)
-	{
-		_GSTITEM_
-		NcFile::open(ncpath, filemode);
-		if (filemode == NcFile::read) {
-			InitialiseExisting();
-		}
-		else if (filemode == NcFile::write) {
-			InitialiseExisting();
-		}
-		else if (filemode == NcFile::replace) {
-
-		}
-		else if (filemode == NcFile::newFile) {
-
-		}
-		else {
-
-		}
-	}*/
+	}	
 
 	bool InitialiseNew(const std::vector<size_t>& linenumbers, const std::vector<size_t>& linesamplecount){
 		_GSTITEM_
@@ -1083,18 +1060,15 @@ public:
 	 size_t ntotalsamples() const { return sum(line_index_count); }
 	size_t nlinesamples(const size_t lineindex) const { return line_index_count[lineindex]; }
 
-	size_t getLineIndexByPointIndex(const int& pointindex)
+	size_t getLineIndexByPointIndex(const int& pointindex) const 
 	{		
 		_GSTITEM_
-		auto it = std::lower_bound(line_index_start.begin(), line_index_start.end(), pointindex);
-		if (it == line_index_start.end()) {			
-			if (line_index_start.back() + line_index_count.back() > (size_t)pointindex) {
-				return line_index_start.size() - 1;
-			}
-			else return ud_size_t();
+		const size_t n = line_index_start.size() - 1;
+		for (size_t k = 0; k < n; k++) {
+			if (line_index_start[k+1] > pointindex) return k;
 		}
-		size_t i = std::distance(line_index_start.begin(), it);
-		return i;
+		if (line_index_start[n] + line_index_count[n] > pointindex) return n;			   		 	  		
+		return ud_size_t();		
 	};
 
 	size_t getLineIndex(const int& linenumber){
@@ -1252,7 +1226,7 @@ public:
 		}
 
 		size_t record;
-		if (isSampleVar(var))record = pointindex;
+		if (isSampleVar(var)) record = pointindex;
 		else record = getLineIndexByPointIndex(pointindex);
 		return var.getRecord(record,vals);
 	}
