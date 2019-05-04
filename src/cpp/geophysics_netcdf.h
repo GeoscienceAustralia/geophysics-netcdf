@@ -1069,9 +1069,9 @@ public:
 		_GSTITEM_
 		const size_t n = line_index_start.size() - 1;
 		for (size_t k = 0; k < n; k++) {
-			if (line_index_start[k+1] > pointindex) return k;
+			if ((int)line_index_start[k+1] > pointindex) return k;
 		}
-		if (line_index_start[n] + line_index_count[n] > pointindex) return n;			   		 	  		
+		if ((int)(line_index_start[n] + line_index_count[n]) > pointindex) return n;
 		return ud_size_t();		
 	};
 
