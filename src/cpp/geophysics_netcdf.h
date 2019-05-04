@@ -29,7 +29,12 @@ Author: Ross C. Brodie, Geoscience Australia.
 using namespace netCDF;
 using namespace netCDF::exceptions;
 
+
+#pragma warning push
+#pragma warning disable 858 //warning #858: type qualifier on return type is meaningless
 #include "marray.hxx"
+#pragma warning pop
+
 using namespace andres;
 
 extern cLogger glog;//The global instance of the log file manager
@@ -366,7 +371,6 @@ public:
 		}
 
 		A.resize(count.data(), count.data() + count.size());
-		size_t sz = lineelements(lineindex);
 		getVar(start, count, &(A(0)));
 	}
 
@@ -812,7 +816,7 @@ public:
 		: NcFile(filename, NcFile::FileMode::newFile)
 	{
 		_GSTITEM_
-		bool status = convert_legacy(srcfile);
+		convert_legacy(srcfile);
 	};
 
 	//Destructor
@@ -985,7 +989,7 @@ public:
 			else{
 				copy_var(srcvar);
 				NcVar v = getVar(srcvar.getName());
-				int status = nc_rename_att(getId(), v.getId(), "standard_name", "long_name");
+				nc_rename_att(getId(), v.getId(), "standard_name", "long_name");
 				
 				if (v.getName() == "latitude"){
 					v.putAtt("standard_name", "latitude");
@@ -1002,7 +1006,7 @@ public:
 						std::string units;
 						a.getValues(units);
 						if (units == "1"){
-							status = nc_del_att(getId(), v.getId(), AN_UNITS);
+							nc_del_att(getId(), v.getId(), AN_UNITS);
 						}
 					}
 				}
@@ -1394,11 +1398,11 @@ public:
 			NcVar v = NcFile::addVar("crs", ncByte, d);
 		#endif
 
-		v.putAtt(AN_LONG_NAME,"coordinate_reference_system");		
-		OGRSpatialReference srs = getsrs(epsgcode);			
+		v.putAtt(AN_LONG_NAME,"coordinate_reference_system");
+		OGRSpatialReference srs = getsrs(epsgcode);
 		char* wkt = NULL;
-		OGRErr err = srs.exportToWkt(&wkt);		
-		err = srs.importFromEPSG(epsgcode);		
+		srs.exportToWkt(&wkt);		
+		srs.importFromEPSG(epsgcode);		
 		v.putAtt("spatial_ref", wkt);
 		v.putAtt("inverse_flattening", ncDouble, srs.GetInvFlattening());
 		v.putAtt("semi_major_axis", ncDouble, srs.GetSemiMajor());
