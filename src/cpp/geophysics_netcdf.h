@@ -1739,7 +1739,7 @@ public:
 };
 
 inline size_t cGeophysicsVar::line_index_start(const size_t& index) const {
-	size_t start = FilePtr->get_line_index_start(index);
+	size_t start = FilePtr->get_line_index_start(index);	
 	return start;
 }
 

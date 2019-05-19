@@ -382,13 +382,15 @@ public:
 		size_t lineindex = 0;
 		glog.logmsg("Processing lines\n");
 		while (size_t nsamples = D.readnextgroup(fi_line, intfields, dblfields)){			
-			for (size_t fi = 0; fi < D.fields.size(); fi++){								
+			for (size_t fi = 0; fi < D.fields.size(); fi++){				
 				std::string fieldname = D.fields[fi].name;
+
 				if (fieldname == DN_LINE) continue;
 
 				size_t nbands = D.fields[fi].nbands;
 
 				NcVar var = ncFile.getSampleVar(fieldname);
+				
 				std::vector<size_t> startp(2);
 				std::vector<size_t> countp(2);								
 				for (size_t bi = 0; bi < nbands; bi++){
@@ -431,9 +433,7 @@ public:
 				}				
 			}			
 			lineindex++;
-		}
-		D.closefile();
-
+		}		
 
 		cSampleVar sv = ncFile.getSampleVar("Easting");
 		std::vector<int> d;

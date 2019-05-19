@@ -3,10 +3,13 @@ Control Begin
 	DummyRun              = false
 	ArgusMetaData         = Z:\projects\geophysics_netcdf\metadata\airborne_metadata_tab.txt
 	VocabularyFile        = Z:\projects\geophysics_netcdf\metadata\vocabulary.csv
-	#ASEGGDF2Dir          = Z:\projects\2017_AusAEM_Survey_01\final\temp
-	#NetCDFOutputDir      = Z:\projects\2017_AusAEM_Survey_01\final\temp
-	ASEGGDF2Dir           = Z:\projects\2017_AusAEM_Survey_01\final\line_data_em
-	NetCDFOutputDir       = Z:\projects\2017_AusAEM_Survey_01\final\line_data_em
+
+	ASEGGDF2Dir          = Z:\projects\2017_AusAEM_Survey_01\final\temp
+	NetCDFOutputDir      = Z:\projects\2017_AusAEM_Survey_01\final\temp
+
+	#ASEGGDF2Dir           = Z:\projects\2017_AusAEM_Survey_01\final\line_data_em
+	#NetCDFOutputDir       = Z:\projects\2017_AusAEM_Survey_01\final\line_data_em
+
 	DatafileStart         = 1
 	DatafileSubsample     = 1
 	OverWriteExistingNcFiles = yes
