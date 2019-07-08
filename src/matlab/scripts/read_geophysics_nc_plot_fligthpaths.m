@@ -1,68 +1,71 @@
 clc;
 clear all;
 
-plotactualflightpath = true;
-plotstartendpoints   = true;
+plotactualflightpath = false;
 plotboundingpolygon  = true;
+plotstartendpoints   = false;
 
 addpath('Z:\code\repos\geophysics-netcdf\src\matlab\functions\');
 
-basedir = 'Y:\ops\gap\geophysical_methods\mag_rad\AWAGS_Levelled_Databases\rb_working\';
-plotdir = [basedir 'awags_conversions\plots\awags_plots\'];
+%basedir = 'Y:\ops\gap\geophysical_methods\mag_rad\AWAGS_Levelled_Databases\rb_working\';
+basedir = 'Z:\projects\geophysics_netcdf\matlab_test\';
+plotdir = [basedir];
 
-ncfiledir = 'Y:\ops\gap\geophysical_methods\mag_rad\AWAGS_Levelled_Databases\awags_survey_reformat\netcdf\';
-F = getfilelist(ncfiledir,'*.nc');
-
-%catalog1 = 'catalog/uc0/rr2_dev/rcb547/AWAGS_Levelled_Line_Databases/mag_database_reformat_adjusted/netcdf/catalog.html';
-%catalog2 = 'catalog/uc0/rr2_dev/rcb547/AWAGS_Levelled_Line_Databases/mag_database_reformat_2016_adjusted/netcdf/catalog.html';
-%plotdir = [basedir 'mag_plots\'];
-
-%catalog1 = 'catalog/uc0/rr2_dev/rcb547/AWAGS_Levelled_Line_Databases/rad_database_reformat_adjusted/netcdf/catalog.html';
-%catalog2 = 'catalog/uc0/rr2_dev/rcb547/AWAGS_Levelled_Line_Databases/rad_database_reformat_2016_adjusted/netcdf/catalog.html';
-%plotdir = [basedir 'rad_plots\'];
-%F1 = get_ncfile_list(catalog1);
-%F2 = get_ncfile_list(catalog2);
-%F = [F1 F2];
-
-%catalog1 = 'catalog/uc0/rr2_dev/rcb547/AWAGS_Levelled_Line_Databases/awags_survey_reformat/netcdf/catalog.html';
-%F = get_ncfile_list(catalog1);
+%ncfiledir = 'Z:\projects\2017_AusAEM_Survey_01\final\line_data_em';
+ncfiledir = 'Z:\projects\geophysics_netcdf\ncfiles\v2';
+F = getfilelist(ncfiledir,'P441*.nc');
+F = getfilelist(ncfiledir,'P1152*.nc');
+%catalog  = 'catalog/uc0/rr2_dev/axi547/magnetic_line/catalog.html';
+%F = get_ncfile_list(catalog);
 
 k=1;
-for i=1:1:length(F)
+for i=1:1:1
     %ncfile = F(i).ncurl;
     ncfile = F(i).pathname;
     
-    [p,n,e] = fileparts(ncfile);
+    [p,n,e]  = fileparts(ncfile);
     filename = [n e];
     plotname = [plotdir filename '.jpg'];
     
     %if(exist(plotname,'file'))continue;end;
     disp([num2str(i) ' ' ncfile]);
     
-    pt=0.1;
-    chunksize = 20e6;
+    pt=0.1;    
+    chunksize = 5e6;    
     [chosen_chunksize,fileid] = netcdf.open(ncfile,'NOWRITE',chunksize);
-    pause(pt);
+        
+    [istart icount] = get_start_count(fileid);  
+    nlines = length(istart);
     
-    istart = get_by_name(fileid,'index_line');pause(pt);
-    icount = get_by_name(fileid,'index_count');pause(pt);
-    line   = get_by_name(fileid,'line');pause(pt);
-    nlines = length(istart);pause(pt);
-    
-    %figure
+              
+    %% Figure
     close all;
-    figure;
+    dark_figure(1);
     maximize_figure();  
+    set(gcf,'InvertHardcopy','off');
     box on;
     hold on;
     
     if(plotactualflightpath)
-        vx  = get_vid_by_name(fileid,'longitude');
-        vy  = get_vid_by_name(fileid,'latitude');
-        for k=1:1:nlines
-            x = get_line(fileid,vx,istart(k),icount(k));
-            y = get_line(fileid,vy,istart(k),icount(k));
-            plot(x(1:100:end),y(1:100:end),'g.');
+        vx  = get_vid_by_stdname(fileid,'longitude');
+        vy  = get_vid_by_stdname(fileid,'latitude');
+        if(vx<0 || vy<0)
+            vx  = get_vid_by_name(fileid,'Longitude');
+            vy  = get_vid_by_name(fileid,'Latitude');
+        end            
+        if(vx<0 || vy<0)
+            vx  = get_vid_by_name(fileid,'longitude');
+            vy  = get_vid_by_name(fileid,'latitude');
+        end            
+                
+        for k=1:1:nlines    
+            %stride = floor(icount(k)/10);
+            stride = icount(k)-1;
+            x = get_line(fileid,vx,istart(k),icount(k),stride);
+            y = get_line(fileid,vy,istart(k),icount(k),stride);
+            plot(x,y,'-g+');
+            daspect([1 1 1]);
+            drawnow;
         end        
     end
     
@@ -75,14 +78,16 @@ for i=1:1:length(F)
     end
     
     if(plotboundingpolygon)
-        bp = get_by_name(fileid,'bounding_polygon');        
-        plot(bp(1,:),bp(2,:),'-r.');        
+        bp = get_by_name(fileid,'bounding_polygon');                        
+        if(~isempty(bp))
+            patch(bp(1,:),bp(2,:),':','edgecolor','r','facecolor','none','linewidth',2);            
+        end
     end
         
     daspect([1 1 1]);
-    title(filename,'interpreter','none','fontsize',8);
-    saveas(gcf,plotname); 
-    
+    title(filename,'interpreter','none','fontsize',14);
+    drawnow;
+    saveas(gcf,plotname);     
     netcdf.close(fileid);
 end
 
