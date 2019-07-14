@@ -20,10 +20,10 @@
     <ClCompile Include="..\..\submodules\cpp-utils\src\general_utils.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\src\cpp\intrepid2netcdf.cpp">
+    <ClCompile Include="..\..\submodules\cpp-utils\src\gdal_utils.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\submodules\cpp-utils\src\gdal_utils.cpp">
+    <ClCompile Include="..\..\src\intrepid2netcdf.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
