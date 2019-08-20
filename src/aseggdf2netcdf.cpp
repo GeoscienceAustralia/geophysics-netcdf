@@ -52,7 +52,7 @@ public:
 	
 	cMetaDataTable   Argus;
 	cMetaDataRecord  M;
-	cCSVFile V;
+	//cCSVFile V;
 	std::string DataFileDir;
 	std::string NetCDFOutputDir;
 	bool OverWriteExistingNcFiles = false;
@@ -81,7 +81,7 @@ public:
 		M = cMetaDataRecord(B, "Metadata");
 		std::string argusfile = B.getstringvalue("ArgusMetaData");
 		Argus = cMetaDataTable(argusfile, 1);
-		V = cCSVFile(B.getstringvalue("VocabularyFile"));
+		//V = cCSVFile(B.getstringvalue("VocabularyFile"));
 		
 		DataFileDir = B.getstringvalue("ASEGGDF2Dir");
 		fixseparator(DataFileDir);
@@ -325,10 +325,10 @@ public:
 		//Pre process the fields
 		for (size_t fi = 0; fi < D.fields.size(); fi++){
 			std::string fieldname = D.fields[fi].name;
-			if (fieldname == DN_LINE){
-				glog.logmsg("Skip processing field %3lu - %s (already in index)\n", fi, fieldname.c_str());
+			if (fieldname == DN_LINE || fieldname == "Line"){
+				glog.logmsg("Skip processing field %3zu - %s (already in index)\n", fi, fieldname.c_str());
 				continue;
-			}
+			}			
 			else{
 				glog.logmsg("Pre processing field  %3lu - %s\n", fi, fieldname.c_str());
 			}
@@ -362,7 +362,7 @@ public:
 			}
 
 			if (isgroupby[fi]){
-				cLineVar var = ncFile.addLineVar(varname, vartype, vardims);
+				cLineVar var = ncFile.addLineVar(varname, vartype, vardims);				
 				var.add_long_name(fieldname);
 				var.add_original_name(fieldname);
 				var.add_units(D.fields[fi].units);
@@ -372,7 +372,15 @@ public:
 				var.add_long_name(fieldname);
 				var.add_original_name(fieldname);
 				var.add_units(D.fields[fi].units);
-			}			
+
+				if (strcasecmp(fieldname.c_str(), "latitude") == 0) var.add_standard_name("latitude");
+				else if (strcasecmp(fieldname.c_str(), "Latitude") == 0) var.add_standard_name("latitude");
+				else if (strcasecmp(fieldname.c_str(), "longitude") == 0) var.add_standard_name("longitude");
+				else if (strcasecmp(fieldname.c_str(), "Longitude") == 0) var.add_standard_name("longitude");
+				else;				
+			}
+
+			
 		}
 
 		size_t fi_line = D.fieldindexbyname("line");				
@@ -385,7 +393,9 @@ public:
 			for (size_t fi = 0; fi < D.fields.size(); fi++){				
 				std::string fieldname = D.fields[fi].name;
 
-				if (fieldname == DN_LINE) continue;
+				//if (fieldname == DN_LINE) continue;
+				//if (fieldname == "Line") continue;
+				if (fieldname == DN_LINE || fieldname == "Line") continue;
 
 				size_t nbands = D.fields[fi].nbands;
 
@@ -455,14 +465,16 @@ public:
 			}
 
 			if (AddLineStartEndPoints){
-				glog.logmsg( "Adding line start and end points\n");				
-				ncFile.addLineStartEndPointsEN();				
+				glog.logmsg("Adding line start and end points\n");				
+				ncFile.addLineStartEndPointsLL();
+				//ncFile.addLineStartEndPointsEN();
 			}
 
 			if (AddAlphaShapePolygon){
-				glog.logmsg( "Adding alphashape polygon\n");
-				//ncFile.addAlphaShapePolygon("longitude","latitude");
-				ncFile.addAlphaShapePolygon("Easting", "Northing");
+				glog.logmsg("Adding alphashape polygon\n");
+				std::string xvarname = ncFile.getVarNameByStandardName("longitude");
+				std::string yvarname = ncFile.getVarNameByStandardName("latitude");
+				ncFile.addAlphaShapePolygon(xvarname,yvarname);				
 			}
 		}
 		glog.logmsg( "Conversion complete\n");

@@ -51,6 +51,7 @@ extern cLogger glog;//The global instance of the log file manager
 #define LN_SAMPLE_NUMBER "point_number"
 #define LN_FLIGHT_NUMBER "flight_number"
 
+#define AN_STANDARD_NAME "standard_name"
 #define AN_LONG_NAME "long_name"
 #define AN_UNITS "units"
 #define AN_DESCRIPTION "description"
@@ -184,6 +185,11 @@ public:
 	NcVarAtt add_attribute(const std::string& att, std::string value){
 		_GSTITEM_
 		return putAtt(att, value);
+	}
+
+	NcVarAtt add_standard_name(const std::string& value) {
+		_GSTITEM_
+			return putAtt(AN_STANDARD_NAME, value);
 	}
 
 	NcVarAtt add_long_name(const std::string& value){
@@ -1133,6 +1139,11 @@ public:
 		return getVarNameByAtt(AN_LONG_NAME, att_value);
 	}
 
+	std::string getVarNameByStandardName(const std::string& att_value) {
+		_GSTITEM_
+		return getVarNameByAtt(AN_STANDARD_NAME, att_value);
+	}
+
 	template<typename T>
 	bool getLineNumbers(std::vector<T>& vals){
 		_GSTITEM_
@@ -1402,7 +1413,10 @@ public:
 		std::vector<double> x2;
 		std::vector<double> y1;
 		std::vector<double> y2;
-		findNonNullLineStartEndPoints("longitude", "latitude", x1, x2, y1, y2);
+
+		std::string xvarname = getVarNameByStandardName("longitude");
+		std::string yvarname = getVarNameByStandardName("latitude");		
+		findNonNullLineStartEndPoints(xvarname,yvarname, x1, x2, y1, y2);
 
 		cLineVar vx1 = addLineVar("longitude_first", ncDouble);
 		vx1.add_missing_value(vx1.preferred_double_missing_value());
