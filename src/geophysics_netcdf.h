@@ -1414,8 +1414,8 @@ public:
 		std::vector<double> y1;
 		std::vector<double> y2;
 
-		std::string xvarname = getVarNameByStandardName("longitude");
-		std::string yvarname = getVarNameByStandardName("latitude");		
+		std::string xvarname = getVarNameByLongName("longitude");
+		std::string yvarname = getVarNameByLongName("latitude");		
 		findNonNullLineStartEndPoints(xvarname,yvarname, x1, x2, y1, y2);
 
 		cLineVar vx1 = addLineVar("longitude_first", ncDouble);
