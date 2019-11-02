@@ -17,10 +17,10 @@
     <ClCompile Include="..\..\submodules\cpp-utils\src\general_utils.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\src\cpp\test_geophysics_netcdf_reader.cpp">
+    <ClCompile Include="..\..\submodules\cpp-utils\src\gdal_utils.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\submodules\cpp-utils\src\gdal_utils.cpp">
+    <ClCompile Include="..\..\src\test_geophysics_netcdf_reader.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
