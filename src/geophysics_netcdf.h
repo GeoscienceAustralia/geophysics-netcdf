@@ -30,10 +30,10 @@ using namespace netCDF;
 using namespace netCDF::exceptions;
 
 
-#pragma warning push
-#pragma warning disable 858 //warning #858: type qualifier on return type is meaningless
+//#pragma warning push
+//#pragma warning disable 858 //warning #858: type qualifier on return type is meaningless
 #include "marray.hxx"
-#pragma warning pop
+//#pragma warning pop
 
 using namespace andres;
 
@@ -1242,7 +1242,7 @@ public:
 
 		size_t record;
 		if (isSampleVar(var)) record = pointindex;
-		else record = getLineIndexByPointIndex(pointindex);
+		else record = getLineIndexByPointIndex((int)pointindex);
 		return var.getRecord(record,vals);
 	}
 
