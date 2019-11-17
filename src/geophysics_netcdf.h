@@ -39,44 +39,45 @@ using namespace andres;
 
 extern cLogger glog;//The global instance of the log file manager
 
-#define DN_POINT "point"
-#define DN_LINE  "line"
+constexpr auto DN_POINT = "point";
+constexpr auto DN_LINE = "line";
 
-#define VN_LI_START "index_line"
-#define VN_LI_COUNT "index_count"
-#define VN_LINE_INDEX "line_index"
+constexpr auto VN_LI_START   = "index_line";
+constexpr auto VN_LI_COUNT   = "index_count";
+constexpr auto VN_LINE_INDEX = "line_index";
 
-#define LN_LINE_INDEX "zero-based index of variable in line"
-#define LN_LINE_NUMBER   "line_number"
-#define LN_SAMPLE_NUMBER "point_number"
-#define LN_FLIGHT_NUMBER "flight_number"
+constexpr auto LN_LINE_INDEX = "zero-based index of variable in line";
+constexpr auto LN_LINE_NUMBER = "line_number";
+constexpr auto LN_SAMPLE_NUMBER = "point_number";
+constexpr auto LN_FLIGHT_NUMBER = "flight_number";
 
-#define AN_STANDARD_NAME "standard_name"
-#define AN_LONG_NAME "long_name"
-#define AN_UNITS "units"
-#define AN_DESCRIPTION "description"
-#define AN_MISSINGVALUE "_FillValue"
-#define AN_ORIGINAL_NAME "original_database_name"
+constexpr auto AN_STANDARD_NAME = "standard_name";
+constexpr auto AN_LONG_NAME = "long_name";
+constexpr auto AN_UNITS = "units";
+constexpr auto AN_DESCRIPTION = "description";
+constexpr auto AN_MISSINGVALUE = "_FillValue";
+constexpr auto AN_ORIGINAL_NAME = "original_database_name";
 
-#define NcShortNull -32767
-#define NcIntNull -2147483647
-#define NcFloatNull  9.969209968386869e+36F
-#define NcDoubleNull 9.969209968386869e+36
+inline NcType nctype(const short) { return ncShort; }
+inline NcType nctype(const int) { return ncInt; }
+inline NcType nctype(const unsigned int) { return ncUint; }
+inline NcType nctype(const float) { return ncFloat; }
+inline NcType nctype(const double) { return ncDouble; }
+inline NcType nctype(const std::string) { return ncString; }
 
-NcType nctype(const short dummy);
-NcType nctype(const int dummy);
-NcType nctype(const unsigned int dummy);
-NcType nctype(const float dummy);
-NcType nctype(const double dummy);
-NcType nctype(const std::string dummy);
+inline short defaultmissingvalue(const NcShort&) { return (short) NC_FILL_SHORT; }
+inline int defaultmissingvalue(const NcInt&) { return (int) NC_FILL_INT; }
+inline unsigned int defaultmissingvalue(const NcUint&) { return (unsigned int)NC_FILL_UINT; }
+inline float defaultmissingvalue(const NcFloat&) { return (float) NC_FILL_FLOAT; }
+inline double defaultmissingvalue(const NcDouble&) { return (double) NC_FILL_DOUBLE; }
 
 class cExportFormat{
 
 public:
-	char   form;
-	size_t width;
-	size_t decimals;
-	double nullvalue;
+	char   form='\0';
+	size_t width=0;
+	size_t decimals=0;
+	double nullvalue=0;
 
 	cExportFormat()
 	{
@@ -247,13 +248,13 @@ public:
 	}
 
 	static float preferred_float_missing_value() {
-		_GSTITEM_
-		return NcFloatNull;
+		_GSTITEM_		
+		return NC_FILL_FLOAT;		
 	}
 
 	static double preferred_double_missing_value() {
 		_GSTITEM_
-		return NcDoubleNull;
+		return NC_FILL_DOUBLE;
 	}
 
 	double lowest_possible_value() const {
@@ -276,23 +277,21 @@ public:
 		else return DBL_MAX;
 	}
 
-	bool set_default_missingvalue(){
+	void set_default_missingvalue(){
 		_GSTITEM_
-		const NcType type = getType();
-		if (type == ncShort){
-			putAtt(AN_MISSINGVALUE, ncShort, (short)NcShortNull);
+		nc_type t = getType().getId();						
+		switch (t) { 
+		case NC_SHORT: putAtt(AN_MISSINGVALUE, ncShort, defaultmissingvalue(ncShort)); break;
+		case NC_INT: putAtt(AN_MISSINGVALUE, ncInt, defaultmissingvalue(ncInt)); break;
+		case NC_UINT: putAtt(AN_MISSINGVALUE, ncUint, defaultmissingvalue(ncUint)); break;
+		case NC_FLOAT: putAtt(AN_MISSINGVALUE, ncFloat, defaultmissingvalue(ncFloat)); break;
+		case NC_DOUBLE: putAtt(AN_MISSINGVALUE, ncDouble, defaultmissingvalue(ncDouble)); break;
+		default: {
+					std::string msg = _SRC_ + strprint("Attempt to set default missing value of unsupported datatype\n");
+					throw(std::runtime_error(msg));					
+				}			
 		}
-		else if (type == ncInt){
-			putAtt(AN_MISSINGVALUE, ncInt, (int)NcIntNull);
-		}
-		else if (type == ncFloat){
-			putAtt(AN_MISSINGVALUE, ncFloat, (float)NcFloatNull);
-		}
-		else if (type == ncDouble){
-			putAtt(AN_MISSINGVALUE, ncDouble, (double)NcDoubleNull);
-		}
-		else return false;
-		return true;
+		return;
 	}
 
 	template<typename T>
@@ -317,11 +316,11 @@ public:
 		}		
 		else{
 			const NcType type = getType();
-			if (type == ncShort) return (T) NcShortNull;
-			else if (type == ncInt)  return (T) NcIntNull;
-			else if (type == ncFloat) return (T) NcFloatNull;
-			else if (type == ncDouble) return (T) NcDoubleNull;
-			else return (T) NcShortNull;
+			if (type == ncShort) return (T) NC_FILL_SHORT;
+			else if (type == ncInt)  return (T) NC_FILL_INT;
+			else if (type == ncFloat) return (T) NC_FILL_FLOAT;
+			else if (type == ncDouble) return (T) NC_FILL_DOUBLE;
+			else return (T) NC_FILL_SHORT;
 		}
 	}
 
@@ -428,6 +427,7 @@ public:
 		switch (t){
 		case NC_SHORT: e = cExportFormat('I',8,0, -999); break;
 		case NC_INT: e = cExportFormat('I',12,0, -999); break;
+		case NC_UINT: e = cExportFormat('I', 12, 0, 999); break;
 		case NC_FLOAT: e = cExportFormat('F', 10, 4, -999); break;
 		case NC_DOUBLE: e = cExportFormat('F', 16, 6, -999); break;
 		default: e = cExportFormat('F', 16, 6, -999);  break;
@@ -1762,12 +1762,7 @@ inline size_t cGeophysicsVar::line_index_count(const size_t& index) const {
 	return count;
 }
 
-inline NcType nctype(const short) { return ncShort; }
-inline NcType nctype(const int) { return ncInt; }
-inline NcType nctype(const unsigned int) { return ncUint; }
-inline NcType nctype(const float) { return ncFloat; }
-inline NcType nctype(const double) { return ncDouble; }
-inline NcType nctype(const std::string) { return ncString; }
+
 
 #endif
 

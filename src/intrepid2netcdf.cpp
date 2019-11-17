@@ -11,7 +11,6 @@ Author: Ross C. Brodie, Geoscience Australia.
 #include <vector>
 #include <limits>
 
-//using namespace std;
 using namespace netCDF;
 using namespace netCDF::exceptions;
 
@@ -696,25 +695,21 @@ class cIntrepidToNetCDFConverter {
 	std::string IntrepiDatabasePath;
 	std::string NCPath;
 	bool OverWriteExistingNcFiles = true;
-	std::string LogFile;
+	std::string LogFile;		
 
 public:
 
 	cIntrepidToNetCDFConverter(const std::string& intrepiddatabasepath, const std::string& ncfilepath) {
 		_GSTITEM_
-			IntrepiDatabasePath = fixseparator(intrepiddatabasepath);
+		IntrepiDatabasePath = fixseparator(intrepiddatabasepath);
 		NCPath = fixseparator(ncfilepath);
 		LogFile = NCPath + ".log";
 
-		glog.open(LogFile);
-		glog.logmsg("Log file opened at %s\n", timestamp().c_str());
+		glog.open(LogFile);		
 		glog.logmsg("Program %s \n", _PROGRAM_);
 		glog.logmsg("Version %s Compiled at %s on %s\n", _VERSION_, __TIME__, __DATE__);
 		glog.logmsg("Working directory %s\n", getcurrentdirectory().c_str());
-
-		process();
-
-		glog.logmsg("Finished at %s\n", timestamp().c_str());
+		process();		
 		glog.close();
 	};
 
@@ -744,8 +739,12 @@ public:
 
 		glog.logmsg("\nOpening Intrepid database\n");
 		ILDataset D(IntrepiDatabasePath);
-		if (D.valid == false){
-			glog.logmsg("Error 1: problem opening database - skipping this database\n");
+		if (D.ispointdataset()) {
+			glog.logmsg("Error 1: point databases not supported - skipping %s\n",IntrepiDatabasePath.c_str());
+			return false;
+		}
+		else if(D.valid == false){
+			glog.logmsg("Error 2: problem opening database - skipping %s\n",IntrepiDatabasePath.c_str());
 			return false;
 		}
 
@@ -763,10 +762,10 @@ public:
 			glog.logmsg("Warning 2: could not determine the Y field in the SurveyInfo file\n");
 		}
 
-		glog.logmsg("Creating NetCDF file\n");
+		glog.logmsg("Creating NetCDF file: %s\n",NCPath.c_str());
 		cGeophysicsNcFile ncFile(NCPath, NcFile::replace);
 
-		glog.logmsg("\nAdding line index variables\n");
+		glog.logmsg("\nAdding the line index variable\n");
 		bool lstatus = add_lineindex(ncFile, D);
 		if (lstatus == false) {
 			glog.logmsg("Error 3: could not determine the line numbers\n");
@@ -965,12 +964,7 @@ public:
 int main(int argc, char** argv)
 {
 	_GSTITEM_
-
-		//if (argc != 2) {
-		//	printf("Usage: %s control_file_name\n", argv[0]);
-		//	return 1;
-		//}
-
+	
 	int mpisize;
 	int mpirank;
 	MPI_Init(&argc, &argv);
@@ -979,17 +973,32 @@ int main(int argc, char** argv)
 
 	try
 	{
-		//std::string controlfile = argv[1];
-		//cIntrepidConverter C(controlfile, mpisize, mpirank);
-
-		std::string dbname = "GADDS_DATABASES\\ga\\P607RAD";
-		std::string ncname = "GADDS_NCFILES\\ga\\P607RAD.nc";
-		//std::string dbname = "GADDS_DATABASES\\ga\\P607DEM";
-		//std::string ncname = "GADDS_NCFILES\\ga\\P607DEM.nc";
-		//std::string dbname = "GADDS_DATABASES\\ga\\P607MAG";
-		//std::string ncname = "GADDS_NCFILES\\ga\\P607MAG.nc";
-
-		cIntrepidToNetCDFConverter C(dbname, ncname);
+		std::string dbdir    = argv[1];
+		std::string ncdir    = argv[2];
+		std::string listfile = argv[3];
+		std::ifstream file(listfile);
+		addtrailingseparator(dbdir);
+		addtrailingseparator(ncdir);
+		int k = 0;
+		while (file.eof() == false) {
+			std::string db;	
+			file >> db;
+			db = trim(db);
+			if (db.size() > 0 && db[0] != '#') {
+				sFilePathParts fpp = getfilepathparts(db);
+				std::string dbname = dbdir + fpp.directory + fpp.prefix;
+				std::string ncname = ncdir + fpp.directory + fpp.prefix + ".nc";
+				std::cout << dbname << std::endl;
+				std::cout << ncname << std::endl;
+				
+				//if (k % mpisize == mpirank) {
+				//	cIntrepidToNetCDFConverter C(dbname, ncname);
+				//}
+				//k++;
+				cGeophysicsNcFile N(ncname);
+				N.export_ASEGGDF2("test.dat", "test.dfn");
+			}									
+		}		
 	}
 	catch (NcException& e)
 	{
