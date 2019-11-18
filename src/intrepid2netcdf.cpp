@@ -804,10 +804,11 @@ public:
 		if (t == ncUbyte) v.add_missing_value(IDatatype::bytenull());
 		else if (t == ncShort) v.add_missing_value(IDatatype::shortnull());
 		else if (t == ncInt) v.add_missing_value(IDatatype::intnull());
+		else if (t == ncUint) v.add_missing_value(NC_FILL_UINT);
 		else if (t == ncFloat) v.add_missing_value(v.preferred_float_missing_value());
 		else if (t == ncDouble) v.add_missing_value(v.preferred_double_missing_value());
 		else {
-			std::string msg = "Error 7: Unsupported data type\n";
+			std::string msg = strprint("Error 7: Unsupported data type %s for field %s\n",t.getName().c_str(), v.getName().c_str());
 			glog.logmsg(msg.c_str());
 			throw(msg);
 		}
@@ -991,13 +992,11 @@ int main(int argc, char** argv)
 				std::cout << dbname << std::endl;
 				std::cout << ncname << std::endl;
 				
-				//if (k % mpisize == mpirank) {
-				//	cIntrepidToNetCDFConverter C(dbname, ncname);
-				//}
-				//k++;
-				cGeophysicsNcFile N(ncname);
-				N.export_ASEGGDF2("test.dat", "test.dfn");
-			}									
+				if (k % mpisize == mpirank) {
+					cIntrepidToNetCDFConverter C(dbname, ncname);
+				}
+				k++;
+			}
 		}		
 	}
 	catch (NcException& e)

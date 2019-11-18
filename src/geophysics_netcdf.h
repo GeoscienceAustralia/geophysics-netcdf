@@ -248,8 +248,8 @@ public:
 	}
 
 	static float preferred_float_missing_value() {
-		_GSTITEM_		
-		return NC_FILL_FLOAT;		
+		_GSTITEM_
+		return NC_FILL_FLOAT;
 	}
 
 	static double preferred_double_missing_value() {
@@ -288,8 +288,8 @@ public:
 		case NC_DOUBLE: putAtt(AN_MISSINGVALUE, ncDouble, defaultmissingvalue(ncDouble)); break;
 		default: {
 					std::string msg = _SRC_ + strprint("Attempt to set default missing value of unsupported datatype\n");
-					throw(std::runtime_error(msg));					
-				}			
+					throw(std::runtime_error(msg));
+				}
 		}
 		return;
 	}
