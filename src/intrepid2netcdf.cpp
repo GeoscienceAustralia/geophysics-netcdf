@@ -692,6 +692,8 @@ public:
 */
 
 class cIntrepidToNetCDFConverter {
+	int MPISize;
+	int MPIRank;
 	std::string IntrepiDatabasePath;
 	std::string NCPath;
 	bool OverWriteExistingNcFiles = true;
@@ -699,8 +701,10 @@ class cIntrepidToNetCDFConverter {
 
 public:
 
-	cIntrepidToNetCDFConverter(const std::string& intrepiddatabasepath, const std::string& ncfilepath) {
+	cIntrepidToNetCDFConverter(const std::string& intrepiddatabasepath, const std::string& ncfilepath, const int mpisize, const int mpirank) {
 		_GSTITEM_
+		MPISize = mpisize;
+		MPIRank = mpirank;
 		IntrepiDatabasePath = fixseparator(intrepiddatabasepath);
 		NCPath = fixseparator(ncfilepath);
 		LogFile = NCPath + ".log";
@@ -709,7 +713,10 @@ public:
 		glog.logmsg("Program %s \n", _PROGRAM_);
 		glog.logmsg("Version %s Compiled at %s on %s\n", _VERSION_, __TIME__, __DATE__);
 		glog.logmsg("Working directory %s\n", getcurrentdirectory().c_str());
-		process();		
+		bool status = process();	
+		if (status == false) {
+			glog.logmsg(MPIRank,"Error 0: converting %s to %s\n",intrepiddatabasepath.c_str(), ncfilepath.c_str());
+		}
 		glog.close();
 	};
 
@@ -988,12 +995,10 @@ int main(int argc, char** argv)
 			if (db.size() > 0 && db[0] != '#') {
 				sFilePathParts fpp = getfilepathparts(db);
 				std::string dbname = dbdir + fpp.directory + fpp.prefix;
-				std::string ncname = ncdir + fpp.directory + fpp.prefix + ".nc";
-				std::cout << dbname << std::endl;
-				std::cout << ncname << std::endl;
-				
+				std::string ncname = ncdir + fpp.directory + fpp.prefix + ".nc";				
 				if (k % mpisize == mpirank) {
-					cIntrepidToNetCDFConverter C(dbname, ncname);
+					std::cout << "[" << mpirank << "] " << dbname << " " << ncname << std::endl;
+					cIntrepidToNetCDFConverter C(dbname, ncname, mpisize, mpirank);
 				}
 				k++;
 			}
