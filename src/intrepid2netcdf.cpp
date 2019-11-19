@@ -697,7 +697,7 @@ class cIntrepidToNetCDFConverter {
 	std::string IntrepiDatabasePath;
 	std::string NCPath;
 	bool OverWriteExistingNcFiles = true;
-	std::string LogFile;		
+	std::string LogFile;	
 
 public:
 
@@ -708,16 +708,16 @@ public:
 		IntrepiDatabasePath = fixseparator(intrepiddatabasepath);
 		NCPath = fixseparator(ncfilepath);
 		LogFile = NCPath + ".log";
-
-		glog.open(LogFile);		
-		glog.logmsg("Program %s \n", _PROGRAM_);
-		glog.logmsg("Version %s Compiled at %s on %s\n", _VERSION_, __TIME__, __DATE__);
-		glog.logmsg("Working directory %s\n", getcurrentdirectory().c_str());
+		
+		glog.open(LogFile);
+		glog.log("Program %s \n", _PROGRAM_);
+		glog.log("Version %s Compiled at %s on %s\n", _VERSION_, __TIME__, __DATE__);
+		glog.log("Working directory %s\n", getcurrentdirectory().c_str());		
 		bool status = process();	
 		if (status == false) {
-			glog.logmsg(MPIRank,"Error 0: converting %s to %s\n",intrepiddatabasepath.c_str(), ncfilepath.c_str());
+			glog.logmsg(MPIRank,"Error 0: converting %s to %s\n",intrepiddatabasepath.c_str(), ncfilepath.c_str());			
 		}
-		glog.close();
+		glog.close();		
 	};
 
 	~cIntrepidToNetCDFConverter() {
@@ -737,55 +737,56 @@ public:
 			}
 		}
 
-		glog.logmsg("\nConverting database: %s\n", IntrepiDatabasePath.c_str());
+		glog.log("\nConverting database: %s\n", IntrepiDatabasePath.c_str());
 		bool datasetexists = exists(IntrepiDatabasePath);
 		if (datasetexists == false) {
 			glog.logmsg("Error 1: Database does not exist: %s\n", IntrepiDatabasePath.c_str());
-			return false;
+			return true;
 		}
 
-		glog.logmsg("\nOpening Intrepid database\n");
+		glog.log("\nOpening Intrepid database\n");
 		ILDataset D(IntrepiDatabasePath);
 		if (D.ispointdataset()) {
-			glog.logmsg("Error 1: point databases not supported - skipping %s\n",IntrepiDatabasePath.c_str());
-			return false;
+			glog.logmsg("Error 2: point databases not supported - skipping %s\n",IntrepiDatabasePath.c_str());
+			return true;
 		}
 		else if(D.valid == false){
-			glog.logmsg("Error 2: problem opening database - skipping %s\n",IntrepiDatabasePath.c_str());
-			return false;
+			glog.logmsg("Error 3: problem opening database - skipping %s\n",IntrepiDatabasePath.c_str());
+			return true;
 		}
 
 		std::string linenumberfieldname;
 		D.getlinenumberfieldname(linenumberfieldname);
 		if (D.fieldexists(linenumberfieldname) == false) {
-			glog.logmsg("Error 2: could not determine the LineNumber field in the SurveyInfo file\n");
+			glog.logmsg("Error 4: could not determine the LineNumber field in the SurveyInfo file for - skipping %s\n", IntrepiDatabasePath.c_str());
+			return true;
 		}
 
 		if (D.hassurveyinfoid_fieldexists("X") == false) {
-			glog.logmsg("Warning 1: could not determine the X field in the SurveyInfo file\n");
+			glog.logmsg("Warning 2: could not determine the X field in the SurveyInfo file\n");
 		}
 
 		if (D.hassurveyinfoid_fieldexists("Y") == false) {
-			glog.logmsg("Warning 2: could not determine the Y field in the SurveyInfo file\n");
+			glog.logmsg("Warning 3: could not determine the Y field in the SurveyInfo file\n");
 		}
-
-		glog.logmsg("Creating NetCDF file: %s\n",NCPath.c_str());
+		
+		glog.log("Creating NetCDF file: %s\n",NCPath.c_str());
 		cGeophysicsNcFile ncFile(NCPath, NcFile::replace);
 
-		glog.logmsg("\nAdding the line index variable\n");
+		glog.log("\nAdding the line index variable\n");
 		bool lstatus = add_lineindex(ncFile, D);
-		if (lstatus == false) {
-			glog.logmsg("Error 3: could not determine the line numbers\n");
-			return false;
+		if (lstatus == false) {			
+			glog.logmsg("Error 5: could not determine the line numbers - skipping % s\n", IntrepiDatabasePath.c_str());
+			return true;
 		}
 
-		glog.logmsg("\nAdding groupby varaibles\n");
+		glog.log("\nAdding groupby varaibles\n");
 		add_groupbyline_variables(ncFile, D);
 
-		glog.logmsg("\nAdding indexed varaibles\n");
+		glog.log("\nAdding indexed varaibles\n");
 		add_indexed_variables(ncFile, D);
 
-		glog.logmsg("\nConversion complete\n");
+		glog.log("\nConversion complete\n");
 		return true;
 	}
 
@@ -798,8 +799,8 @@ public:
 		else if (F.datatype().isfloat())return NcType(ncFloat);
 		else if (F.datatype().isdouble())return NcType(ncDouble);
 		else {
-			std::string msg = "Error 6: Unknown Intrepid data type\n";
-			glog.logmsg(msg.c_str());
+			std::string msg = strprint("Error 6: Unknown Intrepid data type in %s field %s\n",IntrepiDatabasePath.c_str(),F.Name.c_str());
+			glog.logmsg(msg);
 			throw(msg);
 		}
 	}
@@ -816,8 +817,8 @@ public:
 		else if (t == ncFloat) v.add_missing_value(IDatatype::floatnull());
 		else if (t == ncDouble) v.add_missing_value(IDatatype::doublenull());
 		else {
-			std::string msg = strprint("Error 7: Unsupported data type %s for field %s\n",t.getName().c_str(), v.getName().c_str());
-			glog.logmsg(msg.c_str());
+			std::string msg = strprint("Error 7: Unsupported data type %s for field %s in %s\n",t.getName().c_str(),v.getName().c_str(),IntrepiDatabasePath.c_str());
+			glog.logmsg(msg);
 			throw(msg);
 		}
 		return true;
@@ -855,11 +856,9 @@ public:
 				glog.logmsg("Warning 5: skipping field %s: unsupported Intrepid datatype\n", F.Name.c_str());
 				continue;
 			}
-
-			glog.logmsg("Converting field %s\n", F.Name.c_str());
-			
 			if (F.Name == linenumberfield) continue;
-
+			glog.log("Converting field %s\n", F.Name.c_str());
+						
 			std::vector<NcDim> dims;
 			if (F.nbands() > 1) {
 				std::string dimname = "nbands_" + F.Name;
@@ -867,14 +866,12 @@ public:
 				dims.push_back(dim_band);
 			}
 
-			cLineVar var = ncFile.addLineVar(F.Name, nc_datatype(F), dims);
-			//set_intrepid_nullvalue(var);
-
+			cLineVar var = ncFile.addLineVar(F.Name, nc_datatype(F), dims);			
 			for (size_t li = 0; li < nlines; li++) {
 				ILSegment& S = F.Segments[li];
 
 				if (S.readbuffer() == false) {
-					glog.logmsg("Error 8: could not read buffer for line sequence number %zu in field %s\n", li, F.Name.c_str());
+					glog.logmsg("Error 8: could not read buffer for line sequence number %zu in %s field %s\n", li, IntrepiDatabasePath.c_str(),  F.Name.c_str());
 					return false;
 				}				
 				change_fillvalues(S);
@@ -908,17 +905,18 @@ public:
 			if (F.isgroupbyline() == true)continue;
 
 			if (F.datatype().name() == "UNKNOWN") {
-				glog.logmsg("Warning 5: skipping field %s: unsupported Intrepid datatype\n", F.Name.c_str());
+				glog.logmsg("Warning 4: unsupported Intrepid datatype - skipping field %s in %s: \n", F.Name.c_str(), IntrepiDatabasePath.c_str());
 				continue;
 			}
-
-			glog.logmsg("Converting field %s\n", F.Name.c_str());
+			
 			NcVar tmp = ncFile.getVar(F.Name);
 			if (tmp.isNull() == false) {
-				glog.logmsg("Error 9: variable name %s already exists in this NC file - skipping this field\n", F.Name.c_str());
+				glog.logmsg("Warning 5: variable name %s already exists in this NC file - skipping field %s in %s\n", F.Name.c_str(), IntrepiDatabasePath.c_str());
 				return false;
 			}
 
+			
+			glog.log("Converting field %s\n", F.Name.c_str());
 			std::vector<NcDim> dims;
 			if (F.nbands() > 1) {
 				std::string dimname = "nbands_" + F.Name;
@@ -926,15 +924,13 @@ public:
 				dims.push_back(dim_band);
 			}
 
-			cSampleVar var = ncFile.addSampleVar(F.Name, nc_datatype(F), dims);
-			//set_intrepid_nullvalue(var);
-
+			cSampleVar var = ncFile.addSampleVar(F.Name, nc_datatype(F), dims);			
 			size_t startindex = 0;
 			for (size_t li = 0; li < nlines; li++) {
 				ILSegment& S = F.Segments[li];
 
 				if (S.readbuffer() == false) {
-					glog.logmsg("Error 8: could not read buffer for line sequence number %zu in field %s\n", li, F.Name.c_str());
+					glog.logmsg("Error 9: could not read buffer for line sequence number %zu in %s field %s\n", li, IntrepiDatabasePath.c_str(), F.Name.c_str());
 					return false;
 				}
 				change_fillvalues(S);
@@ -993,6 +989,10 @@ int main(int argc, char** argv)
 	MPI_Comm_size(MPI_COMM_WORLD, &mpisize);
 	MPI_Comm_rank(MPI_COMM_WORLD, &mpirank);
 
+	glog.logmsg(0,"Program %s \n", _PROGRAM_);
+	glog.logmsg(0,"Version %s Compiled at %s on %s\n", _VERSION_, __TIME__, __DATE__);
+	glog.logmsg(0,"Working directory %s\n", getcurrentdirectory().c_str());
+
 	try
 	{
 		std::string dbdir    = argv[1];
@@ -1011,7 +1011,7 @@ int main(int argc, char** argv)
 				std::string dbname = dbdir + fpp.directory + fpp.prefix;
 				std::string ncname = ncdir + fpp.directory + fpp.prefix + ".nc";				
 				if (k % mpisize == mpirank) {
-					std::cout << "[" << mpirank << "] " << dbname << " " << ncname << std::endl;
+					std::cout << "[" << mpirank << "] " << dbname << " " << ncname << std::endl << std::flush;
 					cIntrepidToNetCDFConverter C(dbname, ncname, mpisize, mpirank);
 				}
 				k++;
@@ -1033,8 +1033,9 @@ int main(int argc, char** argv)
 		return 1;
 	}
 
-	//MPI_Barrier(MPI_COMM_WORLD);
-	MPI_Finalize();
+	MPI_Barrier(MPI_COMM_WORLD);
+	glog.logmsg(0,"Finished\n");
+	MPI_Finalize();	
 	return 0;
 }
 
