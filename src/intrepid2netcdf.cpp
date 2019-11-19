@@ -811,9 +811,10 @@ public:
 		if (t == ncUbyte) v.add_missing_value(IDatatype::bytenull());
 		else if (t == ncShort) v.add_missing_value(IDatatype::shortnull());
 		else if (t == ncInt) v.add_missing_value(IDatatype::intnull());
-		else if (t == ncUint) v.add_missing_value(NC_FILL_UINT);
-		else if (t == ncFloat) v.add_missing_value(v.preferred_float_missing_value());
-		else if (t == ncDouble) v.add_missing_value(v.preferred_double_missing_value());
+		//UINT is not an Intrepid datatype //
+		//else if (t == ncUint) v.add_missing_value(NC_FILL_UINT);
+		else if (t == ncFloat) v.add_missing_value(IDatatype::floatnull());
+		else if (t == ncDouble) v.add_missing_value(IDatatype::doublenull());
 		else {
 			std::string msg = strprint("Error 7: Unsupported data type %s for field %s\n",t.getName().c_str(), v.getName().c_str());
 			glog.logmsg(msg.c_str());
@@ -867,7 +868,7 @@ public:
 			}
 
 			cLineVar var = ncFile.addLineVar(F.Name, nc_datatype(F), dims);
-			set_intrepid_nullvalue(var);
+			//set_intrepid_nullvalue(var);
 
 			for (size_t li = 0; li < nlines; li++) {
 				ILSegment& S = F.Segments[li];
@@ -875,7 +876,8 @@ public:
 				if (S.readbuffer() == false) {
 					glog.logmsg("Error 8: could not read buffer for line sequence number %zu in field %s\n", li, F.Name.c_str());
 					return false;
-				}
+				}				
+				change_fillvalues(S);
 
 				std::vector<size_t> startp(2);
 				std::vector<size_t> countp(2);
@@ -925,7 +927,7 @@ public:
 			}
 
 			cSampleVar var = ncFile.addSampleVar(F.Name, nc_datatype(F), dims);
-			set_intrepid_nullvalue(var);
+			//set_intrepid_nullvalue(var);
 
 			size_t startindex = 0;
 			for (size_t li = 0; li < nlines; li++) {
@@ -935,15 +937,8 @@ public:
 					glog.logmsg("Error 8: could not read buffer for line sequence number %zu in field %s\n", li, F.Name.c_str());
 					return false;
 				}
-
-				//Replace the nulls with more "sensible" values
-				if (S.datatype().isfloat()) {
-					S.change_nullvalue(var.preferred_float_missing_value());
-				}
-				else if (S.datatype().isdouble()) {
-					S.change_nullvalue(var.preferred_double_missing_value());
-				}
-
+				change_fillvalues(S);
+				
 				std::vector<size_t> startp(2);
 				std::vector<size_t> countp(2);
 
@@ -960,6 +955,25 @@ public:
 			}
 		}
 		return true;
+	}
+	
+	void change_fillvalues(ILSegment& S) {
+		//Replace the nulls with more "sensible" values
+		if (S.datatype().isbyte()) {
+			S.change_nullvalue(defaultmissingvalue(ncByte));
+		}
+		else if (S.datatype().isshort()) {
+			S.change_nullvalue(defaultmissingvalue(ncShort));
+		}
+		else if (S.datatype().isint()) {
+			S.change_nullvalue(defaultmissingvalue(ncInt));
+		}
+		else if (S.datatype().isfloat()) {
+			S.change_nullvalue(defaultmissingvalue(ncFloat));
+		}
+		else if (S.datatype().isdouble()) {
+			S.change_nullvalue(defaultmissingvalue(ncDouble));
+		}
 	}
 
 	bool add_global_metadata() {

@@ -42,11 +42,11 @@ extern cLogger glog;//The global instance of the log file manager
 constexpr auto DN_POINT = "point";
 constexpr auto DN_LINE = "line";
 
-constexpr auto VN_LI_START   = "index_line";
-constexpr auto VN_LI_COUNT   = "index_count";
+constexpr auto VN_LI_START   = "line_index_start";
+constexpr auto VN_LI_COUNT   = "line_index_count";
 constexpr auto VN_LINE_INDEX = "line_index";
 
-constexpr auto LN_LINE_INDEX = "zero-based index of variable in line";
+constexpr auto LN_LINE_INDEX = "line_index";
 constexpr auto LN_LINE_NUMBER = "line_number";
 constexpr auto LN_SAMPLE_NUMBER = "point_number";
 constexpr auto LN_FLIGHT_NUMBER = "flight_number";
@@ -58,6 +58,7 @@ constexpr auto AN_DESCRIPTION = "description";
 constexpr auto AN_MISSINGVALUE = "_FillValue";
 constexpr auto AN_ORIGINAL_NAME = "original_database_name";
 
+inline NcType nctype(const int8_t) { return ncShort; }
 inline NcType nctype(const short) { return ncShort; }
 inline NcType nctype(const int) { return ncInt; }
 inline NcType nctype(const unsigned int) { return ncUint; }
@@ -65,6 +66,7 @@ inline NcType nctype(const float) { return ncFloat; }
 inline NcType nctype(const double) { return ncDouble; }
 inline NcType nctype(const std::string) { return ncString; }
 
+inline short defaultmissingvalue(const NcByte&) { return (int8_t)NC_FILL_BYTE; }
 inline short defaultmissingvalue(const NcShort&) { return (short) NC_FILL_SHORT; }
 inline int defaultmissingvalue(const NcInt&) { return (int) NC_FILL_INT; }
 inline unsigned int defaultmissingvalue(const NcUint&) { return (unsigned int)NC_FILL_UINT; }
@@ -247,15 +249,15 @@ public:
 		return getStringAtt(AN_DESCRIPTION);
 	}
 
-	static float preferred_float_missing_value() {
-		_GSTITEM_
-		return NC_FILL_FLOAT;
-	}
+	//static float preferred_float_missing_value() {
+	//	_GSTITEM_
+	//	return NC_FILL_FLOAT;
+	//}
 
-	static double preferred_double_missing_value() {
-		_GSTITEM_
-		return NC_FILL_DOUBLE;
-	}
+	//static double preferred_double_missing_value() {
+	//	_GSTITEM_
+	//	return NC_FILL_DOUBLE;
+	//}
 
 	double lowest_possible_value() const {
 		_GSTITEM_
@@ -886,9 +888,8 @@ public:
 		_GSTITEM_
 		cSampleVar v = addSampleVar(VN_LINE_INDEX, ncUint);
 		v.putVar(line_index.data());
-		v.add_long_name(LN_LINE_INDEX);
-		v.add_attribute("lookup", "line");
-		v.add_description("zero based index of line associated with point");
+		v.add_long_name(LN_LINE_INDEX);		
+		v.add_description("zero-based index of line associated with point");
 		//v.add_units("1");		
 	}
 
@@ -899,7 +900,7 @@ public:
 		cLineVar vstart = addLineVar(VN_LI_START, ncUint);		
 		vstart.putVar(line_index_start.data());
 		vstart.add_long_name(VN_LI_START);		
-		vstart.add_description("zero based index of the first sample in the line");
+		vstart.add_description("zero-based index of the first sample in the line");
 		//vstart.add_units("1");
 	}
 
@@ -1419,28 +1420,28 @@ public:
 		findNonNullLineStartEndPoints(xvarname,yvarname, x1, x2, y1, y2);
 
 		cLineVar vx1 = addLineVar("longitude_first", ncDouble);
-		vx1.add_missing_value(vx1.preferred_double_missing_value());
+		vx1.add_missing_value(defaultmissingvalue(ncDouble));
 		vx1.add_long_name("longitude_first");
 		vx1.add_description("first non-null longitude coordinate in the line");
 		vx1.add_units("degree_east");
 		vx1.putAll(x1);
 
 		cLineVar vx2 = addLineVar("longitude_last", ncDouble);
-		vx2.add_missing_value(vx2.preferred_double_missing_value());
+		vx2.add_missing_value(defaultmissingvalue(ncDouble));		
 		vx2.add_long_name("longitude_last");
 		vx2.add_description("last non-null longitude coordinate in the line");
 		vx2.add_units("degree_east");
 		vx2.putAll(x2);
 
 		cLineVar vy1 = addLineVar("latitude_first", ncDouble);
-		vy1.add_missing_value(vy1.preferred_double_missing_value());
+		vy1.add_missing_value(defaultmissingvalue(ncDouble));
 		vy1.add_long_name("latitude_first");
 		vy1.add_description("first non-null latitude coordinate in the line");
 		vy1.add_units("degree_north");
 		vy1.putAll(y1);
 
 		cLineVar vy2 = addLineVar("latitude_last", ncDouble);
-		vy2.add_missing_value(vy2.preferred_double_missing_value());
+		vy2.add_missing_value(defaultmissingvalue(ncDouble));
 		vy2.add_long_name("latitude_last");
 		vy2.add_description("last non-null latitude coordinate in the line");
 		vy2.add_units("degree_north");
@@ -1479,28 +1480,28 @@ public:
 		}		
 
 		cLineVar vx1 = addLineVar("easting_first", ncDouble);
-		vx1.add_missing_value(vx1.preferred_double_missing_value());
+		vx1.add_missing_value(defaultmissingvalue(ncDouble));
 		vx1.add_long_name("easting_first");
 		vx1.add_description("first non-null easting coordinate in the line");
 		vx1.add_units("m");
 		vx1.putAll(x1);
 
 		cLineVar vx2 = addLineVar("easting_last", ncDouble);
-		vx2.add_missing_value(vx2.preferred_double_missing_value());
+		vx2.add_missing_value(defaultmissingvalue(ncDouble));
 		vx2.add_long_name("easting_last");
 		vx2.add_description("last non-null easting coordinate in the line");
 		vx2.add_units("m");
 		vx2.putAll(x2);
 
 		cLineVar vy1 = addLineVar("northing_first", ncDouble);
-		vy1.add_missing_value(vy1.preferred_double_missing_value());
+		vy1.add_missing_value(defaultmissingvalue(ncDouble));
 		vy1.add_long_name("northing_first");
 		vy1.add_description("first non-null northing coordinate in the line");
 		vy1.add_units("m");
 		vy1.putAll(y1);
 
 		cLineVar vy2 = addLineVar("northing_last", ncDouble);
-		vy2.add_missing_value(vy2.preferred_double_missing_value());
+		vy2.add_missing_value(defaultmissingvalue(ncDouble));
 		vy2.add_long_name("northing_last");
 		vy2.add_description("last non-null northing coordinate in the line");
 		vy2.add_units("m");
