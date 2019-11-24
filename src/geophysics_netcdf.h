@@ -810,7 +810,7 @@ public:
 	cGeophysicsNcFile() : NcFile() {} // invoke base class constructor	
 
 	//Open existing file constructor
-	cGeophysicsNcFile(const std::string& ncpath, const FileMode& filemode = NcFile::FileMode::read)
+	cGeophysicsNcFile(const std::string& ncpath, const NcFile::FileMode& filemode = NcFile::FileMode::read)
 		: NcFile(ncpath, filemode)
 	{
 		_GSTITEM_

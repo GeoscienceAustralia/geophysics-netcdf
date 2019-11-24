@@ -816,13 +816,13 @@ public:
 	{
 		_GSTITEM_
 		NcType t = v.getType();
-		if (t == ncUbyte) v.add_missing_value(IDatatype::bytenull());
-		else if (t == ncShort) v.add_missing_value(IDatatype::shortnull());
-		else if (t == ncInt) v.add_missing_value(IDatatype::intnull());
+		if (t == ncUbyte) v.add_missing_value(IDataType::bytenull());
+		else if (t == ncShort) v.add_missing_value(IDataType::shortnull());
+		else if (t == ncInt) v.add_missing_value(IDataType::intnull());
 		//UINT is not an Intrepid datatype //
 		//else if (t == ncUint) v.add_missing_value(NC_FILL_UINT);
-		else if (t == ncFloat) v.add_missing_value(IDatatype::floatnull());
-		else if (t == ncDouble) v.add_missing_value(IDatatype::doublenull());
+		else if (t == ncFloat) v.add_missing_value(IDataType::floatnull());
+		else if (t == ncDouble) v.add_missing_value(IDataType::doublenull());
 		else {
 			std::string msg = strprint("Error 7: Unsupported data type %s for field %s in %s\n",t.getName().c_str(),v.getName().c_str(),IntrepiDatabasePath.c_str());
 			glog.logmsg(msg);
@@ -846,7 +846,7 @@ public:
 			ILField& F = *it;
 			if (F.isgroupbyline() == false) continue;
 
-			if (F.getTypeId() == dtUNKNOWN) {
+			if (F.getTypeId() == IDataType::ID::UNKNOWN) {
 				glog.logmsg("Warning 5: skipping field %s: unsupported Intrepid datatype\n", F.datafilepath().c_str());
 				continue;
 			}
@@ -899,7 +899,7 @@ public:
 			ILField& F = *it;
 			if (F.isgroupbyline() == true)continue;
 
-			if (F.getTypeId() == dtUNKNOWN) {
+			if (F.getTypeId() == IDataType::ID::UNKNOWN) {
 				glog.logmsg("Warning 4: unsupported Intrepid datatype - skipping field in %s\n", F.datafilepath().c_str());
 				continue;
 			}
