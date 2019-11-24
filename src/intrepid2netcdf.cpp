@@ -755,30 +755,37 @@ public:
 			return true;
 		}
 
+		glog.log("\nGetting the line numbers\n");
 		std::string linenumberfieldname;
 		D.getlinenumberfieldname(linenumberfieldname);
 		if (D.fieldexists(linenumberfieldname) == false) {
 			glog.logmsg("Error 4: could not determine the LineNumber field in the SurveyInfo file for - skipping %s\n", IntrepiDatabasePath.c_str());
 			return true;
 		}
-
-		if (D.hassurveyinfoid_fieldexists("X") == false) {
+		
+		std::vector<size_t> linenumbers;
+		if (D.getlinenumbers(linenumbers) == false) {					
+			glog.logmsg("Error 5: could not determine the line numbers - skipping % s\n", IntrepiDatabasePath.c_str());
+			return true;
+		}					
+		
+		if (D.hassurveyinfokey_and_fieldexists("X") == false) {
 			glog.logmsg("Warning 2: could not determine the X field in the SurveyInfo file\n");
 		}
 
-		if (D.hassurveyinfoid_fieldexists("Y") == false) {
+		if (D.hassurveyinfokey_and_fieldexists("Y") == false) {
 			glog.logmsg("Warning 3: could not determine the Y field in the SurveyInfo file\n");
 		}
 		
 		glog.log("Creating NetCDF file: %s\n",NCPath.c_str());
 		cGeophysicsNcFile ncFile(NCPath, NcFile::replace);
 
-		glog.log("\nAdding the line index variable\n");
-		bool lstatus = add_lineindex(ncFile, D);
-		if (lstatus == false) {			
-			glog.logmsg("Error 5: could not determine the line numbers - skipping % s\n", IntrepiDatabasePath.c_str());
-			return true;
-		}
+		glog.log("\nAdding the line index variable\n");				
+		std::vector<size_t> count = D.linesamplecount();									
+		ncFile.InitialiseNew(linenumbers, count);			
+		
+		glog.log("\nAdding global attributes\n");
+		add_global_attributes(ncFile);
 
 		glog.log("\nAdding groupby varaibles\n");
 		add_groupbyline_variables(ncFile, D);
@@ -793,13 +800,13 @@ public:
 	NcType nc_datatype(const ILField& F)
 	{
 		_GSTITEM_
-		if (F.datatype().isbyte()) return NcType(ncUbyte);
-		else if (F.datatype().isshort()) return NcType(ncShort);
-		else if (F.datatype().isint()) return NcType(ncInt);
-		else if (F.datatype().isfloat())return NcType(ncFloat);
-		else if (F.datatype().isdouble())return NcType(ncDouble);
+		if (F.getType().isbyte()) return NcType(ncUbyte);
+		else if (F.getType().isshort()) return NcType(ncShort);
+		else if (F.getType().isint()) return NcType(ncInt);
+		else if (F.getType().isfloat())return NcType(ncFloat);
+		else if (F.getType().isdouble())return NcType(ncDouble);
 		else {
-			std::string msg = strprint("Error 6: Unknown Intrepid data type in %s field %s\n",IntrepiDatabasePath.c_str(),F.Name.c_str());
+			std::string msg = strprint("Error 6: Unknown Intrepid data type in %s\n",F.datafilepath().c_str());
 			glog.logmsg(msg);
 			throw(msg);
 		}
@@ -824,25 +831,12 @@ public:
 		return true;
 	}
 
-	bool add_lineindex(cGeophysicsNcFile& ncFile, ILDataset& D)
-	{
-		_GSTITEM_
-		std::vector<size_t> count = D.linesamplecount();
-		std::vector<size_t> linenumbers;
-		bool status = D.getlinenumbers(linenumbers);
-		if (status) {
-			ncFile.InitialiseNew(linenumbers, count);
-			return true;
-		}
-		return false;
-	}
-
 	bool add_groupbyline_variables(cGeophysicsNcFile& ncFile, ILDataset& D)
 	{
 		_GSTITEM_
 		if (D.valid == false)return false;
 		size_t nlines = D.nlines();
-		NcDim  dim_line = ncFile.getDim("line");
+		NcDim  dim_line = ncFile.getDim(DN_LINE);
 
 		std::string linenumberfield;
 		D.getlinenumberfieldname(linenumberfield);
@@ -852,26 +846,26 @@ public:
 			ILField& F = *it;
 			if (F.isgroupbyline() == false) continue;
 
-			if (F.datatype().name() == "UNKNOWN") {
-				glog.logmsg("Warning 5: skipping field %s: unsupported Intrepid datatype\n", F.Name.c_str());
+			if (F.getTypeId() == dtUNKNOWN) {
+				glog.logmsg("Warning 5: skipping field %s: unsupported Intrepid datatype\n", F.datafilepath().c_str());
 				continue;
 			}
-			if (F.Name == linenumberfield) continue;
-			glog.log("Converting field %s\n", F.Name.c_str());
-						
+			
+			if (F.getName() == linenumberfield) continue;
+			glog.log("Converting field %s\n", F.getName().c_str());
 			std::vector<NcDim> dims;
 			if (F.nbands() > 1) {
-				std::string dimname = "nbands_" + F.Name;
+				std::string dimname = "nbands_" + F.getName();
 				NcDim dim_band = ncFile.addDim(dimname, F.nbands());
 				dims.push_back(dim_band);
 			}
 
-			cLineVar var = ncFile.addLineVar(F.Name, nc_datatype(F), dims);			
+			cLineVar var = ncFile.addLineVar(F.getName(), nc_datatype(F), dims);			
 			for (size_t li = 0; li < nlines; li++) {
-				ILSegment& S = F.Segments[li];
+				ILSegment S(F,li);
 
 				if (S.readbuffer() == false) {
-					glog.logmsg("Error 8: could not read buffer for line sequence number %zu in %s field %s\n", li, IntrepiDatabasePath.c_str(),  F.Name.c_str());
+					glog.logmsg("Error 8: could not read buffer for line sequence number %zu in field %s\n", li, F.getName().c_str());
 					return false;
 				}				
 				change_fillvalues(S);
@@ -887,7 +881,8 @@ public:
 				startp[1] = 0;
 				countp[1] = S.nbands();
 				var.putVar(startp, countp, S.pvoid_groupby());
-			}
+			}	
+			add_field_attributes(F, var);
 		}
 		return true;
 	}
@@ -904,33 +899,33 @@ public:
 			ILField& F = *it;
 			if (F.isgroupbyline() == true)continue;
 
-			if (F.datatype().name() == "UNKNOWN") {
-				glog.logmsg("Warning 4: unsupported Intrepid datatype - skipping field %s in %s: \n", F.Name.c_str(), IntrepiDatabasePath.c_str());
+			if (F.getTypeId() == dtUNKNOWN) {
+				glog.logmsg("Warning 4: unsupported Intrepid datatype - skipping field in %s\n", F.datafilepath().c_str());
 				continue;
 			}
 			
-			NcVar tmp = ncFile.getVar(F.Name);
+			NcVar tmp = ncFile.getVar(F.getName());
 			if (tmp.isNull() == false) {
-				glog.logmsg("Warning 5: variable name %s already exists in this NC file - skipping field %s in %s\n", F.Name.c_str(), IntrepiDatabasePath.c_str());
+				glog.logmsg("Warning 5: variable name %s already exists in this NC file - skipping field %s\n", F.getName().c_str(), F.datafilepath().c_str());
 				return false;
 			}
 
 			
-			glog.log("Converting field %s\n", F.Name.c_str());
+			glog.log("Converting field %s\n", F.getName().c_str());
 			std::vector<NcDim> dims;
 			if (F.nbands() > 1) {
-				std::string dimname = "nbands_" + F.Name;
+				std::string dimname = "nbands_" + F.getName();
 				NcDim dim_band = ncFile.addDim(dimname, F.nbands());
 				dims.push_back(dim_band);
 			}
 
-			cSampleVar var = ncFile.addSampleVar(F.Name, nc_datatype(F), dims);			
+			cSampleVar var = ncFile.addSampleVar(F.getName(), nc_datatype(F), dims);			
 			size_t startindex = 0;
 			for (size_t li = 0; li < nlines; li++) {
-				ILSegment& S = F.Segments[li];
+				ILSegment S(F,li);
 
 				if (S.readbuffer() == false) {
-					glog.logmsg("Error 9: could not read buffer for line sequence number %zu in %s field %s\n", li, IntrepiDatabasePath.c_str(), F.Name.c_str());
+					glog.logmsg("Error 9: could not read buffer for line sequence number %zu in field %s\n", li, F.datasetpath().c_str());
 					return false;
 				}
 				change_fillvalues(S);
@@ -949,32 +944,46 @@ public:
 				var.putVar(startp, countp, S.pvoid());
 				startindex += S.nsamples();
 			}
+			add_field_attributes(F, var);
 		}
 		return true;
 	}
 	
 	void change_fillvalues(ILSegment& S) {
 		//Replace the nulls with more "sensible" values
-		if (S.datatype().isbyte()) {
+		if (S.getType().isbyte()) {
 			S.change_nullvalue(defaultmissingvalue(ncByte));
 		}
-		else if (S.datatype().isshort()) {
+		else if (S.getType().isshort()) {
 			S.change_nullvalue(defaultmissingvalue(ncShort));
 		}
-		else if (S.datatype().isint()) {
+		else if (S.getType().isint()) {
 			S.change_nullvalue(defaultmissingvalue(ncInt));
 		}
-		else if (S.datatype().isfloat()) {
+		else if (S.getType().isfloat()) {
 			S.change_nullvalue(defaultmissingvalue(ncFloat));
 		}
-		else if (S.datatype().isdouble()) {
+		else if (S.getType().isdouble()) {
 			S.change_nullvalue(defaultmissingvalue(ncDouble));
 		}
 	}
 
-	bool add_global_metadata() {
+	void add_field_attributes(const ILField& F, cGeophysicsVar& var) {
+		if (F.Datum.size() > 0) var.add_attribute("IntrepidDatumString", F.Datum);
+		if (F.Projection.size() > 0) var.add_attribute("IntrepidProjectionString", F.Projection);
+		if (F.CoordinateType.size() > 0) var.add_attribute("IntrepidCoordinateTypeString", F.CoordinateType);
+		
+		std::string aliaskey;
+		if (F.getDataset().fieldalias(F.getName(), aliaskey)) {
+			var.add_attribute("IntrepidAlias", aliaskey);
+		}
+	}
+
+	bool add_global_attributes(cGeophysicsNcFile& ncFile) {
 		_GSTITEM_
-		//ncFile.putAtt(m.header[j].c_str(), ncInt, pnum);		
+		ncFile.putAtt("CreationTime", timestamp());
+		ncFile.putAtt("CreationMethod", "intrepid2netcdf.exe");		
+		ncFile.putAtt("IntrepidSourceDataset", IntrepiDatabasePath);
 		return true;
 	}	
 };
@@ -982,7 +991,7 @@ public:
 int main(int argc, char** argv)
 {
 	_GSTITEM_
-	
+
 	int mpisize;
 	int mpirank;
 	MPI_Init(&argc, &argv);

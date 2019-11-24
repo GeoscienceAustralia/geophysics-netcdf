@@ -43,5 +43,8 @@
     <ClInclude Include="..\..\src\cpp\geophysics_netcdf.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\submodules\cpp-utils\src\intrepid.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>
