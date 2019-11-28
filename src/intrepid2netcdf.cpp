@@ -847,10 +847,14 @@ public:
 			if (F.isgroupbyline() == false) continue;
 
 			if (F.getTypeId() == IDataType::ID::UNKNOWN) {
-				glog.logmsg("Warning 5: skipping field %s: unsupported Intrepid datatype\n", F.datafilepath().c_str());
+				glog.logmsg("Warning 4: skipping field %s: unsupported datatype\n", F.datafilepath().c_str());
 				continue;
 			}
-			
+			else if (F.getTypeId() == IDataType::ID::STRING) {
+				glog.logmsg("Warning 5: skipping field %s: with STRING datatype\n", F.datafilepath().c_str());
+				continue;
+			}
+
 			if (F.getName() == linenumberfield) continue;
 			glog.log("Converting field %s\n", F.getName().c_str());
 			std::vector<NcDim> dims;
@@ -900,17 +904,20 @@ public:
 			if (F.isgroupbyline() == true)continue;
 
 			if (F.getTypeId() == IDataType::ID::UNKNOWN) {
-				glog.logmsg("Warning 4: unsupported Intrepid datatype - skipping field in %s\n", F.datafilepath().c_str());
+				glog.logmsg("Warning 4: skipping field %s: unsupported datatype\n", F.datafilepath().c_str());
+				continue;
+			}
+			else if (F.getTypeId() == IDataType::ID::STRING) {
+				glog.logmsg("Warning 5: skipping field %s: with STRING datatype\n", F.datafilepath().c_str());
 				continue;
 			}
 			
 			NcVar tmp = ncFile.getVar(F.getName());
 			if (tmp.isNull() == false) {
-				glog.logmsg("Warning 5: variable name %s already exists in this NC file - skipping field %s\n", F.getName().c_str(), F.datafilepath().c_str());
+				glog.logmsg("Warning 6: variable name %s already exists in this NC file - skipping field %s\n", F.getName().c_str(), F.datafilepath().c_str());
 				return false;
 			}
 
-			
 			glog.log("Converting field %s\n", F.getName().c_str());
 			std::vector<NcDim> dims;
 			if (F.nbands() > 1) {
