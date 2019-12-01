@@ -16,25 +16,29 @@ Author: Ross C. Brodie, Geoscience Australia.
 #include <map>
 #include <iomanip> 
 #include <memory> 
-#include "float.h"
-#include "general_utils.h"
-#include "vector_utils.h"
-#include "crs.h"
-#include "cgal_utils.h"
-#include "file_formats.h"
-#include "stopwatch.h"
-#include "logger.h"
-
+#include <cfloat>
 #include <netcdf>
 using namespace netCDF;
 using namespace netCDF::exceptions;
 
 
-//#pragma warning push
-//#pragma warning disable 858 //warning #858: type qualifier on return type is meaningless
-#include "marray.hxx"
-//#pragma warning pop
+#include "general_utils.h"
+#include "vector_utils.h"
+#include "file_formats.h"
+#include "stopwatch.h"
+#include "logger.h"
+#ifdef HAVE_GDAL
+	#include "crs.h"
+#endif
+#ifdef HAVE_CGAL
+	#include "cgal_utils.h"
+#endif
 
+
+#pragma warning push
+#pragma warning disable 858 //warning #858: type qualifier on return type is meaningless
+#include "marray.hxx"
+#pragma warning pop
 using namespace andres;
 
 extern cLogger glog;//The global instance of the log file manager
@@ -817,14 +821,6 @@ public:
 		open(ncpath,filemode);		
 	};
 
-	//Convert legacy file constructor
-	cGeophysicsNcFile(const std::string& filename, const cGeophysicsNcFile& srcfile)
-		: NcFile(filename, NcFile::FileMode::newFile)
-	{
-		_GSTITEM_
-		convert_legacy(srcfile);
-	};
-
 	//Destructor
 	~cGeophysicsNcFile(){};	
 
@@ -937,17 +933,8 @@ public:
 		//vline.add_units("1");		
 	}
 
-	
-	//Convert legacy file
-	static bool convert_legacy(const std::string& srcpathname, const std::string& dstpathname)
-	{
-		_GSTITEM_
-		cGeophysicsNcFile srcfile(srcpathname);
-		cGeophysicsNcFile dstfile(dstpathname, NcFile::FileMode::newFile);
-		bool status = dstfile.convert_legacy(srcfile);
-		return status;
-	}
 
+#ifdef HAVE_GDAL
 	//Convert legacy file
 	bool convert_legacy(const cGeophysicsNcFile& srcfile)
 	{
@@ -998,6 +985,8 @@ public:
 		}		
 		return true;
 	}
+#endif
+
 
 	bool copy_global_atts(const cGeophysicsNcFile& srcfile)
 	{
@@ -1375,6 +1364,7 @@ public:
 		return true;
 	}
 
+#ifdef HAVE_GDAL
 	bool addCRS(const int epsgcode){
 
 		#ifdef _WIN32 
@@ -1395,6 +1385,7 @@ public:
 		v.putAtt("longitude_of_prime_meridian", ncDouble, srs.GetPrimeMeridian());
 		return true;
 	}
+#endif
 
 	bool addLineStartEndPointsLL(){
 
@@ -1509,6 +1500,7 @@ public:
 		return true;
 	}
 	
+#ifdef HAVE_CGAL
 	bool addAlphaShapePolygon(const std::string xvarname, const std::string yvarname){
 		std::vector<double> x;
 		std::vector<double> y;
@@ -1543,6 +1535,7 @@ public:
 		v.putVar(poly.data());
 		return true;
 	}
+#endif
 	
 	bool minmax(const std::string& varname, double& minval, double& maxval){		
 		cSampleVar var = getSampleVar(varname);
@@ -1568,8 +1561,8 @@ public:
 		return true;		
 	}
 
-	bool addGeospatialMetadataXY(){
-		
+#ifdef HAVE_GDAL
+	bool addGeospatialMetadataXY(){		
 		bool status;
 		if (hasVar("longitude") && hasVar("latitude")){
 			status = addGeospatialMetadataItem("longitude", "lon", "degrees_east");
@@ -1591,6 +1584,7 @@ public:
 
 		return true;
 	}
+#endif
 
 	bool addGeospatialMetadataVertical(){
 

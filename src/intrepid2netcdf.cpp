@@ -30,10 +30,12 @@ class cStackTrace gtrace;
 #include "intrepid.h"
 
 #include "metadata.h"
-#include "crs.h"
 #include "csvfile.h"
 #include "logger.h"
 #include "geophysics_netcdf.h"
+#ifdef HAVE_GDAL
+	#include "crs.h"
+#endif
 
 class cLogger glog; //The instance of the global log file manager
 

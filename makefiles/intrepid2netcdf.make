@@ -8,16 +8,23 @@ includes  = -I$(srcdir)
 includes += -I$(cpputilssrc)
 includes += -I$(marray_include)
 
+
 cxxflags  += -DUSEGLOBALSTACKTRACE
 cxxflags  += -D_MPI_ENABLED
 
-libs       =  -lnetcdf -lnetcdf_c++4 -lgdal -lCGAL_Core
-executable =  $(exedir)/intrepid2netcdf.exe
+libs       =  -lnetcdf -lnetcdf_c++4
 
+executable =  $(exedir)/intrepid2netcdf.exe
 objects  = $(cpputilssrc)/general_utils.o
 objects += $(cpputilssrc)/file_utils.o
-objects += $(cpputilssrc)/gdal_utils.o
-objects += $(cpputilssrc)/cgal_utils.o
+ifeq ($(HAVE_GDAL),1)
+    cxxflags += -DHAVE_GDAL
+    objects  += $(cpputilssrc)/gdal_utils.o
+endif
+ifeq ($(HAVE_CGAL),1)
+    cxxflags += -DHAVE_CGAL
+    objects  += $(cpputilssrc)/cgal_utils.o
+endif
 objects += $(srcdir)/intrepid2netcdf.o
 
 %.o : %.cpp
