@@ -76,7 +76,7 @@ public:
 
 		cGeophysicsNcFile N(NCPath);
 		std::vector<int> ln = N.getLineNumbers();
-		for (size_t i = 0; i < ln.size(); i++) {
+		for (size_t i = 0; i < ln.size(); i++) {			
 			std::vector<double> x;
 			std::vector<double> y;
 			bool status = false;
@@ -88,30 +88,32 @@ public:
 			double null = defaultmissingvalue(ncDouble);
 			size_t ns = x.size();
 			int k = 0;
-			while (x[k] == null && y[k] == null) {
+			int kstart, kend;
+			while (x[k] == null || y[k] == null) {				
 				k++;
 				if (k == ns)break;
 			}
-			size_t kstart = k;
-
+			kstart = k;
+			
 			k = ns - 1;
-			while (x[k] == null && y[k] == null) {
+			while (x[k] == null || y[k] == null) {				
 				k--;
 				if (k == -1)break;
 			}
-			size_t kend = k;
-
-			int minpoints = 5;
-			int ss = (kend - kstart) / (minpoints - 2);
-			for (k = kstart; k < kend; k += ss) {
-				xout.push_back(x[k]);
-				yout.push_back(y[k]);
+			kend = k;
+			
+			if(kend >= kstart){
+				int minpoints = 5;
+				int ss = (kend - kstart) / (minpoints - 2);
+				for (k = kstart; k < kend; k += ss) {
+					xout.push_back(x[k]);
+					yout.push_back(y[k]);
+				}
+				xout.push_back(x[kend]);
+				yout.push_back(y[kend]);			
+				atts[0].value = ln[i];
+				L.add_linestring_feature(atts, xout, yout);
 			}
-			xout.push_back(x[kend]);
-			yout.push_back(y[kend]);
-
-			atts[0].value = ln[i];
-			L.add_linestring_feature(atts, xout, yout);
 		}		
 		return true;
 	}
