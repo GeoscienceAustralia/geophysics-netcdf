@@ -76,7 +76,13 @@ public:
 
 		cGeophysicsNcFile N(NCPath);
 		std::vector<int> ln = N.getLineNumbers();
-		for (size_t i = 0; i < ln.size(); i++) {			
+		for (size_t i = 0; i < ln.size(); i++) {
+			
+			//std::cout << i << std::endl;
+			//if (i == 267){
+			//	int dummy = 0;
+			//}
+
 			std::vector<double> x;
 			std::vector<double> y;
 			bool status = false;
@@ -105,6 +111,7 @@ public:
 			if(kend >= kstart){
 				int minpoints = 5;
 				int ss = (kend - kstart) / (minpoints - 2);
+				if (ss < 1) ss = 1;
 				for (k = kstart; k < kend; k += ss) {
 					xout.push_back(x[k]);
 					yout.push_back(y[k]);
@@ -152,9 +159,12 @@ int main(int argc, char** argv)
 				sFilePathParts fpp = getfilepathparts(s);
 				std::string NCPath    = ncdir    + fpp.directory + fpp.prefix + ".nc";
 				std::string ShapePath = shapedir + fpp.directory + fpp.prefix + ".shp";
+				
 				if (k % mpisize == mpirank) {
-					std::cout << "[" << mpirank << "] " << NCPath << " " << ShapePath << std::endl << std::flush;
-					cNcToShapefileConverter C(NCPath, ShapePath, mpisize, mpirank);
+					if (exists(ShapePath) == false) {
+						std::cout << "[" << mpirank << "] " << NCPath << " " << ShapePath << std::endl << std::flush;
+						cNcToShapefileConverter C(NCPath, ShapePath, mpisize, mpirank);
+					}
 				}
 				k++;
 			}
