@@ -20,6 +20,7 @@ objects += $(cpputilssrc)/file_utils.o
 ifeq ($(HAVE_GDAL),1)
     cxxflags += -DHAVE_GDAL
     objects  += $(cpputilssrc)/gdal_utils.o
+    libs     +=  -lgdal
 endif
 ifeq ($(HAVE_CGAL),1)
     cxxflags += -DHAVE_CGAL
