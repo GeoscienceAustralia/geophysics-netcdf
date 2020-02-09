@@ -75,7 +75,9 @@ public:
 		L.add_fields(atts);
 
 		cGeophysicsNcFile N(NCPath);
-		std::vector<int> ln = N.getLineNumbers();
+		std::vector<unsigned int> ln;
+		bool status = N.getLineNumbers(ln);
+		//std::vector<unsigned int> ln = N.getLineNumbers();
 		for (size_t i = 0; i < ln.size(); i++) {
 			
 			//std::cout << i << std::endl;
@@ -118,7 +120,7 @@ public:
 				}
 				xout.push_back(x[kend]);
 				yout.push_back(y[kend]);			
-				atts[0].value = ln[i];
+				atts[0].value = (int)ln[i];
 				L.add_linestring_feature(atts, xout, yout);
 			}
 		}		
