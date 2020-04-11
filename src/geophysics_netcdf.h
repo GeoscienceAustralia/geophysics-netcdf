@@ -62,7 +62,8 @@ constexpr auto AN_DESCRIPTION = "description";
 constexpr auto AN_MISSINGVALUE = "_FillValue";
 constexpr auto AN_ORIGINAL_NAME = "original_database_name";
 
-inline NcType nctype(const int8_t) { return ncShort; }
+inline NcType nctype(const uint8_t) { return ncUbyte; }
+inline NcType nctype(const int8_t) { return ncByte; }
 inline NcType nctype(const short) { return ncShort; }
 inline NcType nctype(const int) { return ncInt; }
 inline NcType nctype(const unsigned int) { return ncUint; }
@@ -70,7 +71,8 @@ inline NcType nctype(const float) { return ncFloat; }
 inline NcType nctype(const double) { return ncDouble; }
 inline NcType nctype(const std::string) { return ncString; }
 
-inline short defaultmissingvalue(const NcByte&) { return (int8_t)NC_FILL_BYTE; }
+inline uint8_t defaultmissingvalue(const NcUbyte&) { return (uint8_t) NC_FILL_UBYTE; }
+inline int8_t defaultmissingvalue(const NcByte&) { return (int8_t)NC_FILL_BYTE; }
 inline short defaultmissingvalue(const NcShort&) { return (short) NC_FILL_SHORT; }
 inline int defaultmissingvalue(const NcInt&) { return (int) NC_FILL_INT; }
 inline unsigned int defaultmissingvalue(const NcUint&) { return (unsigned int)NC_FILL_UINT; }
@@ -145,7 +147,7 @@ public:
 		return length() * getType().getSize();
 	}
 
-	size_t elementspersample() const {
+	size_t elementspersample() const {		
 		_GSTITEM_
 		std::vector<NcDim> dims = getDims();
 		size_t len = 1;
@@ -283,10 +285,12 @@ public:
 		else return DBL_MAX;
 	}
 
-	void set_default_missingvalue(){
+	void set_default_missingvalue(){		
 		_GSTITEM_
 		nc_type t = getType().getId();						
 		switch (t) { 
+		case NC_UBYTE: putAtt(AN_MISSINGVALUE, ncUbyte, defaultmissingvalue(ncUbyte)); break;
+		case NC_BYTE: putAtt(AN_MISSINGVALUE, ncByte, defaultmissingvalue(ncByte)); break;
 		case NC_SHORT: putAtt(AN_MISSINGVALUE, ncShort, defaultmissingvalue(ncShort)); break;
 		case NC_INT: putAtt(AN_MISSINGVALUE, ncInt, defaultmissingvalue(ncInt)); break;
 		case NC_UINT: putAtt(AN_MISSINGVALUE, ncUint, defaultmissingvalue(ncUint)); break;
