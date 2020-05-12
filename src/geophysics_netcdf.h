@@ -78,6 +78,7 @@ inline int defaultmissingvalue(const NcInt&) { return (int) NC_FILL_INT; }
 inline unsigned int defaultmissingvalue(const NcUint&) { return (unsigned int)NC_FILL_UINT; }
 inline float defaultmissingvalue(const NcFloat&) { return (float) NC_FILL_FLOAT; }
 inline double defaultmissingvalue(const NcDouble&) { return (double) NC_FILL_DOUBLE; }
+inline std::string defaultmissingvalue(const NcString&) { return std::string(NC_FILL_STRING); }
 
 class cExportFormat{
 
@@ -296,6 +297,11 @@ public:
 		case NC_UINT: putAtt(AN_MISSINGVALUE, ncUint, defaultmissingvalue(ncUint)); break;
 		case NC_FLOAT: putAtt(AN_MISSINGVALUE, ncFloat, defaultmissingvalue(ncFloat)); break;
 		case NC_DOUBLE: putAtt(AN_MISSINGVALUE, ncDouble, defaultmissingvalue(ncDouble)); break;
+		case NC_STRING: {			
+			//std::string n = defaultmissingvalue(ncString);
+			//putAtt(AN_MISSINGVALUE, ncString, n.length(), n.c_str()); break;
+			break;
+		}
 		default: {
 					std::string msg = _SRC_ + strprint("Attempt to set default missing value of unsupported datatype\n");
 					throw(std::runtime_error(msg));

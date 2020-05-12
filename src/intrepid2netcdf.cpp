@@ -153,6 +153,9 @@ public:
 		else if (F.getType().isint()) return NcType(ncInt);
 		else if (F.getType().isfloat())return NcType(ncFloat);
 		else if (F.getType().isdouble())return NcType(ncDouble);
+		else if (F.getType().isstring()) {
+			return NcType(ncString);
+		}
 		else {
 			std::string msg = strprint("Error 6: Unknown Intrepid data type in %s\n",F.datafilepath().c_str());
 			glog.logmsg(msg);
@@ -190,18 +193,13 @@ public:
 		for (auto it = D.Fields.begin(); it != D.Fields.end(); ++it) {
 			fi++;
 			ILField& F = *it;
-			if (F.isgroupbyline() == false) continue;
-
+			if (F.isgroupbyline() == false) continue;			
+			if (F.getName() == linenumberfield) continue;
 			if (F.getTypeId() == IDataType::ID::UNKNOWN) {
 				glog.logmsg("Warning 4: skipping field %s: unsupported datatype\n", F.datafilepath().c_str());
 				continue;
-			}
-			else if (F.getTypeId() == IDataType::ID::STRING) {
-				glog.logmsg("Warning 5: skipping field %s: with STRING datatype\n", F.datafilepath().c_str());
-				continue;
-			}
-
-			if (F.getName() == linenumberfield) continue;
+			}			
+			
 			glog.log("Converting field %s\n", F.getName().c_str());
 			std::vector<NcDim> dims;
 			if (F.nbands() > 1) {
@@ -210,7 +208,15 @@ public:
 				dims.push_back(dim_band);
 			}
 
-			cLineVar var = ncFile.addLineVar(F.getName(), nc_datatype(F), dims);			
+			std::vector<int> vstringasint;	
+			nc_type t = nc_datatype(F).getId();			
+			if(F.getTypeId() == IDataType::ID::STRING){
+				D.getgroupbydata(F, vstringasint);
+				t = ncInt.getId();
+			}
+			NcType ncvartype(t);
+
+			cLineVar var = ncFile.addLineVar(F.getName(), ncvartype, dims);
 			for (size_t li = 0; li < nlines; li++) {
 				ILSegment S(F,li);
 
@@ -230,7 +236,12 @@ public:
 				//Band dimension
 				startp[1] = 0;
 				countp[1] = S.nbands();
-				var.putVar(startp, countp, S.pvoid_groupby());
+				if (F.getTypeId() == IDataType::ID::STRING) {
+					var.putVar(startp, countp, (void*)&(vstringasint[li]));
+				}
+				else {
+					var.putVar(startp, countp, S.pvoid_groupby());
+				}
 			}	
 			add_field_attributes(F, var);
 		}
@@ -247,7 +258,7 @@ public:
 		for (auto it = D.Fields.begin(); it != D.Fields.end(); ++it) {
 			fi++;
 			ILField& F = *it;
-			if (F.isgroupbyline() == true)continue;
+			if (F.isgroupbyline() == true) continue;			
 
 			if (F.getTypeId() == IDataType::ID::UNKNOWN) {
 				glog.logmsg("Warning 4: skipping field %s: unsupported datatype\n", F.datafilepath().c_str());
@@ -318,6 +329,9 @@ public:
 		}
 		else if (S.getType().isdouble()) {
 			S.change_nullvalue(defaultmissingvalue(ncDouble));
+		}
+		else if (S.getType().isstring()) {
+			S.change_nullvalue(defaultmissingvalue(ncString));
 		}
 		else {
 			std::string msg = strprint("Error 10: Unsupported data type %s for field %s in %s\n",S.getType().getName().c_str(),S.getField().getName().c_str(),IntrepiDatabasePath.c_str());
