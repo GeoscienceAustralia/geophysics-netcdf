@@ -181,7 +181,15 @@ public:
 	}
 
 	bool add_groupbyline_variables(cGeophysicsNcFile& ncFile, ILDataset& D)
-	{
+	{	
+		//ILField& f = D.getfield("dateCode");
+		//for (size_t li = 0; li < D.nlines(); li++) {
+		//	ILSegment S(f, li);
+		//	bool status = S.readbuffer();
+		//	std::vector<std::string> iv;
+		//	bool stat = S.getband(iv, 0);
+		//}
+
 		_GSTITEM_
 		if (D.valid == false)return false;
 		size_t nlines = D.nlines();
@@ -209,14 +217,14 @@ public:
 			}
 
 			std::vector<int> vstringasint;	
-			nc_type t = nc_datatype(F).getId();			
+			nc_type outdatatype = nc_datatype(F).getId();
 			if(F.getTypeId() == IDataType::ID::STRING){
 				D.getgroupbydata(F, vstringasint);
-				t = ncInt.getId();
+				outdatatype = ncInt.getId();
+				glog.logmsg("Warning 5: Converting field %s: with STRING datatype to 'int' datatype\n", F.datafilepath().c_str());
 			}
-			NcType ncvartype(t);
-
-			cLineVar var = ncFile.addLineVar(F.getName(), ncvartype, dims);
+			
+			cLineVar var = ncFile.addLineVar(F.getName(), NcType(outdatatype), dims);
 			for (size_t li = 0; li < nlines; li++) {
 				ILSegment S(F,li);
 
@@ -257,24 +265,26 @@ public:
 		size_t fi = 0;
 		for (auto it = D.Fields.begin(); it != D.Fields.end(); ++it) {
 			fi++;
-			ILField& F = *it;
+			//ILField& F = *it;
+			ILField& F = D.getfield("dateCode");
 			if (F.isgroupbyline() == true) continue;			
+			
+			if (ncFile.getVar(F.getName()).isNull() == false) {
+				glog.logmsg("Warning 6: variable name %s already exists in this NC file - skipping field %s\n", F.getName().c_str(), F.datafilepath().c_str());
+				return false;
+			}
 
 			if (F.getTypeId() == IDataType::ID::UNKNOWN) {
 				glog.logmsg("Warning 4: skipping field %s: unsupported datatype\n", F.datafilepath().c_str());
 				continue;
 			}
-			else if (F.getTypeId() == IDataType::ID::STRING) {
-				glog.logmsg("Warning 5: skipping field %s: with STRING datatype\n", F.datafilepath().c_str());
-				continue;
-			}
-			
-			NcVar tmp = ncFile.getVar(F.getName());
-			if (tmp.isNull() == false) {
-				glog.logmsg("Warning 6: variable name %s already exists in this NC file - skipping field %s\n", F.getName().c_str(), F.datafilepath().c_str());
-				return false;
-			}
 
+			nc_type outdatatype = nc_datatype(F).getId();
+			//if (F.getTypeId() == IDataType::ID::STRING) {				
+			//	outdatatype = ncInt.getId();
+			//	glog.logmsg("Warning 5: Converting field %s: with STRING datatype to 'int' datatype\n", F.datafilepath().c_str());
+			//}
+						
 			glog.log("Converting field %s\n", F.getName().c_str());
 			std::vector<NcDim> dims;
 			if (F.nbands() > 1) {
@@ -282,8 +292,8 @@ public:
 				NcDim dim_band = ncFile.addDim(dimname, F.nbands());
 				dims.push_back(dim_band);
 			}
-
-			cSampleVar var = ncFile.addSampleVar(F.getName(), nc_datatype(F), dims);			
+					   			 		  		  
+			cSampleVar var = ncFile.addSampleVar(F.getName(), NcType(outdatatype), dims);
 			size_t startindex = 0;
 			for (size_t li = 0; li < nlines; li++) {
 				ILSegment S(F,li);
@@ -305,7 +315,21 @@ public:
 				startp[1] = 0;
 				countp[1] = S.nbands();
 
-				var.putVar(startp, countp, S.pvoid());
+				if (F.getTypeId() == IDataType::ID::STRING) {
+					//std::vector<int> vstringasint;
+					//bool stat = S.getband(vstringasint, 0);
+					//var.putVar(startp, countp, (void*)vstringasint.data());
+					std::vector<std::string> svec;
+					bool stat = S.getband(svec, 0);
+					std::vector<const char*> p(S.nsamples());
+					for (size_t si = 0; si < S.nsamples(); si++) {
+						p[si] = svec[si].c_str();
+					}
+					var.putVar(startp, countp, p.data());
+				}
+				else {
+					var.putVar(startp, countp, S.pvoid());
+				}
 				startindex += S.nsamples();
 			}
 			add_field_attributes(F, var);

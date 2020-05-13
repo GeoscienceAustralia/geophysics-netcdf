@@ -28,6 +28,7 @@ class cStackTrace gtrace;
 #include "file_utils.h"
 #include "logger.h"
 #include "ogr_utils.h"
+#include "gdal_utils.h"
 #include "geophysics_netcdf.h"
 
 #ifdef HAVE_GDAL
@@ -67,29 +68,72 @@ public:
 
 	~cNcToShapefileConverter() {};
 
+	std::string look_for_var(cGeophysicsNcFile& N,  const std::vector<std::string>& candidates)
+	{
+		std::vector<NcVar> v = N.getAllVars();		
+		for(size_t ci=0; ci<candidates.size(); ci++){
+			for (size_t vi = 0; vi < v.size(); vi++) {
+				if(strcasecmp(v[vi].getName(), candidates[ci]) == 0){
+					return v[vi].getName();
+				}
+			}
+		}
+		return std::string();
+	}
+
+	std::vector<int> get_linetype(cGeophysicsNcFile& N)
+	{		
+		std::vector<std::string> candidates;
+		candidates.push_back("linetype");
+		candidates.push_back("line_type");
+		candidates.push_back("ltype");
+		std::string vname = look_for_var(N, candidates);
+		std::vector<int> ltype;
+
+		if (vname.size() > 0) {
+			NcVar var = N.getVar(vname);
+			if (N.isLineVar(var)) {
+				cLineVar v = N.getLineVar(vname);
+				bool s = v.getAll(ltype);
+			}
+			else if (N.isSampleVar(var)) {
+				ltype.resize(N.nlines());
+				cSampleVar v = N.getSampleVar(vname);
+				for (size_t li = 0; li < N.nlines(); li++) {
+					v.getSample(li, 0, 0, ltype[li]);
+				}
+			}
+		}
+		return ltype;
+	}
+
 	bool process() {		
 		cGeoDataset D = cGeoDataset::create_shapefile(ShapePath);
 		cLayer L = D.create_layer("flight_lines", OGRwkbGeometryType::wkbLineString);
 		std::vector<cAttribute> atts;
 		atts.push_back(cAttribute("linenumber", (int)0));
+		atts.push_back(cAttribute("linetype", (int)0));
 		L.add_fields(atts);
 
 		cGeophysicsNcFile N(NCPath);
 		std::vector<unsigned int> ln;
 		bool status = N.getLineNumbers(ln);
-		//std::vector<unsigned int> ln = N.getLineNumbers();
-		for (size_t i = 0; i < ln.size(); i++) {
-			
-			//std::cout << i << std::endl;
-			//if (i == 267){
-			//	int dummy = 0;
-			//}
+		const size_t nl = N.nlines();
+				
+		std::vector<int> ltype = get_linetype(N);				
+		std::vector<double> lkm0(nl);
+		std::vector<double> lkm2(nl);
+		std::vector<double> lkm4(nl);
+		for (size_t li = 0; li < nl; li++) {	
+			lkm0[li] = 0.0; 
+			lkm2[li] = 0.0;
+			lkm4[li] = 0.0;
 
 			std::vector<double> x;
 			std::vector<double> y;
 			bool status = false;
-			status = N.getDataByLineIndex("longitude", i, x);
-			status = N.getDataByLineIndex("latitude", i, y);
+			status = N.getDataByLineIndex("longitude", li, x);
+			status = N.getDataByLineIndex("latitude", li, y);
 			std::vector<double> xout;
 			std::vector<double> yout;
 
@@ -111,7 +155,7 @@ public:
 			kend = k;
 			
 			if(kend >= kstart){
-				int minpoints = 5;
+				int minpoints = 10;
 				int ss = (kend - kstart) / (minpoints - 2);
 				if (ss < 1) ss = 1;
 				for (k = kstart; k < kend; k += ss) {
@@ -120,10 +164,38 @@ public:
 				}
 				xout.push_back(x[kend]);
 				yout.push_back(y[kend]);			
-				atts[0].value = (int)ln[i];
+				atts[0].value = (int)ln[li];
+
+				atts[1].value = (int)0;
+				if (ltype.size() == nl) {
+					atts[1].value = (int)ltype[li];
+				}
 				L.add_linestring_feature(atts, xout, yout);
+
+				double meanlong = mean(xout);
+				int zone = std::ceil((meanlong + 180.0) / 6.0);
+				std::string zonestr = strprint("MGA%02d", zone);
+				int epsgcode_geodetic = getepsgcode("GDA94", "GEODETIC");
+				int epsgcode_utm      = getepsgcode("GDA94", zonestr);
+				std::vector<double> e;
+				std::vector<double> n;
+				bool status = transform(epsgcode_geodetic, xout, yout, epsgcode_utm, e, n);
+				
+				double d = 0.0;
+				for (size_t j = 1; j < e.size(); j++) {
+					d += std::hypot(e[j] - e[j - 1], n[j] - n[j - 1]);
+				}
+
+				lkm0[li] = d / 1000.0;				
+				if (ltype.size() == nl) {
+					if (ltype[li] == 2) lkm2[li] = lkm0[li];
+					if (ltype[li] == 4) lkm4[li] = lkm0[li];
+				}				
 			}
 		}		
+		std::string a = strprint("%s,%.1lf,%.1lf,%.1lf\n",NCPath.c_str(),sum(lkm0), sum(lkm2), sum(lkm4));
+		glog.logmsg(a);
+		std::printf(a.c_str());
 		return true;
 	}
 };
@@ -163,10 +235,10 @@ int main(int argc, char** argv)
 				std::string ShapePath = shapedir + fpp.directory + fpp.prefix + ".shp";
 				
 				if (k % mpisize == mpirank) {
-					if (exists(ShapePath) == false) {
+					//if (exists(ShapePath) == false) {
 						std::cout << "[" << mpirank << "] " << NCPath << " " << ShapePath << std::endl << std::flush;
 						cNcToShapefileConverter C(NCPath, ShapePath, mpisize, mpirank);
-					}
+					//}
 				}
 				k++;
 			}

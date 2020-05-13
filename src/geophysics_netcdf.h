@@ -656,14 +656,13 @@ public:
 	}
 
 	template<typename T>
-	T getSample(const size_t& lineindex, const size_t& sampleindex, const size_t& bandindex, T& val) const {		
-		_GSTITEM_
-		std::vector<double>& v;		
+	bool getSample(const size_t& lineindex, const size_t& sampleindex, const size_t& bandindex, T& val) const {		
+		_GSTITEM_		
 		if (isNull()){ return false; }
 		std::vector<size_t> startp = { line_index_start(lineindex)+sampleindex, bandindex };
 		std::vector<size_t> countp = { 1, 1 };	
 		getVar(startp, countp, &val);
-		return val;
+		return true;
 	};
 
 	template<typename T>
