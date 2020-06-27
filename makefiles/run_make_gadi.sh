@@ -55,8 +55,8 @@ echo HAVE_GDAL = $HAVE_GDAL
 echo HAVE_CGAL = $HAVE_CGAL
 echo ---------------------------------------
 
-#make -f intrepid2netcdf.make $makemode
-make -f geophysicsnc2shape.make $makemode
+make -f intrepid2netcdf.make $makemode
+#make -f geophysicsnc2shape.make $makemode
 #make -f aseggdf2netcdf.make $makemode
 #make -f test_geophysics_netcdf_reader.make $makemode
 

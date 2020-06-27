@@ -182,14 +182,6 @@ public:
 
 	bool add_groupbyline_variables(cGeophysicsNcFile& ncFile, ILDataset& D)
 	{	
-		//ILField& f = D.getfield("dateCode");
-		//for (size_t li = 0; li < D.nlines(); li++) {
-		//	ILSegment S(f, li);
-		//	bool status = S.readbuffer();
-		//	std::vector<std::string> iv;
-		//	bool stat = S.getband(iv, 0);
-		//}
-
 		_GSTITEM_
 		if (D.valid == false)return false;
 		size_t nlines = D.nlines();
@@ -265,8 +257,7 @@ public:
 		size_t fi = 0;
 		for (auto it = D.Fields.begin(); it != D.Fields.end(); ++it) {
 			fi++;
-			//ILField& F = *it;
-			ILField& F = D.getfield("dateCode");
+			ILField& F = *it;
 			if (F.isgroupbyline() == true) continue;			
 			
 			if (ncFile.getVar(F.getName()).isNull() == false) {
@@ -280,10 +271,10 @@ public:
 			}
 
 			nc_type outdatatype = nc_datatype(F).getId();
-			//if (F.getTypeId() == IDataType::ID::STRING) {				
-			//	outdatatype = ncInt.getId();
-			//	glog.logmsg("Warning 5: Converting field %s: with STRING datatype to 'int' datatype\n", F.datafilepath().c_str());
-			//}
+			if (F.getTypeId() == IDataType::ID::STRING) {				
+				outdatatype = ncInt.getId();
+				glog.logmsg("Warning 5: Converting field %s: with STRING datatype to 'int' datatype\n", F.datafilepath().c_str());
+			}
 						
 			glog.log("Converting field %s\n", F.getName().c_str());
 			std::vector<NcDim> dims;
@@ -316,16 +307,17 @@ public:
 				countp[1] = S.nbands();
 
 				if (F.getTypeId() == IDataType::ID::STRING) {
-					//std::vector<int> vstringasint;
-					//bool stat = S.getband(vstringasint, 0);
-					//var.putVar(startp, countp, (void*)vstringasint.data());
-					std::vector<std::string> svec;
-					bool stat = S.getband(svec, 0);
-					std::vector<const char*> p(S.nsamples());
-					for (size_t si = 0; si < S.nsamples(); si++) {
-						p[si] = svec[si].c_str();
-					}
-					var.putVar(startp, countp, p.data());
+					std::vector<int> vstringasint;
+					bool stat = S.getband(vstringasint, 0);
+					var.putVar(startp, countp, (void*)vstringasint.data());
+					
+					//std::vector<std::string> svec;
+					//bool stat = S.getband(svec, 0);
+					//std::vector<const char*> p(S.nsamples());
+					//for (size_t si = 0; si < S.nsamples(); si++) {
+					//	p[si] = svec[si].c_str();
+					//}
+					//var.putVar(startp, countp, p.data());
 				}
 				else {
 					var.putVar(startp, countp, S.pvoid());

@@ -81,14 +81,14 @@ public:
 		return std::string();
 	}
 
-	std::vector<int> get_linetype(cGeophysicsNcFile& N)
+	std::vector<double> get_linetype(cGeophysicsNcFile& N)
 	{		
 		std::vector<std::string> candidates;
 		candidates.push_back("linetype");
 		candidates.push_back("line_type");
 		candidates.push_back("ltype");
 		std::string vname = look_for_var(N, candidates);
-		std::vector<int> ltype;
+		std::vector<double> ltype;
 
 		if (vname.size() > 0) {
 			NcVar var = N.getVar(vname);
@@ -120,7 +120,7 @@ public:
 		bool status = N.getLineNumbers(ln);
 		const size_t nl = N.nlines();
 				
-		std::vector<int> ltype = get_linetype(N);				
+		std::vector<double> ltype = get_linetype(N);				
 		std::vector<double> lkm0(nl);
 		std::vector<double> lkm2(nl);
 		std::vector<double> lkm4(nl);
@@ -138,6 +138,7 @@ public:
 			std::vector<double> yout;
 
 			double null = defaultmissingvalue(ncDouble);
+
 			size_t ns = x.size();
 			int k = 0;
 			int kstart, kend;
@@ -155,32 +156,56 @@ public:
 			kend = k;
 			
 			if(kend >= kstart){
-				int minpoints = 10;
+				int minpoints = 20;
 				int ss = (kend - kstart) / (minpoints - 2);
 				if (ss < 1) ss = 1;
 				for (k = kstart; k < kend; k += ss) {
-					xout.push_back(x[k]);
-					yout.push_back(y[k]);
+					if(x[k] != null && y[k] != null) {
+						xout.push_back(x[k]);
+						yout.push_back(y[k]);						
+					}					
 				}
 				xout.push_back(x[kend]);
 				yout.push_back(y[kend]);			
-				atts[0].value = (int)ln[li];
 
+				atts[0].value = (int)ln[li];
 				atts[1].value = (int)0;
 				if (ltype.size() == nl) {
 					atts[1].value = (int)ltype[li];
 				}
 				L.add_linestring_feature(atts, xout, yout);
 
+				continue;
+				
 				double meanlong = mean(xout);
 				int zone = std::ceil((meanlong + 180.0) / 6.0);
-				std::string zonestr = strprint("MGA%02d", zone);
-				int epsgcode_geodetic = getepsgcode("GDA94", "GEODETIC");
-				int epsgcode_utm      = getepsgcode("GDA94", zonestr);
+				
+				//std::string zonestr = strprint("MGA%02d", zone);
+				//int epsgcode_geodetic = getepsgcode("GDA94", "GEODETIC");
+				//int epsgcode_utm      = getepsgcode("GDA94", zonestr);
+
+				std::string zonestr   = strprint("UTM%02dS", zone);
+				int epsgcode_geodetic = getepsgcode("WGS84", "GEODETIC");
+				//int epsgcode_utm      = getepsgcode("WGS84", zonestr);
+				int epsgcode_utm = 32752;
+
+			    printf("zone=%d\n",zone);
+			    printf("zonestr=%s\n",zonestr.c_str());
+				printf("epsgcode_geodetic=%d\n",epsgcode_geodetic);
+			    printf("epsgcode_utm     =%d\n",epsgcode_utm);
+			    
+				for (size_t j = 1; j < xout.size(); j++) {
+				    printf("%lf,%lf\n",xout[j],yout[j]);
+				}
+
 				std::vector<double> e;
 				std::vector<double> n;
 				bool status = transform(epsgcode_geodetic, xout, yout, epsgcode_utm, e, n);
 				
+				for (size_t j = 0; j < xout.size(); j++) {
+				    printf("%lf,%lf\n",xout[j],yout[j]);
+				}
+
 				double d = 0.0;
 				for (size_t j = 1; j < e.size(); j++) {
 					d += std::hypot(e[j] - e[j - 1], n[j] - n[j - 1]);
@@ -190,12 +215,14 @@ public:
 				if (ltype.size() == nl) {
 					if (ltype[li] == 2) lkm2[li] = lkm0[li];
 					if (ltype[li] == 4) lkm4[li] = lkm0[li];
-				}				
+				}		
+				
 			}
 		}		
-		std::string a = strprint("%s,%.1lf,%.1lf,%.1lf\n",NCPath.c_str(),sum(lkm0), sum(lkm2), sum(lkm4));
-		glog.logmsg(a);
-		std::printf(a.c_str());
+		
+		//std::string a = strprint("%s,%.1lf,%.1lf,%.1lf\n",NCPath.c_str(),sum(lkm0), sum(lkm2), sum(lkm4));
+		//glog.logmsg(a);
+		//std::printf(a.c_str());
 		return true;
 	}
 };
