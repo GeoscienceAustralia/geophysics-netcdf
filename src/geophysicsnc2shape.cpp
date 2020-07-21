@@ -94,7 +94,7 @@ public:
 			NcVar var = N.getVar(vname);
 			if (N.isLineVar(var)) {
 				cLineVar v = N.getLineVar(vname);
-				bool s = v.getAll(ltype);
+				v.getAll(ltype);
 			}
 			else if (N.isSampleVar(var)) {
 				ltype.resize(N.nlines());
@@ -117,7 +117,7 @@ public:
 
 		cGeophysicsNcFile N(NCPath);
 		std::vector<unsigned int> ln;
-		bool status = N.getLineNumbers(ln);
+		N.getLineNumbers(ln);
 		const size_t nl = N.nlines();
 				
 		std::vector<double> ltype = get_linetype(N);				
@@ -130,16 +130,15 @@ public:
 			lkm4[li] = 0.0;
 
 			std::vector<double> x;
-			std::vector<double> y;
-			bool status = false;
-			status = N.getDataByLineIndex("longitude", li, x);
-			status = N.getDataByLineIndex("latitude", li, y);
+			std::vector<double> y;			
+			N.getDataByLineIndex("longitude", li, x);
+			N.getDataByLineIndex("latitude", li, y);
 			std::vector<double> xout;
 			std::vector<double> yout;
 
 			double null = defaultmissingvalue(ncDouble);
 
-			size_t ns = x.size();
+			int ns = (int) x.size();
 			int k = 0;
 			int kstart, kend;
 			while (x[k] == null || y[k] == null) {				
@@ -200,7 +199,7 @@ public:
 
 				std::vector<double> e;
 				std::vector<double> n;
-				bool status = transform(epsgcode_geodetic, xout, yout, epsgcode_utm, e, n);
+				transform(epsgcode_geodetic, xout, yout, epsgcode_utm, e, n);
 				
 				for (size_t j = 0; j < xout.size(); j++) {
 				    printf("%lf,%lf\n",xout[j],yout[j]);

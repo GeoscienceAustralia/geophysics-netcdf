@@ -20,7 +20,7 @@ elif [ $compiler == 'gnu' ] ; then
 	echo 'Building with GCC compiler'
 	module load gcc/system
 	export cxx=g++
-	export cxxflags='-std=c++11 -O3 -Wall -Wno-unknown-pragmas'
+	export cxxflags='-std=c++17 -O3 -Wall -Wno-unknown-pragmas'
 	export exedir='../bin/gadi/gnu'
 else 
 	echo 'Unknow compiler ' $compiler
@@ -56,7 +56,7 @@ echo HAVE_CGAL = $HAVE_CGAL
 echo ---------------------------------------
 
 make -f intrepid2netcdf.make $makemode
-#make -f geophysicsnc2shape.make $makemode
+make -f geophysicsnc2shape.make $makemode
 #make -f aseggdf2netcdf.make $makemode
 #make -f test_geophysics_netcdf_reader.make $makemode
 

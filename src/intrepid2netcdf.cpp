@@ -308,7 +308,7 @@ public:
 
 				if (F.getTypeId() == IDataType::ID::STRING) {
 					std::vector<int> vstringasint;
-					bool stat = S.getband(vstringasint, 0);
+					S.getband(vstringasint, 0);
 					var.putVar(startp, countp, (void*)vstringasint.data());
 					
 					//std::vector<std::string> svec;
