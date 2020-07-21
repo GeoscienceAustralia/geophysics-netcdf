@@ -425,7 +425,7 @@ public:
 						for (size_t si = 0; si < nactive; si++){							
 							data[si] = intfields[fi][si*nbands + bi];
 							if (data[si] == D.fields[fi].nullvalue){
-								data[si] = NcIntNull;
+								data[si] = defaultmissingvalue(ncInt);
 							}
 						}
 						var.putVar(startp, countp, data.data());
@@ -435,7 +435,7 @@ public:
 						for (size_t si = 0; si < nactive; si++){
 							data[si] = dblfields[fi][si*nbands + bi];
 							if (data[si] == D.fields[fi].nullvalue){
-								data[si] = NcDoubleNull;
+								data[si] = defaultmissingvalue(ncDouble); 
 							}
 						}
 						var.putVar(startp, countp, data.data());
@@ -460,21 +460,21 @@ public:
 		if (DummyRun == false){			
 			if (AddGeospatialMetadata){
 				glog.logmsg("Adding geospatial metadata\n");
-				ncFile.addGeospatialMetadataXY();
-				ncFile.addGeospatialMetadataVertical();
+				//ncFile.addGeospatialMetadataXY();
+				//ncFile.addGeospatialMetadataVertical();
 			}
 
 			if (AddLineStartEndPoints){
 				glog.logmsg("Adding line start and end points\n");				
-				ncFile.addLineStartEndPointsLL();
+				//ncFile.addLineStartEndPointsLL();
 				//ncFile.addLineStartEndPointsEN();
 			}
 
 			if (AddAlphaShapePolygon){
 				glog.logmsg("Adding alphashape polygon\n");
-				std::string xvarname = ncFile.getVarNameByStandardName("longitude");
-				std::string yvarname = ncFile.getVarNameByStandardName("latitude");
-				ncFile.addAlphaShapePolygon(xvarname,yvarname);				
+				//std::string xvarname = ncFile.getVarNameByStandardName("longitude");
+				//std::string yvarname = ncFile.getVarNameByStandardName("latitude");
+				//ncFile.addAlphaShapePolygon(xvarname,yvarname);				
 			}
 		}
 		glog.logmsg( "Conversion complete\n");
