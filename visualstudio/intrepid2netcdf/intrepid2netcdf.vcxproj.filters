@@ -49,5 +49,8 @@
     <ClInclude Include="..\..\submodules\cpp-utils\src\string_utils.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\submodules\cpp-utils\src\ogr_utils.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>

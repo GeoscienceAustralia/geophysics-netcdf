@@ -309,25 +309,25 @@ void test_marray(){
 	std::cout << a.size() << std::endl;
 };
 
+void test_duplicate() {
+	std::string inncpath = R"(D:\inversion_netcdf\line_data_em\902467_1_Field_Survey_Data_20200826.nc)";
+	std::string outncpath = R"(D:\inversion_netcdf\line_data_em\test.nc)";
+	cGeophysicsNcFile infile(inncpath, NcFile::FileMode::read);
+	cGeophysicsNcFile outfile(outncpath, NcFile::FileMode::replace);
+	outfile.duplicate(infile);
+
+}
+
+
+
 int main(int argc, char** argv)
 {
 	_GSTITEM_
 	glog.logmsg("Opening log file\n");
-	glog.open("test.log");
-		
-	OGRSpatialReference srs;	
-	//OGRErr err = srs.importFromERM("GEODETIC","GDA94","METERS");
-	OGRErr err = srs.importFromERM("GEODETIC","WGS84","METERS");	
-	int epsgcode = srs.GetEPSGGeogCS();
-	double sma = srs.GetSemiMajor();
-	double inv = srs.GetInvFlattening();
-	
-	//const char* AuthName = srs.GetAuthorityName("PROJCS");
-	const char* AuthName = srs.GetAuthorityName("GEOGCS");
-	int a = atoi(srs.GetAuthorityCode("GEOGCS"));
-
+	glog.open("test.log");	
 	try{	
-		example_magnetics();
+		test_duplicate();
+		//example_magnetics();
 		//example_aem_conductivity();	
 		//test_create();
 		//test_update();

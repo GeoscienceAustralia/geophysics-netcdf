@@ -388,32 +388,44 @@ int main(int argc, char** argv)
 
 	glog.logmsg(0,"Program %s \n", _PROGRAM_);
 	glog.logmsg(0,"Version %s Compiled at %s on %s\n", _VERSION_, __TIME__, __DATE__);
-	glog.logmsg(0,"Working directory %s\n", getcurrentdirectory().c_str());
+	glog.logmsg(0,"Working directory %s\n", getcurrentdirectory().c_str());	
 
 	try
 	{
-		std::string dbdir    = argv[1];
-		std::string ncdir    = argv[2];
-		std::string listfile = argv[3];
-		std::ifstream file(listfile);
-		addtrailingseparator(dbdir);
-		addtrailingseparator(ncdir);
-		int k = 0;
-		while (file.eof() == false) {
-			std::string db;	
-			file >> db;
-			db = trim(db);
-			if (db.size() > 0 && db[0] != '#') {
-				sFilePathParts fpp = getfilepathparts(db);
-				std::string dbname = dbdir + fpp.directory + fpp.prefix;
-				std::string ncname = ncdir + fpp.directory + fpp.prefix + ".nc";				
-				if (k % mpisize == mpirank) {
-					std::cout << "[" << mpirank << "] " << dbname << " " << ncname << std::endl << std::flush;
-					cIntrepidToNetCDFConverter C(dbname, ncname, mpisize, mpirank);
+		if (argc == 3) {
+			std::string dbname = argv[1];
+			std::string ncname = argv[2];
+			cIntrepidToNetCDFConverter C(dbname, ncname, 1, 0);
+		}
+		else if (argc == 4) {		
+			std::string dbdir = argv[1];
+			std::string ncdir = argv[2];
+			std::string listfile = argv[3];
+			std::ifstream file(listfile);
+			addtrailingseparator(dbdir);
+			addtrailingseparator(ncdir);
+			int k = 0;
+			while (file.eof() == false) {
+				std::string db;
+				file >> db;
+				db = trim(db);
+				if (db.size() > 0 && db[0] != '#') {
+					sFilePathParts fpp = getfilepathparts(db);
+					std::string dbname = dbdir + fpp.directory + fpp.prefix;
+					std::string ncname = ncdir + fpp.directory + fpp.prefix + ".nc";
+					if (k % mpisize == mpirank) {
+						std::cout << "[" << mpirank << "] " << dbname << " " << ncname << std::endl << std::flush;
+						cIntrepidToNetCDFConverter C(dbname, ncname, mpisize, mpirank);
+					}
+					k++;
 				}
-				k++;
 			}
-		}		
+		}
+		else {
+			glog.logmsg(0,"\nUsage: %s input_database output_ncfile\n",extractfilename(argv[0]).c_str());
+			glog.logmsg(0,"or\n");
+			glog.logmsg(0,"       %s databases_dir ncfiles_dir conversion_list_file\n", extractfilename(argv[0]).c_str());			
+		}
 	}
 	catch (NcException& e)
 	{

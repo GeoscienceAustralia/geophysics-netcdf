@@ -111,11 +111,12 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\..\marray\include\andres\marray.hxx" />
-    <ClInclude Include="..\..\src\cpp\geophysics_netcdf.h" />
     <ClInclude Include="..\..\src\cpp\metadata.h" />
+    <ClInclude Include="..\..\src\geophysics_netcdf.h" />
     <ClInclude Include="..\..\submodules\cpp-utils\src\asciicolumnfile.h" />
     <ClInclude Include="..\..\submodules\cpp-utils\src\file_formats.h" />
     <ClInclude Include="..\..\submodules\cpp-utils\src\gdal_utils.h" />
+    <ClInclude Include="..\..\submodules\cpp-utils\src\ogr_utils.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

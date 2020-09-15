@@ -303,7 +303,7 @@ public:
 			break;
 		}
 		default: {
-					std::string msg = _SRC_ + strprint("Attempt to set default missing value of unsupported datatype\n");
+					std::string msg = _SRC_ + strprint("\nAttempt to set default missing value of unsupported datatype\n");
 					throw(std::runtime_error(msg));
 				}
 		}
@@ -369,7 +369,7 @@ public:
 	void getLine(const size_t& lineindex, Marray<T>& A) const {
 		_GSTITEM_
 		if (isNull()){
-			std::string msg = _SRC_ + strprint("Attempt to read from a Null variable\n");
+			std::string msg = _SRC_ + strprint("\nAttempt to read from a Null variable\n");
 			throw(std::runtime_error(msg));
 		}
 		std::vector<NcDim>  dims = getDims();
@@ -411,7 +411,7 @@ public:
 	{	
 		_GSTITEM_
 		if (isNull()) { 
-			std::string msg = _SRC_ + strprint("Attempt to read from a Null variable\n");			
+			std::string msg = _SRC_ + strprint("\nAttempt to read from a Null variable\n");			
 			throw(std::runtime_error(msg));
 			return false; 
 		}
@@ -468,12 +468,12 @@ public:
 	bool putAll(std::vector<T> vals){
 		_GSTITEM_
 		if (isNull()){
-			std::string msg = _SRC_ + strprint("Attempt to write to a Null variable\n");			
+			std::string msg = _SRC_ + strprint("\nAttempt to write to a Null variable\n");			
 			throw(std::runtime_error(msg));
 		}
 
 		if (vals.size() != length()){
-			std::string msg = _SRC_ + strprint("Attempt to write variable (%s) with non-matching size\n", getName().c_str());			
+			std::string msg = _SRC_ + strprint("\nAttempt to write variable (%s) with non-matching size\n", getName().c_str());			
 			throw(std::runtime_error(msg));
 		}
 
@@ -542,12 +542,12 @@ public:
 	bool putAll(const std::vector<T>& vals){
 		_GSTITEM_
 		if (isNull()){
-			std::string msg = _SRC_ + strprint("Attempt to write to a Null variable\n");			
+			std::string msg = _SRC_ + strprint("\nAttempt to write to a Null variable\n");			
 			throw(std::runtime_error(msg));
 		}
 
 		if (vals.size() != length()){
-			std::string msg = _SRC_ + strprint("Attempt to write variable (%s) with non-matching size\n", getName().c_str());			
+			std::string msg = _SRC_ + strprint("\nAttempt to write variable (%s) with non-matching size\n", getName().c_str());			
 			throw(std::runtime_error(msg));
 		}
 
@@ -559,18 +559,18 @@ public:
 	bool putLineBand(const size_t& lineindex, const size_t& bandindex, const std::vector<T>& vals){
 		_GSTITEM_
 		if (isNull()){
-			std::string msg = _SRC_ + strprint("Attempt to write to a Null variable\n");			
+			std::string msg = _SRC_ + strprint("\nAttempt to write to a Null variable\n");			
 			throw(std::runtime_error(msg));
 		}
 
 		std::vector<NcDim>  dims = getDims();
 		if (dims.size() > 2){
-			std::string msg = _SRC_ + strprint("Attempt to use putLineBand() to write to a variable with more than 2 dimensions\n");			
+			std::string msg = _SRC_ + strprint("\nAttempt to use putLineBand() to write to a variable with more than 2 dimensions\n");			
 			throw(std::runtime_error(msg));
 		}
 
 		if (vals.size() != line_index_count(lineindex)){
-			std::string msg = _SRC_ + strprint("Attempt to write line/band of variable (%s) with non-matching size\n", getName().c_str());
+			std::string msg = _SRC_ + strprint("\nAttempt to write line/band of variable (%s) with non-matching size\n", getName().c_str());
 			throw(std::runtime_error(msg));
 		}
 
@@ -588,13 +588,13 @@ public:
 	bool putLine(const size_t& lineindex, const std::vector<T>& vals){		
 		_GSTITEM_
 		if (isNull()){
-			std::string msg = _SRC_ + strprint("Attempt to write to a Null variable\n");			
+			std::string msg = _SRC_ + strprint("\nAttempt to write to a Null variable\n");			
 			throw(std::runtime_error(msg));
 		}
 
 		size_t sz = lineelements(lineindex);
 		if (vals.size() != sz){
-			std::string msg = _SRC_ + strprint("Attempt to write line/band of variable (%s) with non-matching size\n", getName().c_str());			
+			std::string msg = _SRC_ + strprint("\nAttempt to write line/band of variable (%s) with non-matching size\n", getName().c_str());			
 			throw(std::runtime_error(msg));
 		}
 		
@@ -615,7 +615,7 @@ public:
 	bool getLine(const size_t& lineindex, std::vector<T>& vals){				
 		_GSTITEM_
 		if (isNull()){
-			std::string msg = _SRC_ + strprint("Attempt to read from a Null variable\n");			
+			std::string msg = _SRC_ + strprint("\nAttempt to read from a Null variable\n");			
 			throw(std::runtime_error(msg));
 		}
 		
@@ -638,7 +638,7 @@ public:
 	void getLine_temp(const size_t& lineindex, Marray<T>& A) const {
 		_GSTITEM_
 		if (isNull()){
-			std::string msg = _SRC_ + strprint("Attempt to read from a Null variable\n");			
+			std::string msg = _SRC_ + strprint("\nAttempt to read from a Null variable\n");			
 			throw(std::runtime_error(msg));
 		}		
 		std::vector<NcDim>  dims = getDims();				
@@ -815,7 +815,7 @@ public:
 	cGeophysicsNcFile(const NcGroup& rhs) = delete;
 	cGeophysicsNcFile(const NcFile& rhs) = delete;
 	cGeophysicsNcFile(const cGeophysicsNcFile& rhs) = delete;
-
+	
 	size_t get_line_index_start(const size_t& i) const { return line_index_start[i]; }
 	size_t get_line_index_count(const size_t& i) const { return line_index_count[i]; }
 
@@ -832,7 +832,6 @@ public:
 
 	//Destructor
 	~cGeophysicsNcFile(){};	
-
 
 	void open(const std::string& ncpath, const FileMode& filemode = NcFile::FileMode::read)
 	{
@@ -942,6 +941,30 @@ public:
 		//vline.add_units("1");		
 	}
 
+	bool duplicate(const cGeophysicsNcFile& srcfile)
+	{
+		_GSTITEM_
+		//bookmark
+		
+		unsigned int subsample = 5;
+		unsigned int nsnew = std::ceil((double)srcfile.ntotalsamples()/(double)subsample);
+		std::vector<unsigned int> ln;
+		std::vector<unsigned int> lc;
+
+
+		InitialiseNew(srcfile.line_number, srcfile.line_index_count);
+		copy_global_atts(srcfile);
+		copy_dims(srcfile);
+		auto vm = srcfile.getVars();
+		for (auto vit = vm.begin(); vit != vm.end(); vit++) {
+			NcVar& srcvar = vit->second;
+			//if (srcvar.getName() == VN_LI_START) continue;
+			//if (srcvar.getName() == VN_LI_COUNT) continue;
+			//if (srcvar.getName() == DN_POINT) continue;
+			copy_var(10,srcvar);
+		}
+		return true;
+	}
 
 #ifdef HAVE_GDAL
 	//Convert legacy file
@@ -996,7 +1019,6 @@ public:
 	}
 #endif
 
-
 	bool copy_global_atts(const cGeophysicsNcFile& srcfile)
 	{
 		_GSTITEM_
@@ -1026,7 +1048,7 @@ public:
 		return true;
 	}
 
-	bool copy_var(const NcVar& srcvar, std::string newname=std::string())
+	bool copy_var_old(const NcVar& srcvar, std::string newname=std::string())
 	{			
 		_GSTITEM_
 		std::string name = newname;
@@ -1048,7 +1070,54 @@ public:
 		}
 		return true;
 	}
-		
+
+	bool copy_var(const size_t& subsample, const NcVar& srcvar, std::string newname = std::string())
+	{
+		_GSTITEM_
+		std::string name = newname;
+		if (name.size() == 0) {
+			name = srcvar.getName();
+		}
+
+		if (hasVar(name)) return false;
+
+		NcVar v = addVar(name, srcvar.getType(), srcvar.getDims());
+		v.setCompression(true, true, 9);
+		copy_varatts(srcvar, v);
+
+		std::vector<NcDim> dims = srcvar.getDims();
+		size_t nd = dims.size();
+		if (nd == 0) return true;
+
+		std::vector<size_t> start(nd);
+		std::vector<size_t> count(nd);
+		std::vector<ptrdiff_t> stride(nd);
+		std::vector<ptrdiff_t> stride_out(nd);
+
+		size_t nelements = 1;
+		for (size_t i = 0; i < dims.size(); i++) {
+			start[i] = 0;
+			count[i] = dims[i].getSize();
+			stride[i] = 1;
+			stride_out[i] = 1;
+			if (dims[i].getName() == DN_POINT) {
+				count[i]  = std::ceil(dims[i].getSize() / (double)subsample);
+				stride[i] = subsample;
+			}
+			nelements *= count[i];
+		}
+				
+		size_t elementsize = v.getType().getSize();
+		size_t bufsize = nelements * elementsize;		
+		if (bufsize > 0){
+			std::vector<uint8_t> buf(bufsize);
+			srcvar.getVar(start, count, stride,(void*)buf.data());			
+			v.putVar(start, count, stride_out,(void*)buf.data());
+			//v.putVar((void*)buf.data());
+		}
+		return true;
+	}
+
 	bool copy_varatts(const NcVar& srcvar, const NcVar& dstvar)
 	{
 		_GSTITEM_
@@ -1235,13 +1304,23 @@ public:
 	bool getDataByPointIndex(const std::string& varname, const size_t& pointindex, std::vector<T>& vals) {
 		cGeophysicsVar var(this,getVar(varname));
 		if (var.isNull()) {			
-			std::string msg = _SRC_ + strprint("Attempt to read variable (%s)\n", varname.c_str());			
+			std::string msg = _SRC_ + strprint("\nAttempt to read variable (%s)\n", varname.c_str());			
 			throw(std::runtime_error(msg));
 		}
 
 		size_t record;
-		if (isSampleVar(var)) record = pointindex;
-		else record = getLineIndexByPointIndex((int)pointindex);
+		if (isScalarVar(var)){			
+			vals.resize(1);			
+			NcVar v = getVar(varname);
+			v.getVar(vals.data());
+			return true;
+		}
+		else if(isSampleVar(var)) record = pointindex;
+		else if(isLineVar(var))   record = getLineIndexByPointIndex((int)pointindex);
+		else {
+			std::string msg = _SRC_ + strprint("\nVariable %s is neither a \"point\" or a \"line\" variable\n", varname.c_str());
+			throw(std::runtime_error(msg));
+		}
 		return var.getRecord(record,vals);
 	}
 
@@ -1255,7 +1334,7 @@ public:
 		}
 		else{
 			if (dim.getSize() != dimsize){
-				std::string msg = _SRC_ + strprint("Attempt to add new dimension (%s) with different size to the existing\n", dimname.c_str());				
+				std::string msg = _SRC_ + strprint("\nAttempt to add new dimension (%s) with different size to the existing\n", dimname.c_str());				
 				throw(std::runtime_error(msg));
 			}
 		}
@@ -1266,7 +1345,7 @@ public:
 		}
 		else{
 			if (var.getDim(0).getSize() != dimsize){
-				std::string msg = _SRC_ + strprint("Attempt to add new dimension (%s) with different size to the existing\n", dimname.c_str());				
+				std::string msg = _SRC_ + strprint("\nAttempt to add new dimension (%s) with different size to the existing\n", dimname.c_str());				
 				throw(std::runtime_error(msg));
 			}
 		}
@@ -1399,13 +1478,13 @@ public:
 	bool addLineStartEndPointsLL(){
 
 		if (hasVar("longitude_first")){
-			std::string msg = _SRC_ + strprint("Warning: Variable longitude_first already exists\n");
+			std::string msg = _SRC_ + strprint("\nWarning: Variable longitude_first already exists\n");
 			glog.logmsg(msg);
 			return false;
 		}
 
 		if (hasVar("latitude_first")){
-			std::string msg = _SRC_ + strprint("Warning: Variable latitude_first already exists\n");
+			std::string msg = _SRC_ + strprint("\nWarning: Variable latitude_first already exists\n");
 			glog.logmsg(msg);
 			return false;
 		}
@@ -1452,7 +1531,7 @@ public:
 	bool addLineStartEndPointsEN(){
 
 		if (hasVar("easting_first")){
-			std::string msg = _SRC_ + strprint("Warning: Variable easting_first already exists\n");
+			std::string msg = _SRC_ + strprint("\nWarning: Variable easting_first already exists\n");
 			glog.logmsg(msg);
 			return false;
 		}
@@ -1474,7 +1553,7 @@ public:
 			findNonNullLineStartEndPoints("Easting", "Northing", x1, x2, y1, y2);
 		}
 		else {			
-			std::string msg = _SRC_ + strprint("Warning: Could not find easting/Easting/northin/Northing\n");
+			std::string msg = _SRC_ + strprint("\nWarning: Could not find easting/Easting/northin/Northing\n");
 			glog.logmsg(msg);
 			return false;
 		}		
@@ -1607,6 +1686,11 @@ public:
 
 	}
 	
+	bool isScalarVar(const NcVar& var) const {
+		if (var.getDimCount() == 0) return true;		
+		return false;
+	}
+
 	bool isLineVar(const NcVar& var) const {
 		if (var.getDimCount() == 0) return false;
 		if (var.getDim(0).getName() == DN_LINE){
