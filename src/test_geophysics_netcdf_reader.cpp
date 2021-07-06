@@ -6,6 +6,8 @@ The GNU GPL 2.0 licence is available at: http://www.gnu.org/licenses/gpl-2.0.htm
 Author: Ross C. Brodie, Geoscience Australia.
 */
 
+#include "mpi.h"
+#include "netcdf.h"
 
 #include <cstdio>
 #include <netcdf>
@@ -309,16 +311,48 @@ void test_marray(){
 	std::cout << a.size() << std::endl;
 };
 
-void test_duplicate() {
+void test_subsample() {
 	std::string inncpath = R"(D:\inversion_netcdf\line_data_em\902467_1_Field_Survey_Data_20200826.nc)";
 	std::string outncpath = R"(D:\inversion_netcdf\line_data_em\test.nc)";
 	cGeophysicsNcFile infile(inncpath, NcFile::FileMode::read);
 	cGeophysicsNcFile outfile(outncpath, NcFile::FileMode::replace);
-	outfile.duplicate(infile);
 
+	std::vector<std::string> include_varnames = { "proj_client", "flight", "flight_index", "longitude", "latitude", "emz_nonhprg" };
+	std::vector<std::string> exclude_varnames = { "easting", "northing" };
+	outfile.subsample(infile,30,include_varnames, exclude_varnames);
 }
 
+void test_mpi(int argc, char** argv) {
+	
+	int mpisize, mpirank;
+	MPI_Init(&argc, &argv);
+	MPI_Comm_size(MPI_COMM_WORLD, &mpisize);
+	MPI_Comm_rank(MPI_COMM_WORLD, &mpirank);
+		
+	//std::string inncpath = R"(D:\inversion_netcdf\line_data_em\902467_1_Field_Survey_Data_20200826.nc)";	
+	std::string inncpath = R"(D:\inversion_netcdf\line_data_em\test.nc)";	
+	
+	if (mpirank == 0) {
+		cGeophysicsNcFile nc(inncpath, NcFile::FileMode::write);
+		nc.addSampleVar("newvar", NcType::nc_FLOAT);
+		nc.close();
+	}
+	MPI_Barrier(MPI_COMM_WORLD);
 
+	cGeophysicsNcFile nc(inncpath, NcFile::FileMode::write);		
+	cSampleVar var = nc.getSampleVar("newvar");
+	for (size_t li = 0; li < nc.nlines(); li++) {
+		if ((li%mpisize) == mpirank){
+			float v = (mpirank + 1) * 10000 + li;
+			std::vector<float> vals(nc.nlinesamples(li), v);
+			var.putLine(li, vals);
+			std::cout << "Rank " << mpirank << " Lineindex " << li << " v=" << v << std::endl;						
+		}		
+	}
+	nc.sync();
+	MPI_Barrier(MPI_COMM_WORLD);
+	MPI_Finalize();
+}
 
 int main(int argc, char** argv)
 {
@@ -326,7 +360,8 @@ int main(int argc, char** argv)
 	glog.logmsg("Opening log file\n");
 	glog.open("test.log");	
 	try{	
-		test_duplicate();
+		test_mpi(argc,argv);
+		//test_subsample();
 		//example_magnetics();
 		//example_aem_conductivity();	
 		//test_create();

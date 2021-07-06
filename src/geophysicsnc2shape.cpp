@@ -63,7 +63,7 @@ public:
 		if (status == false) {
 			glog.logmsg(MPIRank,"Error 0: creating shapefile %s from %s\n",ShapePath.c_str(),NCPath.c_str());
 		}
-		glog.close();		
+		glog.close();			
 	};
 
 	~cNcToShapefileConverter() {};

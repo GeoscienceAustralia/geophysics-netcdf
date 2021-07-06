@@ -36,24 +36,24 @@
   <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="PropertySheets">
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
     <Import Project="..\propertysheets\msmpi.x64.props" />
-    <Import Project="..\propertysheets\netcdf4.props" />
-    <Import Project="..\propertysheets\netcdf4-cxx.props" />
-    <Import Project="..\propertysheets\geophysics-netcdf.props" />
     <Import Project="..\propertysheets\gdal.props" />
     <Import Project="..\propertysheets\boost.props" />
     <Import Project="..\propertysheets\cgal.props" />
+    <Import Project="..\propertysheets\netcdf4.props" />
+    <Import Project="..\propertysheets\netcdf4-cxx.props" />
     <Import Project="..\propertysheets\cpp-utils.props" />
+    <Import Project="..\propertysheets\geophysics-netcdf.props" />
   </ImportGroup>
   <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="PropertySheets">
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
     <Import Project="..\propertysheets\msmpi.x64.props" />
-    <Import Project="..\propertysheets\netcdf4.props" />
-    <Import Project="..\propertysheets\netcdf4-cxx.props" />
-    <Import Project="..\propertysheets\geophysics-netcdf.props" />
     <Import Project="..\propertysheets\gdal.props" />
     <Import Project="..\propertysheets\boost.props" />
     <Import Project="..\propertysheets\cgal.props" />
+    <Import Project="..\propertysheets\netcdf4.props" />
+    <Import Project="..\propertysheets\netcdf4-cxx.props" />
     <Import Project="..\propertysheets\cpp-utils.props" />
+    <Import Project="..\propertysheets\geophysics-netcdf.props" />
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
