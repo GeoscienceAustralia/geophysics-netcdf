@@ -88,8 +88,8 @@ class cExportFormat{
 
 public:
 	char   form='\0';
-	size_t width=0;
-	size_t decimals=0;
+	int    width=0;
+	int    decimals=0;
 	double nullvalue=0;
 
 	cExportFormat()
@@ -1877,7 +1877,7 @@ public:
 			mval[vi] = v.missingvalue(double(0));
 			efmt[vi] = v.defaultexportformat();
 
-			size_t bands = v.nbands();
+			int bands = (int) v.nbands();
 			I.addfield(v.getName(), efmt[vi].form, efmt[vi].width, efmt[vi].decimals, bands);
 
 			std::string units = v.getUnits();
