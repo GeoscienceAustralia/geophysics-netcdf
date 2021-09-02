@@ -1,9 +1,3 @@
-[submodule "submodules/cpp-utils"]
-	path = submodules/cpp-utils
-	url = git@github.com:rcb547/cpp-utils.git
-[submodule "submodules/netcdf-cxx4"]
-	path = submodules/netcdf-cxx4
-	url = git@github.com:Unidata/netcdf-cxx4.git
 [submodule "submodules/marray"]
 	path = submodules/marray
 	url = https://github.com/bjoern-andres/marray.git
