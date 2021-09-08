@@ -1,3 +1,3 @@
 [submodule "submodules/marray"]
 	path = submodules/marray
-	url = https://github.com/bjoern-andres/marray.git
+	url = git@github.com:bjoern-andres/marray.git
