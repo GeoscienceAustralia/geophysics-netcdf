@@ -1235,6 +1235,25 @@ public:
 		return true;
 	}
 
+	bool hasVarCaseInsensitive(std::string& varname) {
+		_GSTITEM_
+		NcVar v = getVarByNameCaseInsensitive(varname);
+		if (v.isNull()) return false;
+		return true;
+	}
+
+	NcVar getVarByNameCaseInsensitive(std::string& varname) {
+		_GSTITEM_
+		std::multimap<std::string, NcVar> vars = getVars();
+		for (auto vit = vars.begin(); vit != vars.end(); vit++) {
+			if (strcasecmp(varname, vit->first) == 0) {
+				varname = vit->first;
+				return vit->second;
+			}
+		}
+		return NcVar();
+	}
+
 	bool hasDim(const std::string& dimname){
 		_GSTITEM_
 		NcDim d = getDim(dimname);
@@ -1258,7 +1277,7 @@ public:
 				return d;
 			}
 	}
-
+	
 	NcVar getVarByAtt(const std::string& att_name, const std::string& att_value){
 		_GSTITEM_
 		std::multimap<std::string, NcVar> vars = getVars();
