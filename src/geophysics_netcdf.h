@@ -1086,7 +1086,7 @@ public:
 				addCRS(epsgcode);
 			}
 			else{
-				copy_var(srcvar);
+				copy_var(1,srcvar);
 				NcVar v = getVar(srcvar.getName());
 				nc_rename_att(getId(), v.getId(), "standard_name", "long_name");
 				
@@ -1273,7 +1273,6 @@ public:
 			}
 			else {
 				NcDim d = NcGroup::addDim(dimname, dimsize);
-				bool status = !d.isNull();
 				return d;
 			}
 	}
