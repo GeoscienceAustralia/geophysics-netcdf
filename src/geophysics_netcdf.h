@@ -284,7 +284,10 @@ public:
 		const NcType type = getType();
 		if (type == ncShort) return SHRT_MIN;
 		else if (type == ncUint) return 0;
-		else if (type == ncInt) return INT_MIN;
+		else if (type == ncInt) {
+			double v = (double)INT_MIN;
+			return v;
+		}
 		else if (type == ncFloat) return -FLT_MAX;
 		else return -DBL_MAX;
 	}
@@ -878,8 +881,8 @@ public:
 	cGeophysicsNcFile() : NcFile() {} // invoke base class constructor	
 
 	//Open existing file constructor
-	cGeophysicsNcFile(const std::string& ncpath, const NcFile::FileMode& filemode = NcFile::FileMode::read)
-		: NcFile(ncpath, filemode)
+	cGeophysicsNcFile(const std::string& ncpath, const netCDF::NcFile::FileMode& filemode = netCDF::NcFile::FileMode::read)
+		: netCDF::NcFile(ncpath, filemode)
 	{
 		_GSTITEM_
 		open(ncpath,filemode);		
