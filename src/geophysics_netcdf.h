@@ -64,7 +64,8 @@ constexpr auto AN_LONG_NAME = "long_name";
 constexpr auto AN_UNITS = "units";
 constexpr auto AN_DESCRIPTION = "description";
 constexpr auto AN_MISSINGVALUE = "_FillValue";
-constexpr auto AN_ORIGINAL_NAME = "original_database_name";
+constexpr auto AN_ORIGINAL_DATASET_NAME = "original_dataset_name";
+constexpr auto AN_ORIGINAL_DATASET_FIELDNAME = "original_dataset_fieldname";
 
 inline NcType nctype(const uint8_t) { return ncUbyte; }
 inline NcType nctype(const int8_t) { return ncByte; }
@@ -220,9 +221,9 @@ public:
 		return putAtt(AN_LONG_NAME, value);
 	}
 
-	NcVarAtt add_original_name(const std::string& value){
+	NcVarAtt add_original_dataset_fieldname(const std::string& value){
 		_GSTITEM_
-		return putAtt(AN_ORIGINAL_NAME, value);
+		return putAtt(AN_ORIGINAL_DATASET_FIELDNAME, value);
 	}
 
 	NcVarAtt add_units(const std::string& value){
