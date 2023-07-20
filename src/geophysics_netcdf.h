@@ -1223,7 +1223,7 @@ public:
 			if ((int)line_index_start[k+1] > pointindex) return k;
 		}
 		if ((int)(line_index_start[n] + line_index_count[n]) > pointindex) return n;
-		return ud_size_t();		
+		return undefinedvalue<size_t>();
 	};
 
 	size_t getLineIndex(const int& linenumber){
