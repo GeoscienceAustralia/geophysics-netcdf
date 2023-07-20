@@ -892,7 +892,7 @@ public:
 		char* p = new char[len + 1];
 		nc_inq_path(getId(), nullptr, p);
 		std::string path(p);
-		delete p;
+		delete[] p;
 		return path;
 	}
 
