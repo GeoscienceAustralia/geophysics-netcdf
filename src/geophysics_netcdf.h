@@ -869,15 +869,6 @@ public:
 	cGeophysicsNcFile(const NcFile& rhs) = delete;
 	cGeophysicsNcFile(const cGeophysicsNcFile& rhs) = delete;
 	
-	size_t get_line_index_start(const size_t& li) const { return line_index_start[li]; }
-	size_t get_line_index_count(const size_t& li) const { return line_index_count[li]; }
-	
-	std::vector<unsigned int> get_line_index() const {
-		std::vector<unsigned int> index(ntotalsamples());
-		getVar(VN_LINE_INDEX).getVar(index.data());
-		return index;
-	}
-
 	// Constructor generates a null object.
 	cGeophysicsNcFile() : NcFile() {} // invoke base class constructor	
 
@@ -891,6 +882,31 @@ public:
 
 	//Destructor
 	~cGeophysicsNcFile(){};	
+
+	size_t get_line_index_start(const size_t& li) const { return line_index_start[li]; }
+	size_t get_line_index_count(const size_t& li) const { return line_index_count[li]; }
+
+	std::string pathname() const {
+		size_t len;
+		nc_inq_path(getId(), &len, nullptr);
+		char* p = new char[len + 1];
+		nc_inq_path(getId(), nullptr, p);
+		std::string path(p);
+		delete p;
+		return path;
+	}
+
+	bool isopen() const {
+		_GSTITEM_
+			if (line_index_start.size() > 0)	return true;
+		return false;
+	}
+
+	std::vector<unsigned int> get_line_index() const {
+		std::vector<unsigned int> index(ntotalsamples());
+		getVar(VN_LINE_INDEX).getVar(index.data());
+		return index;
+	}
 
 	void open(const std::string& ncpath, const FileMode& filemode = NcFile::FileMode::read)
 	{
