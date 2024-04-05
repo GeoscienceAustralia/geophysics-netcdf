@@ -1,14 +1,24 @@
+#File patterns that are ignored
+
+# Ignore build and install directories
+build*/
+install*/
+
+temp-*.txt
+temp-*.sh
+temp-*.bat
+
 # Compiled Object files
 *.slo
 *.lo
 *.o
+*.obj
 
 # Compiled Dynamic libraries
 *.so
 *.dylib
 
 # Compiled Static libraries
-*.lib
 *.lai
 *.la
 *.a
@@ -23,12 +33,10 @@
 
 # Build results
 [Dd]ebug/
-[Dd]ebugPublic/
 [Rr]elease/
-x64/
-build/
-bld/
+[Rr]elease-nompi/
 [Oo]bj/
+
 
 # Enable "build/" folder in the NuGet Packages folder since NuGet packages use it for MSBuild targets
 !packages/*/build/
@@ -69,11 +77,6 @@ TestResult.xml
 *.plg
 *.opt
 *.ncb
-*.exe
-*.dll
-*.mexw32
-*.mexw64
-*.mexa64
 
 # Chutzpah Test files
 _Chutzpah*
@@ -91,8 +94,6 @@ ipch/
 *.vsp
 *.vspx
 
-.vs/
-
 # =========================
 # Windows detritus
 # =========================
@@ -107,5 +108,6 @@ Desktop.ini
 # Recycle Bin used on file shares
 $RECYCLE.BIN/
 
-# Specifically allow all files in third_party/*
-!third_party/**
+
+
+
