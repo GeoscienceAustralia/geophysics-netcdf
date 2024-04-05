@@ -3,6 +3,10 @@ SET(CMAKE_COLOR_MAKEFILE ON)
 cmake_minimum_required(VERSION 3.16)
 cmake_policy(SET CMP0076 NEW)
 
+if(TARGET geophysics-netcdf::static)
+	return()
+endif()
+
 # Set project name
 project(geophysics-netcdf VERSION 1.0 DESCRIPTION "C++ interface for handling GA's Geophysical NetCDF data format" LANGUAGES CXX)
 message(STATUS "Configuring geophysics-netcdf")
@@ -34,7 +38,6 @@ find_package(PkgConfig QUIET)
 include(cmake/Configure-NetCDF_CXX.cmake)
 
 # Add the cpp-utils submodule with CGAL turned OFF as it is not needed
-# set(WITH_CGAL OFF CACHE BOOL "Build cpp-utils library without CGAL" FORCE)
 add_subdirectory(submodules/cpp-utils EXCLUDE_FROM_ALL)
 
 set(sources ${sources} src/geophysics_netcdf.cpp)
@@ -49,7 +52,7 @@ target_include_directories(${target} PUBLIC "$<BUILD_INTERFACE:${CMAKE_CURRENT_S
 target_include_directories(${target} PUBLIC "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/submodules/marray/include/andres>")
 target_link_libraries(${target} PUBLIC cpp-utils::static)
 target_link_libraries(${target} PUBLIC NETCDF::CXX)
-install(TARGETS ${target} OPTIONAL)
+#install(TARGETS ${target} OPTIONAL)
 
 # Add an alias target
 add_library(geophysics-netcdf::static ALIAS ${target})
