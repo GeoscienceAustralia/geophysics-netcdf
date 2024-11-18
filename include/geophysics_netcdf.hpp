@@ -6,8 +6,7 @@ The GNU GPL 2.0 licence is available at: http://www.gnu.org/licenses/gpl-2.0.htm
 Author: Ross C. Brodie, Geoscience Australia.
 */
 
-#ifndef _geophysics_netcdf_H
-#define _geophysics_netcdf_H
+#pragma once
 
 #include <cassert>
 #include <cstdarg>
@@ -113,11 +112,6 @@ public:
 	cGeophysicsVar(const cGeophysicsNcFile& parent, const NcVar& var) 
 		: NcVar(var), Parent(parent)
 	{};
-
-	// copy constructor
-	//cGeophysicsVar(const cGeophysicsVar& rhs) 
-	//	: NcVar(rhs), Parent(rhs.Parent)
-	//{};
 
 	size_t line_index_start(const size_t& index) const;
 	
@@ -228,14 +222,6 @@ public:
 		return getStringAtt(AN_DESCRIPTION);
 	}
 
-	//static float preferred_float_missing_value() {
-	//	return NC_FILL_FLOAT;
-	//}
-
-	//static double preferred_double_missing_value() {
-	//	return NC_FILL_DOUBLE;
-	//}
-
 	double lowest_possible_value() const {
 		const NcType type = getType();
 		if (type == ncShort) return std::numeric_limits<short>::lowest();
@@ -271,7 +257,7 @@ public:
 		}
 		default: {
 			std::string msg = _SRC_ + strprint("\nAttempt to set default missing value of unsupported datatype\n");
-			throw(std::runtime_error(msg));
+			throw(std::exception(msg.c_str()));
 		}
 		}
 		return;
@@ -332,7 +318,7 @@ public:
 	void getLine(const size_t& lineindex, andres::Marray<T>& A) const {
 		if (isNull()) {
 			std::string msg = _SRC_ + strprint("\nAttempt to read from a Null variable\n");
-			throw(std::runtime_error(msg));
+			throw(std::exception(msg.c_str()));
 		}
 		std::vector<NcDim>  dims = getDims();
 		std::vector<size_t> start((size_t)getDimCount());
@@ -362,7 +348,7 @@ public:
 	{
 		if (isNull()) {
 			std::string msg = _SRC_ + strprint("\nAttempt to read from a Null variable\n");
-			throw(std::runtime_error(msg));
+			throw(std::exception(msg.c_str()));
 			return false;
 		}
 		std::vector<size_t> startp = { record, 0 };
@@ -377,7 +363,7 @@ public:
 	{
 		if (isNull()) {
 			std::string msg = _SRC_ + strprint("\nAttempt to write to a Null variable\n");
-			throw(std::runtime_error(msg));
+			throw(std::exception(msg.c_str()));
 			return false;
 		}
 		std::vector<size_t> startp = { record, 0 };
@@ -391,7 +377,7 @@ public:
 	{
 		if (isNull()) {
 			std::string msg = _SRC_ + strprint("\nAttempt to write to a Null variable\n");
-			throw(std::runtime_error(msg));
+			throw(std::exception(msg.c_str()));
 			return false;
 		}
 		std::vector<size_t> startp = { record, 0 };
@@ -444,12 +430,12 @@ public:
 	bool putAll(std::vector<T> vals) {
 		if (isNull()) {
 			std::string msg = _SRC_ + strprint("\nAttempt to write to a Null variable\n");
-			throw(std::runtime_error(msg));
+			throw(std::exception(msg.c_str()));
 		}
 
 		if (vals.size() != length()) {
 			std::string msg = _SRC_ + strprint("\nAttempt to write variable (%s) with non-matching size\n", getName().c_str());
-			throw(std::runtime_error(msg));
+			throw(std::exception(msg.c_str()));
 		}
 
 		putVar(vals.data());
@@ -510,12 +496,12 @@ public:
 	bool putAll(const std::vector<T>& vals) {
 		if (isNull()) {
 			std::string msg = _SRC_ + strprint("\nAttempt to write to a Null variable\n");
-			throw(std::runtime_error(msg));
+			throw(std::exception(msg.c_str()));
 		}
 
 		if (vals.size() != length()) {
 			std::string msg = _SRC_ + strprint("\nAttempt to write variable (%s) with non-matching size\n", getName().c_str());
-			throw(std::runtime_error(msg));
+			throw(std::exception(msg.c_str()));
 		}
 
 		putVar(vals.data());
@@ -526,18 +512,18 @@ public:
 	bool putLineBand(const size_t& lineindex, const size_t& bandindex, const std::vector<T>& vals) {
 		if (isNull()) {
 			std::string msg = _SRC_ + strprint("\nAttempt to write to a Null variable\n");
-			throw(std::runtime_error(msg));
+			throw(std::exception(msg.c_str()));
 		}
 
 		std::vector<NcDim>  dims = getDims();
 		if (dims.size() > 2) {
 			std::string msg = _SRC_ + strprint("\nAttempt to use putLineBand() to write to a variable with more than 2 dimensions\n");
-			throw(std::runtime_error(msg));
+			throw(std::exception(msg.c_str()));
 		}
 
 		if (vals.size() != line_index_count(lineindex)) {
 			std::string msg = _SRC_ + strprint("\nAttempt to write line/band of variable (%s) with non-matching size\n", getName().c_str());
-			throw(std::runtime_error(msg));
+			throw(std::exception(msg.c_str()));
 		}
 
 		std::vector<size_t> start(getDimCount());
@@ -554,13 +540,13 @@ public:
 	bool putLine(const size_t& lineindex, const std::vector<T>& vals) {
 		if (isNull()) {
 			std::string msg = _SRC_ + strprint("\nAttempt to write to a Null variable\n");
-			throw(std::runtime_error(msg));
+			throw(std::exception(msg.c_str()));
 		}
 
 		size_t sz = lineelements(lineindex);
 		if (vals.size() != sz) {
 			std::string msg = _SRC_ + strprint("\nAttempt to write line/band of variable (%s) with non-matching size\n", getName().c_str());
-			throw(std::runtime_error(msg));
+			throw(std::exception(msg.c_str()));
 		}
 
 		std::vector<NcDim>  dims = getDims();
@@ -580,7 +566,7 @@ public:
 	bool getLine(const size_t& lineindex, std::vector<T>& vals) {
 		if (isNull()) {
 			std::string msg = _SRC_ + strprint("\nAttempt to read from a Null variable\n");
-			throw(std::runtime_error(msg));
+			throw(std::exception(msg.c_str()));
 		}
 
 		std::vector<NcDim>  dims = getDims();
@@ -602,7 +588,7 @@ public:
 	void getLine_temp(const size_t& lineindex, andres::Marray<T>& A) const {
 		if (isNull()) {
 			std::string msg = _SRC_ + strprint("\nAttempt to read from a Null variable\n");
-			throw(std::runtime_error(msg));
+			throw(std::exception(msg.c_str()));
 		}
 		std::vector<NcDim>  dims = getDims();
 		std::vector<size_t> start((size_t)getDimCount());
@@ -855,61 +841,89 @@ public:
 		NcDim dl = addDim(DN_LINE, nl);
 
 		std::vector<unsigned int> line_index = compute_line_index(line_index_count);
-		add_line_index(line_index);
-		//add_line_index_start(line_index);
-		//add_line_index_count(line_index);
-		//add_point_variable();		
-		add_line_number_variable(linenumbers);
+		bool status = add_line_index(line_index);
+		if (status == false) {
+			std::string msg = _SRC_ + strprint("\nCould no add line_index variable (%s)\n", VN_LINE_INDEX);
+			throw(std::exception(msg.c_str()));
+		}
+
+		status = add_line_number_variable(linenumbers);
+		if (status == false) {
+			std::string msg = _SRC_ + strprint("\nCould no add line_number variable (%s)\n", DN_LINE);
+			throw(std::exception(msg.c_str()));
+		}
+
 		return true;
 	}
 
-	void add_line_index(const std::vector<unsigned int> line_index)
+	bool add_line_index(const std::vector<unsigned int> line_index)
 	{
-		cSampleVar v = addSampleVar(VN_LINE_INDEX, ncUint);
-		v.putVar(line_index.data());
-		v.add_long_name(LN_LINE_INDEX);
-		v.add_description("zero-based index of line associated with point");
-		//v.add_units("1");		
+		bool status = addSampleVar(VN_LINE_INDEX, ncUint);
+		if (status) {
+			cSampleVar v = getSampleVar(VN_LINE_INDEX);
+			v.putVar(line_index.data());
+			v.add_long_name(LN_LINE_INDEX);
+			v.add_description("zero-based index of line associated with point");
+			//v.add_units("1");
+		}
+		return status;
 	}
 
 	//Deprecated
-	void add_line_index_start(const std::vector<unsigned int> line_index_start)
+	bool add_line_index_start(const std::vector<unsigned int> line_index_start)
 	{
-		cLineVar vstart = addLineVar(VN_LI_START, ncUint);
-		vstart.putVar(line_index_start.data());
-		vstart.add_long_name(VN_LI_START);
-		vstart.add_description("zero-based index of the first sample in the line");
-		//vstart.add_units("1");
+		bool status = addLineVar(VN_LI_START, ncUint);
+		if (status) {
+			cLineVar vstart = getLineVar(VN_LI_START);
+			vstart.putVar(line_index_start.data());
+			vstart.add_long_name(VN_LI_START);
+			vstart.add_description("zero-based index of the first sample in the line");
+			//vstart.add_units("1");
+		}
+		return status;
 	}
 
 	//Deprecated
-	void add_line_index_count(const std::vector<unsigned int> line_index_count)
+	bool add_line_index_count(const std::vector<unsigned int> line_index_count)
 	{
-		cLineVar vcount = addLineVar(VN_LI_COUNT, ncUint);
-		vcount.putVar(line_index_count.data());
-		vcount.add_long_name(VN_LI_COUNT);
-		vcount.add_description("number of samples in the line");
-		//vcount.add_units("1");
+		bool status = addLineVar(VN_LI_COUNT, ncUint);
+		if (status) {
+			cLineVar vcount = getLineVar(VN_LI_COUNT);
+			vcount.putVar(line_index_count.data());
+			vcount.add_long_name(VN_LI_COUNT);
+			vcount.add_description("number of samples in the line");
+			//vcount.add_units("1");
+		}
+		return status;
 	}
 
 	//Deprecated
-	void add_point_variable()
+	bool add_point_variable()
 	{
-		std::vector<unsigned int> sample = increment((unsigned int)ntotalsamples(), (unsigned int)0, (unsigned int)1);
-		cSampleVar v = addSampleVar(DN_POINT, ncUint);
-		v.putVar(sample.data());
-		v.add_long_name(LN_SAMPLE_NUMBER);
-		v.add_description("sequential point number");
-		//v.add_units("1");
+		bool status = addSampleVar(DN_POINT, ncUint);
+		if (status) {
+			//std::vector<unsigned int> sample = increment((unsigned int)ntotalsamples(), (unsigned int)0, (unsigned int)1);
+			std::vector<unsigned int> sample = increment<unsigned int>(ntotalsamples(), 0, 1);
+			cSampleVar v = getSampleVar(DN_POINT);
+			v.putVar(sample.data());
+			v.add_long_name(LN_SAMPLE_NUMBER);
+			v.add_description("sequential point number");
+			//v.add_units("1");
+		}
+		return status;
 	}
 
-	void add_line_number_variable(const std::vector<unsigned int> linenumbers)
+	bool add_line_number_variable(const std::vector<unsigned int> linenumbers)
 	{
-		cLineVar vline = addLineVar(DN_LINE, ncUint);
-		vline.putVar(linenumbers.data());
-		vline.add_long_name(LN_LINE_NUMBER);
-		vline.add_description("flight line number");
-		//vline.add_units("1");		
+		bool status = addLineVar(DN_LINE, ncUint);
+		if (status) {
+			cLineVar vline = getLineVar(DN_LINE);
+			vline.putVar(linenumbers.data());
+			vline.add_long_name(LN_LINE_NUMBER);
+			vline.add_description("flight line number");
+			//vline.add_units("1");
+		}
+		return status;
 	}
 
 	template<typename T>
@@ -1141,16 +1155,17 @@ public:
 		return true;
 	}
 
-	bool hasVarCaseInsensitive(std::string& varname) {
-		NcVar v = getVarByNameCaseInsensitive(varname);
+	bool hasVarCaseInsensitive(const std::string& invarname) {
+		std::string realname;
+		NcVar v = getVarByNameCaseInsensitive(invarname,realname);
 		if (v.isNull()) return false;
 		return true;
 	}
 
-	NcVar getVarByNameCaseInsensitive(std::string& varname) {
+	NcVar getVarByNameCaseInsensitive(const std::string& invarname, std::string& varname) {
 		std::multimap<std::string, NcVar> vars = getVars();
 		for (auto vit = vars.begin(); vit != vars.end(); vit++) {
-			if (strcasecmp(varname, vit->first) == 0) {
+			if (strcasecmp(invarname, vit->first) == 0) {
 				varname = vit->first;
 				return vit->second;
 			}
@@ -1170,7 +1185,7 @@ public:
 			if (d.getSize() == dimsize) return d;
 			else {
 				std::string msg = _SRC_ + strprint("\nAttempt to add dimension (%s) with size (%zu) unequal to existing dimension (%zu) with same name\n", dimname.c_str(), dimsize, d.getSize());
-				throw(std::runtime_error(msg));
+				throw(std::exception(msg.c_str()));
 			}
 		}
 		else {
@@ -1305,7 +1320,7 @@ public:
 		cGeophysicsVar var(this, getVar(varname));
 		if (var.isNull()) {
 			std::string msg = _SRC_ + strprint("\nAttempt to read variable (%s)\n", varname.c_str());
-			throw(std::runtime_error(msg));
+			throw(std::exception(msg.c_str()));
 		}
 
 		size_t record;
@@ -1319,7 +1334,7 @@ public:
 		else if (isLineVar(var))   record = getLineIndexByPointIndex((int)pointindex);
 		else {
 			std::string msg = _SRC_ + strprint("\nVariable %s is neither a \"point\" or a \"line\" variable\n", varname.c_str());
-			throw(std::runtime_error(msg));
+			throw(std::exception(msg.c_str()));
 		}
 		return var.getRecord(record, vals);
 	}
@@ -1334,7 +1349,7 @@ public:
 		else {
 			if (dim.getSize() != dimsize) {
 				std::string msg = _SRC_ + strprint("\nAttempt to add new dimension (%s) with different size to the existing\n", dimname.c_str());
-				throw(std::runtime_error(msg));
+				throw(std::exception(msg.c_str()));
 			}
 		}
 
@@ -1345,7 +1360,7 @@ public:
 		else {
 			if (var.getDim(0).getSize() != dimsize) {
 				std::string msg = _SRC_ + strprint("\nAttempt to add new dimension (%s) with different size to the existing\n", dimname.c_str());
-				throw(std::runtime_error(msg));
+				throw(std::exception(msg.c_str()));
 			}
 		}
 		var.putVar(dimvals.data());
@@ -1362,10 +1377,9 @@ public:
 		return cLineVar(*this, getVar(name));
 	}
 
-	cSampleVar addSampleVar(const std::string& name, const NcType& type, const std::vector<NcDim>& dims) {
-		cSampleVar existingvar = getSampleVar(name);
-		if (existingvar.isNull() == false) {
-			return existingvar;
+	bool addSampleVar(const std::string& name, const NcType& type, const std::vector<NcDim>& dims) {
+		if (hasVarCaseInsensitive(name)) {
+			return false;
 		}
 
 		std::vector<NcDim> vardims = { dim_sample() };
@@ -1374,11 +1388,13 @@ public:
 		}
 		
 		cSampleVar newvar(*this, addVar(name, type, vardims));
+		if (newvar.isNull())return false;
+
 		newvar.set_default_missingvalue();
-		return newvar;
+		return true;
 	}
 
-	cSampleVar addSampleVar(const std::string& name, const NcType& type, const NcDim& banddim = NcDim()) {
+	bool addSampleVar(const std::string& name, const NcType& type, const NcDim& banddim = NcDim()) {
 		std::vector<NcDim> dims;
 		if (banddim.isNull() == false) {
 			dims.push_back(banddim);
@@ -1386,20 +1402,24 @@ public:
 		return addSampleVar(name, type, dims);
 	}
 
-	cLineVar addLineVar(const std::string& name, const NcType& type, const std::vector<NcDim>& dims) {
-		cLineVar existingvar = getLineVar(name);
-		if (existingvar.isNull() == false) return existingvar;
+	bool addLineVar(const std::string& name, const NcType& type, const std::vector<NcDim>& dims) {
+		if (hasVarCaseInsensitive(name)) {
+			return false;
+		}
 
 		std::vector<NcDim> vardims = { dim_line() };
 		for (size_t i = 0; i < dims.size(); i++) {
 			vardims.push_back(dims[i]);
 		}
+
 		cLineVar newvar(*this, addVar(name, type, vardims));
+		if (newvar.isNull()) return false;
+
 		newvar.set_default_missingvalue();
-		return newvar;
+		return true;
 	}
 
-	cLineVar addLineVar(const std::string& name, const NcType& type, const NcDim& banddim = NcDim()) {
+	bool addLineVar(const std::string& name, const NcType& type, const NcDim& banddim = NcDim()) {
 		std::vector<NcDim> dims;
 		if (banddim.isNull() == false) {
 			dims.push_back(banddim);
@@ -1473,6 +1493,25 @@ public:
 	}
 #endif
 
+	bool addLineVariableAndData(
+		const NcType& type,
+		const std::string name,
+		const std::string longname,
+		const std::string description,
+		const std::string units,
+		const std::vector<double> data
+	) {
+		bool status = addLineVar(name, type);
+		if (status) {
+			cLineVar v = getLineVar(name);
+			v.add_missing_value(defaultmissingvalue(ncDouble));
+			v.add_long_name(longname);
+			v.add_description(description);
+			if(units.size() > 0) v.add_units(units);
+			v.putAll(data);
+		}
+	}
+
 	bool addLineStartEndPointsLL() {
 		if (hasVar("longitude_first")) {
 			std::string msg = _SRC_ + strprint("\nWarning: Variable longitude_first already exists\n");
@@ -1495,33 +1534,10 @@ public:
 		std::string yvarname = getVarNameByLongName("latitude");
 		findNonNullLineStartEndPoints(xvarname, yvarname, x1, x2, y1, y2);
 
-		cLineVar vx1 = addLineVar("longitude_first", ncDouble);
-		vx1.add_missing_value(defaultmissingvalue(ncDouble));
-		vx1.add_long_name("longitude_first");
-		vx1.add_description("first non-null longitude coordinate in the line");
-		vx1.add_units("degree_east");
-		vx1.putAll(x1);
-
-		cLineVar vx2 = addLineVar("longitude_last", ncDouble);
-		vx2.add_missing_value(defaultmissingvalue(ncDouble));
-		vx2.add_long_name("longitude_last");
-		vx2.add_description("last non-null longitude coordinate in the line");
-		vx2.add_units("degree_east");
-		vx2.putAll(x2);
-
-		cLineVar vy1 = addLineVar("latitude_first", ncDouble);
-		vy1.add_missing_value(defaultmissingvalue(ncDouble));
-		vy1.add_long_name("latitude_first");
-		vy1.add_description("first non-null latitude coordinate in the line");
-		vy1.add_units("degree_north");
-		vy1.putAll(y1);
-
-		cLineVar vy2 = addLineVar("latitude_last", ncDouble);
-		vy2.add_missing_value(defaultmissingvalue(ncDouble));
-		vy2.add_long_name("latitude_last");
-		vy2.add_description("last non-null latitude coordinate in the line");
-		vy2.add_units("degree_north");
-		vy2.putAll(y2);
+		bool status1 = addLineVariableAndData(ncDouble,"longitude_first","longitude_first","first non-null longitude coordinate in the line","degree_east",x1);
+		bool status2 = addLineVariableAndData(ncDouble, "longitude_last", "longitude_last", "last non-null longitude coordinate in the line", "degree_east", x2);
+		bool status3 = addLineVariableAndData(ncDouble, "latitude_first", "latitude_first", "first non-null latitude coordinate in the line", "degree_north", y1);
+		bool status4 = addLineVariableAndData(ncDouble, "latitude_last", "latitude_last", "last non-null latitude coordinate in the line", "degree_north", y2);
 		return true;
 	}
 
@@ -1554,33 +1570,10 @@ public:
 			return false;
 		}
 
-		cLineVar vx1 = addLineVar("easting_first", ncDouble);
-		vx1.add_missing_value(defaultmissingvalue(ncDouble));
-		vx1.add_long_name("easting_first");
-		vx1.add_description("first non-null easting coordinate in the line");
-		vx1.add_units("m");
-		vx1.putAll(x1);
-
-		cLineVar vx2 = addLineVar("easting_last", ncDouble);
-		vx2.add_missing_value(defaultmissingvalue(ncDouble));
-		vx2.add_long_name("easting_last");
-		vx2.add_description("last non-null easting coordinate in the line");
-		vx2.add_units("m");
-		vx2.putAll(x2);
-
-		cLineVar vy1 = addLineVar("northing_first", ncDouble);
-		vy1.add_missing_value(defaultmissingvalue(ncDouble));
-		vy1.add_long_name("northing_first");
-		vy1.add_description("first non-null northing coordinate in the line");
-		vy1.add_units("m");
-		vy1.putAll(y1);
-
-		cLineVar vy2 = addLineVar("northing_last", ncDouble);
-		vy2.add_missing_value(defaultmissingvalue(ncDouble));
-		vy2.add_long_name("northing_last");
-		vy2.add_description("last non-null northing coordinate in the line");
-		vy2.add_units("m");
-		vy2.putAll(y2);
+		bool status1 = addLineVariableAndData(ncDouble, "easting_first", "easting_first", "first non-null easting coordinate in the line", "m", x1);
+		bool status2 = addLineVariableAndData(ncDouble, "easting_last", "easting_last", "last non-null easting coordinate in the line", "m", x2);
+		bool status3 = addLineVariableAndData(ncDouble, "northing_first", "northing_first", "first non-null northing coordinate in the line", "m", y1);
+		bool status4 = addLineVariableAndData(ncDouble, "northing_last", "northing_last", "last non-null northing coordinate in the line", "m", y2);
 		return true;
 	}
 
@@ -1840,7 +1833,4 @@ inline size_t cGeophysicsVar::line_index_count(const size_t& index) const {
 	return count;
 }
 
-
-
-#endif
 
