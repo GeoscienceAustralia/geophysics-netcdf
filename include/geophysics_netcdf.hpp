@@ -60,22 +60,22 @@ constexpr auto AN_MISSINGVALUE = "_FillValue";
 constexpr auto AN_ORIGINAL_DATASET_NAME = "original_dataset_name";
 constexpr auto AN_ORIGINAL_DATASET_FIELDNAME = "original_dataset_fieldname";
 
-inline NcType nctype(const uint8_t) { return ncUbyte; }
-inline NcType nctype(const int8_t) { return ncByte; }
-inline NcType nctype(const short) { return ncShort; }
-inline NcType nctype(const int) { return ncInt; }
-inline NcType nctype(const unsigned int) { return ncUint; }
-inline NcType nctype(const float) { return ncFloat; }
-inline NcType nctype(const double) { return ncDouble; }
-inline NcType nctype(const std::string) { return ncString; }
+inline NcType getnctype(const uint8_t) { return ncUbyte; }
+inline NcType getnctype(const int8_t) { return ncByte; }
+inline NcType getnctype(const short) { return ncShort; }
+inline NcType getnctype(const int) { return ncInt; }
+inline NcType getnctype(const unsigned int) { return ncUint; }
+inline NcType getnctype(const float) { return ncFloat; }
+inline NcType getnctype(const double) { return ncDouble; }
+inline NcType getnctype(const std::string) { return ncString; }
 
-inline uint8_t defaultmissingvalue(const NcUbyte&) { return (uint8_t)NC_FILL_UBYTE; }
-inline int8_t defaultmissingvalue(const NcByte&) { return (int8_t)NC_FILL_BYTE; }
-inline short defaultmissingvalue(const NcShort&) { return (short)NC_FILL_SHORT; }
-inline int defaultmissingvalue(const NcInt&) { return (int)NC_FILL_INT; }
-inline unsigned int defaultmissingvalue(const NcUint&) { return (unsigned int)NC_FILL_UINT; }
-inline float defaultmissingvalue(const NcFloat&) { return (float)NC_FILL_FLOAT; }
-inline double defaultmissingvalue(const NcDouble&) { return (double)NC_FILL_DOUBLE; }
+inline uint8_t defaultmissingvalue(const NcUbyte&) { return static_cast<uint8_t>NC_FILL_UBYTE; }
+inline int8_t defaultmissingvalue(const NcByte&) { return static_cast<int8_t>NC_FILL_BYTE; }
+inline short defaultmissingvalue(const NcShort&) { return static_cast<short>NC_FILL_SHORT; }
+inline int defaultmissingvalue(const NcInt&) { return static_cast<int>NC_FILL_INT; }
+inline unsigned int defaultmissingvalue(const NcUint&) { return static_cast<unsigned int>NC_FILL_UINT; }
+inline float defaultmissingvalue(const NcFloat&) { return static_cast<float>NC_FILL_FLOAT; }
+inline double defaultmissingvalue(const NcDouble&) { return static_cast<double>NC_FILL_DOUBLE; }
 inline std::string defaultmissingvalue(const NcString&) { return std::string(NC_FILL_STRING); }
 
 class cExportFormat {
@@ -95,7 +95,6 @@ public:
 		nullvalue = _nullvalue;
 	}
 };
-
 
 class GFile;
 
@@ -1358,7 +1357,7 @@ public:
 
 		NcVar var = getVar(dimname);
 		if (var.isNull()) {
-			var = addVar(dimname, nctype(dimvals[0]), dim);
+			var = addVar(dimname, getnctype(dimvals[0]), dim);
 		}
 		else {
 			if (var.getDim(0).getSize() != dimsize) {
@@ -1870,5 +1869,5 @@ inline size_t GVar::line_index_count(const size_t& index) const {
 	return count;
 }
 
-};
+};//endname space
 
