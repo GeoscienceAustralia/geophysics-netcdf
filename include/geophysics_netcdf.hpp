@@ -38,6 +38,8 @@ using namespace netCDF::exceptions;
 
 #include "marray.hxx"
 
+namespace GeophysicsNetCDF {
+
 constexpr auto DN_POINT = "point";
 constexpr auto DN_LINE = "line";
 
@@ -94,12 +96,13 @@ public:
 	}
 };
 
-class cGeophysicsNcFile;
 
-class cGeophysicsVar : public NcVar {
+class GFile;
+
+class GVar : public NcVar {
 
 private:
-	const cGeophysicsNcFile& Parent;
+	const GFile& Parent;
 
 public:
 
@@ -107,9 +110,9 @@ public:
 	//cGeophysicsVar(const cGeophysicsVar& rhs) = delete;
 	
 	//Do not allow implicit definition of assignment operator
-	cGeophysicsVar& operator=(const cGeophysicsVar& rhs) = delete;
+	GVar& operator=(const GVar& rhs) = delete;
 
-	cGeophysicsVar(const cGeophysicsNcFile& parent, const NcVar& var) 
+	GVar(const GFile& parent, const NcVar& var) 
 		: NcVar(var), Parent(parent)
 	{};
 
@@ -202,7 +205,7 @@ public:
 	};
 
 	bool hasAtt(const std::string& name) const {
-		return cGeophysicsVar::hasAtt(*this, name);
+		return GVar::hasAtt(*this, name);
 	}
 
 	std::string getStringAtt(const std::string& attname) const {
@@ -416,14 +419,14 @@ public:
 	}
 };
 
-class cLineVar : public cGeophysicsVar {
+class GLineVar : public GVar {
 
 private:
 
 public:
 
-	cLineVar(cGeophysicsNcFile& parent, const NcVar& var)
-		: cGeophysicsVar(parent, var)
+	GLineVar(GFile& parent, const NcVar& var)
+		: GVar(parent, var)
 	{}
 
 	template<typename T>
@@ -482,14 +485,14 @@ public:
 
 };
 
-class cSampleVar : public cGeophysicsVar {
+class GSampleVar : public GVar {
 
 private:
 
 public:
 
-	cSampleVar(const cGeophysicsNcFile& parent, const NcVar& var)
-		: cGeophysicsVar(parent, var)
+	GSampleVar(const GFile& parent, const NcVar& var)
+		: GVar(parent, var)
 	{}
 
 	template<typename T>
@@ -631,7 +634,7 @@ public:
 
 };
 
-class cGeophysicsNcFile : public NcFile {
+class GFile : public NcFile {
 
 private:
 
@@ -651,20 +654,20 @@ private:
 
 	bool readLineIndex() {
 		if (hasVar(VN_LI_COUNT)) {
-			cLineVar vc = getLineVar(VN_LI_COUNT);
+			GLineVar vc = getLineVar(VN_LI_COUNT);
 			if (vc.getAll(line_index_count) == false)return false;
 
-			cLineVar vs = getLineVar(VN_LI_START);
+			GLineVar vs = getLineVar(VN_LI_START);
 			if (vs.getAll(line_index_start) == false)return false;
 		}
 		else if (hasVar(VN_LINE_INDEX)) {
-			cLineVar vl = getLineVar(VN_LINE_INDEX);
+			GLineVar vl = getLineVar(VN_LINE_INDEX);
 			std::vector<unsigned int> line_index;
 			if (vl.getAll(line_index) == false)return false;
 			set_start_count(line_index);
 		}
 
-		cLineVar v = getLineVar(DN_LINE);
+		GLineVar v = getLineVar(DN_LINE);
 		v.getAll(line_number);
 		return true;
 	}
@@ -753,26 +756,26 @@ private:
 public:
 
 	//Do not allow implicit definition of copy constructor or assignment operators	
-	cGeophysicsNcFile& operator=(const NcGroup& rhs) = delete;
-	cGeophysicsNcFile& operator=(const NcFile& rhs) = delete;
-	cGeophysicsNcFile& operator=(const cGeophysicsNcFile& rhs) = delete;
+	GFile& operator=(const NcGroup& rhs) = delete;
+	GFile& operator=(const NcFile& rhs) = delete;
+	GFile& operator=(const GFile& rhs) = delete;
 
-	cGeophysicsNcFile(const NcGroup& rhs) = delete;
-	cGeophysicsNcFile(const NcFile& rhs) = delete;
-	cGeophysicsNcFile(const cGeophysicsNcFile& rhs) = delete;
+	GFile(const NcGroup& rhs) = delete;
+	GFile(const NcFile& rhs) = delete;
+	GFile(const GFile& rhs) = delete;
 
 	// Constructor generates a null object.
-	cGeophysicsNcFile() : NcFile() {} // invoke base class constructor	
+	GFile() : NcFile() {} // invoke base class constructor	
 
 	//Open existing file constructor
-	cGeophysicsNcFile(const std::string& ncpath, const netCDF::NcFile::FileMode& filemode = netCDF::NcFile::FileMode::read)
+	GFile(const std::string& ncpath, const netCDF::NcFile::FileMode& filemode = netCDF::NcFile::FileMode::read)
 		: netCDF::NcFile(ncpath, filemode)
 	{
 		open(ncpath, filemode);
 	};
 
 	//Destructor
-	~cGeophysicsNcFile() {};
+	~GFile() {};
 
 	size_t get_line_index_start(const size_t& li) const { return line_index_start[li]; }
 	size_t get_line_index_count(const size_t& li) const { return line_index_count[li]; }
@@ -860,7 +863,7 @@ public:
 	{
 		bool status = addSampleVar(VN_LINE_INDEX, ncUint);
 		if (status) {
-			cSampleVar v = getSampleVar(VN_LINE_INDEX);
+			GSampleVar v = getSampleVar(VN_LINE_INDEX);
 			v.putVar(line_index.data());
 			v.add_long_name(LN_LINE_INDEX);
 			v.add_description("zero-based index of line associated with point");
@@ -874,7 +877,7 @@ public:
 	{
 		bool status = addLineVar(VN_LI_START, ncUint);
 		if (status) {
-			cLineVar vstart = getLineVar(VN_LI_START);
+			GLineVar vstart = getLineVar(VN_LI_START);
 			vstart.putVar(line_index_start.data());
 			vstart.add_long_name(VN_LI_START);
 			vstart.add_description("zero-based index of the first sample in the line");
@@ -888,7 +891,7 @@ public:
 	{
 		bool status = addLineVar(VN_LI_COUNT, ncUint);
 		if (status) {
-			cLineVar vcount = getLineVar(VN_LI_COUNT);
+			GLineVar vcount = getLineVar(VN_LI_COUNT);
 			vcount.putVar(line_index_count.data());
 			vcount.add_long_name(VN_LI_COUNT);
 			vcount.add_description("number of samples in the line");
@@ -904,7 +907,7 @@ public:
 		if (status) {
 			//std::vector<unsigned int> sample = increment((unsigned int)ntotalsamples(), (unsigned int)0, (unsigned int)1);
 			std::vector<unsigned int> sample = increment<unsigned int>(ntotalsamples(), 0, 1);
-			cSampleVar v = getSampleVar(DN_POINT);
+			GSampleVar v = getSampleVar(DN_POINT);
 			v.putVar(sample.data());
 			v.add_long_name(LN_SAMPLE_NUMBER);
 			v.add_description("sequential point number");
@@ -917,7 +920,7 @@ public:
 	{
 		bool status = addLineVar(DN_LINE, ncUint);
 		if (status) {
-			cLineVar vline = getLineVar(DN_LINE);
+			GLineVar vline = getLineVar(DN_LINE);
 			vline.putVar(linenumbers.data());
 			vline.add_long_name(LN_LINE_NUMBER);
 			vline.add_description("flight line number");
@@ -932,7 +935,7 @@ public:
 		return true;
 	}
 
-	bool subsample(const cGeophysicsNcFile& srcfile, const size_t subsamplerate, std::vector<std::string> include_varnames, std::vector<std::string> exclude_varnames)
+	bool subsample(const GFile& srcfile, const size_t subsamplerate, std::vector<std::string> include_varnames, std::vector<std::string> exclude_varnames)
 	{
 		unsigned int nsnew = (unsigned int)std::ceil((double)srcfile.ntotalsamples() / (double)subsamplerate);
 
@@ -1042,7 +1045,7 @@ public:
 	}
 #endif
 
-	bool copy_global_atts(const cGeophysicsNcFile& srcfile)
+	bool copy_global_atts(const GFile& srcfile)
 	{
 		auto m = srcfile.getAtts();
 		for (auto it = m.begin(); it != m.end(); it++) {
@@ -1058,7 +1061,7 @@ public:
 		return true;
 	}
 
-	bool copy_dims(const cGeophysicsNcFile& srcfile)
+	bool copy_dims(const GFile& srcfile)
 	{
 		auto dm = srcfile.getDims();
 		for (auto dit = dm.begin(); dit != dm.end(); dit++) {
@@ -1236,7 +1239,7 @@ public:
 	bool getLineNumbers(std::vector<T>& vals) {
 		NcVar v = getVarByLongName(LN_LINE_NUMBER);
 		if (v.isNull() == false) {
-			cLineVar var(*this, v);
+			GLineVar var(*this, v);
 			return var.getAll(vals);
 		}
 		return false;
@@ -1252,7 +1255,7 @@ public:
 	bool getFlightNumbers(std::vector<T>& vals) {
 		NcVar v = getVarByLongName(LN_FLIGHT_NUMBER);
 		if (v.isNull() == false) {
-			cLineVar var(*this, v);
+			GLineVar var(*this, v);
 			return var.getAll(vals);
 		}
 		return false;
@@ -1265,7 +1268,7 @@ public:
 	}
 
 	template<typename T>
-	bool getDataByLineIndex(const cSampleVar& var, const size_t& lineindex, std::vector<T>& vals) {
+	bool getDataByLineIndex(const GSampleVar& var, const size_t& lineindex, std::vector<T>& vals) {
 		std::vector<NcDim> dims = var.getDims();
 		if (dims.size() != 1) return false;
 		std::vector<size_t> start(1);
@@ -1286,7 +1289,7 @@ public:
 
 	template<typename T>
 	bool getDataByLineIndex(const std::string& varname, const size_t& lineindex, std::vector<T>& vals) {
-		cSampleVar var = getSampleVar(varname);
+		GSampleVar var = getSampleVar(varname);
 		return getDataByLineIndex(var, lineindex, vals);
 	}
 
@@ -1317,7 +1320,7 @@ public:
 
 	template<typename T>
 	bool getDataByPointIndex(const std::string& varname, const size_t& pointindex, std::vector<T>& vals) {
-		cGeophysicsVar var(this, getVar(varname));
+		GVar var(this, getVar(varname));
 		if (var.isNull()) {
 			std::string msg = _SRC_ + strprint("\nAttempt to read variable (%s)\n", varname.c_str());
 			throw(std::exception(msg.c_str()));
@@ -1367,14 +1370,19 @@ public:
 		return dim;
 	}
 
-	cSampleVar getSampleVar(const std::string& name) {
-		if (getVarCount() == 0) return cSampleVar(*this, NcVar());
-		return cSampleVar(*this, getVar(name));
+	GVar getGeophysicsVar(const std::string& name) {
+		if (getVarCount() == 0) return GVar(*this, NcVar());
+		return GVar(*this, getVar(name));
 	}
 
-	cLineVar getLineVar(const std::string& name) {
-		if (getVarCount() == 0) return cLineVar(*this, NcVar());
-		return cLineVar(*this, getVar(name));
+	GSampleVar getSampleVar(const std::string& name) {
+		if (getVarCount() == 0) return GSampleVar(*this, NcVar());
+		return GSampleVar(*this, getVar(name));
+	}
+
+	GLineVar getLineVar(const std::string& name) {
+		if (getVarCount() == 0) return GLineVar(*this, NcVar());
+		return GLineVar(*this, getVar(name));
 	}
 
 	bool addSampleVar(const std::string& name, const NcType& type, const std::vector<NcDim>& dims) {
@@ -1387,7 +1395,7 @@ public:
 			vardims.push_back(dims[i]);
 		}
 		
-		cSampleVar newvar(*this, addVar(name, type, vardims));
+		GSampleVar newvar(*this, addVar(name, type, vardims));
 		if (newvar.isNull())return false;
 
 		newvar.set_default_missingvalue();
@@ -1402,6 +1410,20 @@ public:
 		return addSampleVar(name, type, dims);
 	}
 
+	GSampleVar addgetSampleVar(const std::string& name, const NcType& type, const std::vector<NcDim>& dims) {
+		if (addSampleVar(name, type, dims)) {
+			return GSampleVar(*this, getVar(name));
+		}
+		return GSampleVar(*this, NcVar());
+	}
+
+	GSampleVar addgetSampleVar(const std::string& name, const NcType& type, const NcDim& banddim = NcDim()) {
+		if (addSampleVar(name, type, banddim)) {
+			return GSampleVar(*this, getVar(name));
+		}
+		return GSampleVar(*this, NcVar());
+	}
+
 	bool addLineVar(const std::string& name, const NcType& type, const std::vector<NcDim>& dims) {
 		if (hasVarCaseInsensitive(name)) {
 			return false;
@@ -1412,7 +1434,7 @@ public:
 			vardims.push_back(dims[i]);
 		}
 
-		cLineVar newvar(*this, addVar(name, type, vardims));
+		GLineVar newvar(*this, addVar(name, type, vardims));
 		if (newvar.isNull()) return false;
 
 		newvar.set_default_missingvalue();
@@ -1427,6 +1449,21 @@ public:
 		return addLineVar(name, type, dims);
 	}
 
+	GLineVar addgetLineVar(const std::string& name, const NcType& type, const std::vector<NcDim>& dims) {
+		if (addLineVar(name, type, dims)) {
+			return GLineVar(*this, getVar(name));
+		}
+		return GLineVar(*this, NcVar());
+	}
+
+	GLineVar addgetLineVar(const std::string& name, const NcType& type, const NcDim& banddim = NcDim()) {
+		if (addLineVar(name, type, banddim)) {
+			return GLineVar(*this, getVar(name));
+		}
+		return GLineVar(*this, NcVar());
+	}
+
+
 	bool findNonNullLineStartEndPoints(const std::string& xvar, const std::string& yvar,
 		std::vector<double>& x1, std::vector<double>& x2, std::vector<double>& y1, std::vector<double>& y2) {
 		x1.resize(nlines());
@@ -1434,8 +1471,8 @@ public:
 		y1.resize(nlines());
 		y2.resize(nlines());
 
-		cSampleVar vx = getSampleVar(xvar);
-		cSampleVar vy = getSampleVar(yvar);
+		GSampleVar vx = getSampleVar(xvar);
+		GSampleVar vy = getSampleVar(yvar);
 		double nvx = vx.missingvalue(nvx);
 		double nvy = vy.missingvalue(nvy);
 		for (size_t li = 0; li < nlines(); li++) {
@@ -1503,7 +1540,7 @@ public:
 	) {
 		bool status = addLineVar(name, type);
 		if (status) {
-			cLineVar v = getLineVar(name);
+			GLineVar v = getLineVar(name);
 			v.add_missing_value(defaultmissingvalue(ncDouble));
 			v.add_long_name(longname);
 			v.add_description(description);
@@ -1615,7 +1652,7 @@ public:
 #endif
 
 	bool minmax(const std::string& varname, double& minval, double& maxval) {
-		cSampleVar var = getSampleVar(varname);
+		GSampleVar var = getSampleVar(varname);
 		var.minmax(minval, maxval);
 		return true;
 	}
@@ -1625,7 +1662,7 @@ public:
 		if (hasVar(varname) == false)return false;
 
 		double vmin, vmax;
-		cSampleVar var = getSampleVar(varname);
+		GSampleVar var = getSampleVar(varname);
 		var.minmax(vmin, vmax);
 		std::string s = "geospatial_" + label;
 		putAtt(s + "_min", ncDouble, vmin);
@@ -1714,24 +1751,24 @@ public:
 		return vars;
 	};
 
-	std::vector<cLineVar> getLineVars() {
-		std::vector<cLineVar> vars;
+	std::vector<GLineVar> getLineVars() {
+		std::vector<GLineVar> vars;
 		std::multimap<std::string, NcVar> vm = getVars();
 		for (auto it = vm.begin(); it != vm.end(); it++) {
 			if (isLineVar(it->second)) {
-				cLineVar v(*this, it->second);
+				GLineVar v(*this, it->second);
 				vars.push_back(v);
 			}
 		}
 		return vars;
 	};
 
-	std::vector<cSampleVar> getSampleVars() {
-		std::vector<cSampleVar> vars;
+	std::vector<GSampleVar> getSampleVars() {
+		std::vector<GSampleVar> vars;
 		std::multimap<std::string, NcVar> vm = getVars();
 		for (auto it = vm.begin(); it != vm.end(); it++) {
 			if (isSampleVar(it->second)) {
-				cSampleVar v(*this, it->second);
+				GSampleVar v(*this, it->second);
 				vars.push_back(v);
 			}
 		}
@@ -1742,9 +1779,9 @@ public:
 		std::ofstream of(datfilepath);
 		of << std::fixed;
 
-		std::vector<cLineVar>   lvars = getLineVars();
-		std::vector<cSampleVar> svars = getSampleVars();
-		std::vector<cGeophysicsVar> vars;
+		std::vector<GLineVar>   lvars = getLineVars();
+		std::vector<GSampleVar> svars = getSampleVars();
+		std::vector<GVar> vars;
 		for (size_t i = 0; i < lvars.size(); i++) {
 			if (lvars[i].donotexport() == false) {
 				vars.push_back(lvars[i]);
@@ -1764,7 +1801,7 @@ public:
 
 		cOutputFileInfo I;
 		for (size_t vi = 0; vi < nvars; vi++) {
-			cGeophysicsVar& v = vars[vi];
+			GVar& v = vars[vi];
 
 			if (v.isLineVar()) islv[vi] = true;
 			else islv[vi] = false;
@@ -1790,13 +1827,13 @@ public:
 
 			std::vector<andres::Marray<double>> A(nvars);
 			for (size_t vi = 0; vi < nvars; vi++) {
-				const cGeophysicsVar& v = vars[vi];
+				const GVar& v = vars[vi];
 				v.getLine(li, A[vi]);
 			}
 
 			for (size_t si = 0; si < ns; si += 100) {
 				for (size_t vi = 0; vi < nvars; vi++) {
-					const cGeophysicsVar& v = vars[vi];
+					const GVar& v = vars[vi];
 					of << std::setw(efmt[vi].width);
 					of << std::setprecision(efmt[vi].decimals);
 
@@ -1822,15 +1859,16 @@ public:
 };
 
 // Defined here only because it needs to be after cGeophysicsNcFile definition
-inline size_t cGeophysicsVar::line_index_start(const size_t& index) const {
+inline size_t GVar::line_index_start(const size_t& index) const {
 	size_t start = Parent.get_line_index_start(index);
 	return start;
 }
 
 // Defined here only because it needs to be after cGeophysicsNcFile definition
-inline size_t cGeophysicsVar::line_index_count(const size_t& index) const {
+inline size_t GVar::line_index_count(const size_t& index) const {
 	size_t count = Parent.get_line_index_count(index);
 	return count;
 }
 
+};
 
