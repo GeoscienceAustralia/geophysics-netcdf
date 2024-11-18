@@ -100,34 +100,27 @@ class cGeophysicsNcFile;
 class cGeophysicsVar : public NcVar {
 
 private:
-	cGeophysicsNcFile* FilePtr = NULL;
+	const cGeophysicsNcFile& Parent;
 
 public:
 
-	cGeophysicsVar() : NcVar() {};
+	//Do not allow implicit definition of copy constructor
+	//cGeophysicsVar(const cGeophysicsVar& rhs) = delete;
+	
+	//Do not allow implicit definition of assignment operator
+	cGeophysicsVar& operator=(const cGeophysicsVar& rhs) = delete;
 
-	cGeophysicsVar(cGeophysicsNcFile* parentptr, const NcVar& var) : NcVar(var) {
-		FilePtr = parentptr;
-	};
+	cGeophysicsVar(const cGeophysicsNcFile& parent, const NcVar& var) 
+		: NcVar(var), Parent(parent)
+	{};
 
-	cGeophysicsVar(const cGeophysicsVar& var) : NcVar(var) {
-		FilePtr = var.FilePtr;
-	};
-
-	cGeophysicsVar operator=(const cGeophysicsVar& rhs) {
-		NcVar::operator=(rhs);
-		FilePtr = rhs.FilePtr;
-		return *this;
-	};
-
-	cGeophysicsVar& operator=(cGeophysicsVar& rhs) {
-		NcVar::operator=(rhs);
-		FilePtr = rhs.FilePtr;
-		return *this;
-	};
+	// copy constructor
+	//cGeophysicsVar(const cGeophysicsVar& rhs) 
+	//	: NcVar(rhs), Parent(rhs.Parent)
+	//{};
 
 	size_t line_index_start(const size_t& index) const;
-
+	
 	size_t line_index_count(const size_t& index) const;
 
 	size_t length() {
@@ -443,10 +436,9 @@ private:
 
 public:
 
-	cLineVar(cGeophysicsNcFile* parentptr, const NcVar& var)
-		: cGeophysicsVar(parentptr, var)
-	{
-	}
+	cLineVar(cGeophysicsNcFile& parent, const NcVar& var)
+		: cGeophysicsVar(parent, var)
+	{}
 
 	template<typename T>
 	bool putAll(std::vector<T> vals) {
@@ -510,15 +502,9 @@ private:
 
 public:
 
-	cSampleVar() : cGeophysicsVar()
-	{
-	}
-
-	cSampleVar(cGeophysicsNcFile* parentptr, const NcVar& var)
-		: cGeophysicsVar(parentptr, var)
-	{
-	}
-
+	cSampleVar(const cGeophysicsNcFile& parent, const NcVar& var)
+		: cGeophysicsVar(parent, var)
+	{}
 
 	template<typename T>
 	bool putAll(const std::vector<T>& vals) {
@@ -1235,7 +1221,7 @@ public:
 	bool getLineNumbers(std::vector<T>& vals) {
 		NcVar v = getVarByLongName(LN_LINE_NUMBER);
 		if (v.isNull() == false) {
-			cLineVar var(this, v);
+			cLineVar var(*this, v);
 			return var.getAll(vals);
 		}
 		return false;
@@ -1251,7 +1237,7 @@ public:
 	bool getFlightNumbers(std::vector<T>& vals) {
 		NcVar v = getVarByLongName(LN_FLIGHT_NUMBER);
 		if (v.isNull() == false) {
-			cLineVar var(this, v);
+			cLineVar var(*this, v);
 			return var.getAll(vals);
 		}
 		return false;
@@ -1367,28 +1353,29 @@ public:
 	}
 
 	cSampleVar getSampleVar(const std::string& name) {
-		if (getVarCount() == 0) return cSampleVar(this, NcVar());
-		return cSampleVar(this, getVar(name));
+		if (getVarCount() == 0) return cSampleVar(*this, NcVar());
+		return cSampleVar(*this, getVar(name));
 	}
 
 	cLineVar getLineVar(const std::string& name) {
-		if (getVarCount() == 0) return cLineVar(this, NcVar());
-		return cLineVar(this, getVar(name));
+		if (getVarCount() == 0) return cLineVar(*this, NcVar());
+		return cLineVar(*this, getVar(name));
 	}
 
 	cSampleVar addSampleVar(const std::string& name, const NcType& type, const std::vector<NcDim>& dims) {
-		cSampleVar var = getSampleVar(name);
-		if (var.isNull() == false) {
-			return var;
+		cSampleVar existingvar = getSampleVar(name);
+		if (existingvar.isNull() == false) {
+			return existingvar;
 		}
 
 		std::vector<NcDim> vardims = { dim_sample() };
 		for (size_t i = 0; i < dims.size(); i++) {
 			vardims.push_back(dims[i]);
 		}
-		var = cSampleVar(this, addVar(name, type, vardims));
-		var.set_default_missingvalue();
-		return var;
+		
+		cSampleVar newvar(*this, addVar(name, type, vardims));
+		newvar.set_default_missingvalue();
+		return newvar;
 	}
 
 	cSampleVar addSampleVar(const std::string& name, const NcType& type, const NcDim& banddim = NcDim()) {
@@ -1400,16 +1387,16 @@ public:
 	}
 
 	cLineVar addLineVar(const std::string& name, const NcType& type, const std::vector<NcDim>& dims) {
-		cLineVar var = getLineVar(name);
-		if (var.isNull() == false) return var;
+		cLineVar existingvar = getLineVar(name);
+		if (existingvar.isNull() == false) return existingvar;
 
 		std::vector<NcDim> vardims = { dim_line() };
 		for (size_t i = 0; i < dims.size(); i++) {
 			vardims.push_back(dims[i]);
 		}
-		var = cLineVar(this, addVar(name, type, vardims));
-		var.set_default_missingvalue();
-		return var;
+		cLineVar newvar(*this, addVar(name, type, vardims));
+		newvar.set_default_missingvalue();
+		return newvar;
 	}
 
 	cLineVar addLineVar(const std::string& name, const NcType& type, const NcDim& banddim = NcDim()) {
@@ -1739,7 +1726,7 @@ public:
 		std::multimap<std::string, NcVar> vm = getVars();
 		for (auto it = vm.begin(); it != vm.end(); it++) {
 			if (isLineVar(it->second)) {
-				cLineVar v(this, it->second);
+				cLineVar v(*this, it->second);
 				vars.push_back(v);
 			}
 		}
@@ -1751,7 +1738,7 @@ public:
 		std::multimap<std::string, NcVar> vm = getVars();
 		for (auto it = vm.begin(); it != vm.end(); it++) {
 			if (isSampleVar(it->second)) {
-				cSampleVar v(this, it->second);
+				cSampleVar v(*this, it->second);
 				vars.push_back(v);
 			}
 		}
@@ -1841,13 +1828,15 @@ public:
 
 };
 
+// Defined here only because it needs to be after cGeophysicsNcFile definition
 inline size_t cGeophysicsVar::line_index_start(const size_t& index) const {
-	size_t start = FilePtr->get_line_index_start(index);
+	size_t start = Parent.get_line_index_start(index);
 	return start;
 }
 
+// Defined here only because it needs to be after cGeophysicsNcFile definition
 inline size_t cGeophysicsVar::line_index_count(const size_t& index) const {
-	size_t count = FilePtr->get_line_index_count(index);
+	size_t count = Parent.get_line_index_count(index);
 	return count;
 }
 
