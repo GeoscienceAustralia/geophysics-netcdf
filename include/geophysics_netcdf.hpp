@@ -110,6 +110,7 @@ public:
 	
 	//Do not allow implicit definition of assignment operator
 	GVar& operator=(const GVar& rhs) = delete;
+	GVar& operator=(GVar& rhs) = delete;
 
 	GVar(const GFile& parent, const NcVar& var) 
 		: NcVar(var), Parent(parent)
@@ -389,7 +390,6 @@ public:
 		return true;
 	};
 
-
 	bool donotexport() {
 		std::vector<std::string> s = {
 			DN_POINT, VN_LI_START, VN_LI_COUNT,
@@ -424,7 +424,7 @@ private:
 
 public:
 
-	GLineVar(GFile& parent, const NcVar& var)
+	GLineVar(const GFile& parent, const NcVar& var)
 		: GVar(parent, var)
 	{}
 
@@ -1319,7 +1319,7 @@ public:
 
 	template<typename T>
 	bool getDataByPointIndex(const std::string& varname, const size_t& pointindex, std::vector<T>& vals) {
-		GVar var(this, getVar(varname));
+		GVar var(*this, getVar(varname));
 		if (var.isNull()) {
 			std::string msg = _SRC_ + strprint("\nAttempt to read variable (%s)\n", varname.c_str());
 			throw(std::exception(msg.c_str()));
@@ -1641,7 +1641,7 @@ public:
 		dims.push_back(addDim("polygonvertex", nv));
 		dims.push_back(addDim("polygonordinate", 2));
 
-		cGeophysicsVar v(this, addVar("bounding_polygon", ncDouble, dims));
+		cGeophysicsVar v(*this, addVar("bounding_polygon", ncDouble, dims));
 		v.add_long_name("bounding_polygon");
 		v.add_description("bounding polygon of survey");
 		v.add_units("degree");
