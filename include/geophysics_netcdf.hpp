@@ -21,19 +21,19 @@ Author: Ross C. Brodie, Geoscience Australia.
 using namespace netCDF;
 using namespace netCDF::exceptions;
 
-#include "vector_utils.h"
-#include "string_utils.h"
-#include "logger.h"
-#include "file_formats.h"
+#include "vector_utils.hpp"
+#include "string_utils.hpp"
+#include "logger.hpp"
+#include "file_formats.hpp"
 
 // GDAL functionality must be explicitly enabled
 #ifdef ENABLE_GDAL
-#include "crs.h"
+#include "crs.hpp"
 #endif
 
 // CGAL functionality must be explicitly enabled
 #ifdef ENABLE_CGAL
-#include "cgal_utils.h"
+#include "cgal_utils.hpp"
 #endif
 
 #include "marray.hxx"
