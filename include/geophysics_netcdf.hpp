@@ -259,8 +259,7 @@ public:
 			break;
 		}
 		default: {
-			std::string msg = _SRC_ + strprint("\nAttempt to set default missing value of unsupported datatype\n");
-			throw(std::exception(msg.c_str()));
+			glog.errormsg(_SRC_, "Attempt to set default missing value of unsupported datatype.\n");
 		}
 		}
 		return;
@@ -320,13 +319,12 @@ public:
 	template<typename T>
 	void getLine(const size_t& lineindex, andres::Marray<T>& A) const {
 		if (isNull()) {
-			std::string msg = _SRC_ + strprint("\nAttempt to read from a Null variable\n");
-			throw(std::exception(msg.c_str()));
+			std::string msg = "Attempt to read from a Null variable.";
+			glog.errormsg(_SRC_, msg);
 		}
 		std::vector<NcDim>  dims = getDims();
 		std::vector<size_t> start((size_t)getDimCount());
 		std::vector<size_t> count((size_t)getDimCount());
-
 
 		if (isLineVar()) {
 			start[0] = lineindex;
@@ -350,8 +348,8 @@ public:
 	bool getRecord(const size_t& record, std::vector<T>& v) const
 	{
 		if (isNull()) {
-			std::string msg = _SRC_ + strprint("\nAttempt to read from a Null variable\n");
-			throw(std::exception(msg.c_str()));
+			std::string msg = "Attempt to read from a Null variable.";
+			glog.errormsg(_SRC_, msg);
 			return false;
 		}
 		std::vector<size_t> startp = { record, 0 };
@@ -365,9 +363,8 @@ public:
 	bool putRecord(const size_t& record, const T& v) const
 	{
 		if (isNull()) {
-			std::string msg = _SRC_ + strprint("\nAttempt to write to a Null variable\n");
-			throw(std::exception(msg.c_str()));
-			return false;
+			std::string msg = "Attempt to write to a Null variable.";
+			glog.errormsg(_SRC_, msg);
 		}
 		std::vector<size_t> startp = { record, 0 };
 		std::vector<size_t> countp = { 1,      1 };
@@ -379,9 +376,8 @@ public:
 	bool putRecord(const size_t& record, const std::vector<T>& v) const
 	{
 		if (isNull()) {
-			std::string msg = _SRC_ + strprint("\nAttempt to write to a Null variable\n");
-			throw(std::exception(msg.c_str()));
-			return false;
+			std::string msg = "Attempt to write to a Null variable.";
+			glog.errormsg(_SRC_, msg);
 		}
 		std::vector<size_t> startp = { record, 0 };
 		std::vector<size_t> countp = { 1,      nbands() };
@@ -431,13 +427,13 @@ public:
 	template<typename T>
 	bool putAll(std::vector<T> vals) {
 		if (isNull()) {
-			std::string msg = _SRC_ + strprint("\nAttempt to write to a Null variable\n");
-			throw(std::exception(msg.c_str()));
+			std::string msg = "Attempt to write to a Null variable";
+			glog.errormsg(_SRC_, msg);
 		}
 
 		if (vals.size() != length()) {
-			std::string msg = _SRC_ + strprint("\nAttempt to write variable (%s) with non-matching size\n", getName().c_str());
-			throw(std::exception(msg.c_str()));
+			std::string msg = strprint("Attempt to write variable (%s) with non-matching size.", getName().c_str());
+			glog.errormsg(_SRC_, msg);
 		}
 
 		putVar(vals.data());
@@ -497,13 +493,13 @@ public:
 	template<typename T>
 	bool putAll(const std::vector<T>& vals) {
 		if (isNull()) {
-			std::string msg = _SRC_ + strprint("\nAttempt to write to a Null variable\n");
-			throw(std::exception(msg.c_str()));
+			std::string msg = strprint("Attempt to write to a Null variable.");
+			glog.errormsg(_SRC_, msg);
 		}
 
 		if (vals.size() != length()) {
-			std::string msg = _SRC_ + strprint("\nAttempt to write variable (%s) with non-matching size\n", getName().c_str());
-			throw(std::exception(msg.c_str()));
+			std::string msg = strprint("Attempt to write variable (%s) with non-matching size.", getName().c_str());
+			glog.errormsg(_SRC_, msg);
 		}
 
 		putVar(vals.data());
@@ -513,19 +509,19 @@ public:
 	template<typename T>
 	bool putLineBand(const size_t& lineindex, const size_t& bandindex, const std::vector<T>& vals) {
 		if (isNull()) {
-			std::string msg = _SRC_ + strprint("\nAttempt to write to a Null variable\n");
-			throw(std::exception(msg.c_str()));
+			std::string msg = "Attempt to write to a Null variable.";
+			glog.errormsg(_SRC_, msg);
 		}
 
 		std::vector<NcDim>  dims = getDims();
 		if (dims.size() > 2) {
-			std::string msg = _SRC_ + strprint("\nAttempt to use putLineBand() to write to a variable with more than 2 dimensions\n");
-			throw(std::exception(msg.c_str()));
+			std::string msg = "Attempt to use putLineBand() to write to a variable with more than 2 dimensions";
+			glog.errormsg(_SRC_, msg);
 		}
 
 		if (vals.size() != line_index_count(lineindex)) {
-			std::string msg = _SRC_ + strprint("\nAttempt to write line/band of variable (%s) with non-matching size\n", getName().c_str());
-			throw(std::exception(msg.c_str()));
+			std::string msg = strprint("Attempt to write line/band of variable (%s) with non-matching size.", getName().c_str());
+			glog.errormsg(_SRC_, msg);
 		}
 
 		std::vector<size_t> start(getDimCount());
@@ -541,14 +537,14 @@ public:
 	template<typename T>
 	bool putLine(const size_t& lineindex, const std::vector<T>& vals) {
 		if (isNull()) {
-			std::string msg = _SRC_ + strprint("\nAttempt to write to a Null variable\n");
-			throw(std::exception(msg.c_str()));
+			std::string msg = "Attempt to write to a Null variable.";
+			glog.errormsg(_SRC_, msg);
 		}
 
 		size_t sz = lineelements(lineindex);
 		if (vals.size() != sz) {
-			std::string msg = _SRC_ + strprint("\nAttempt to write line/band of variable (%s) with non-matching size\n", getName().c_str());
-			throw(std::exception(msg.c_str()));
+			std::string msg = strprint("Attempt to write line/band of variable (%s) with non-matching size.", getName().c_str());
+			glog.errormsg(_SRC_, msg);
 		}
 
 		std::vector<NcDim>  dims = getDims();
@@ -567,8 +563,8 @@ public:
 	template<typename T>
 	bool getLine(const size_t& lineindex, std::vector<T>& vals) {
 		if (isNull()) {
-			std::string msg = _SRC_ + strprint("\nAttempt to read from a Null variable\n");
-			throw(std::exception(msg.c_str()));
+			std::string msg = strprint("Attempt to read from a Null variable,");
+			glog.errormsg(_SRC_, msg);
 		}
 
 		std::vector<NcDim>  dims = getDims();
@@ -589,8 +585,8 @@ public:
 	template<typename T>
 	void getLine_temp(const size_t& lineindex, andres::Marray<T>& A) const {
 		if (isNull()) {
-			std::string msg = _SRC_ + strprint("\nAttempt to read from a Null variable\n");
-			throw(std::exception(msg.c_str()));
+			std::string msg = "Attempt to read from a Null variable.";
+			glog.errormsg(_SRC_, msg);
 		}
 		std::vector<NcDim>  dims = getDims();
 		std::vector<size_t> start((size_t)getDimCount());
@@ -845,14 +841,14 @@ public:
 		std::vector<unsigned int> line_index = compute_line_index(line_index_count);
 		bool status = add_line_index(line_index);
 		if (status == false) {
-			std::string msg = _SRC_ + strprint("\nCould no add line_index variable (%s)\n", VN_LINE_INDEX);
-			throw(std::exception(msg.c_str()));
+			std::string msg = strprint("Could no add line_index variable (%s).", VN_LINE_INDEX);
+			glog.errormsg(_SRC_, msg);
 		}
 
 		status = add_line_number_variable(linenumbers);
 		if (status == false) {
-			std::string msg = _SRC_ + strprint("\nCould no add line_number variable (%s)\n", DN_LINE);
-			throw(std::exception(msg.c_str()));
+			std::string msg = strprint("Could no add line_number variable (%s).", DN_LINE);
+			glog.errormsg(_SRC_, msg);
 		}
 
 		return true;
@@ -1182,18 +1178,19 @@ public:
 	}
 
 	NcDim addDim(const std::string& dimname, const size_t& dimsize) {
+		NcDim d;
 		if (hasDim(dimname)) {
-			NcDim d = getDim(dimname);
+			d = getDim(dimname);
 			if (d.getSize() == dimsize) return d;
 			else {
-				std::string msg = _SRC_ + strprint("\nAttempt to add dimension (%s) with size (%zu) unequal to existing dimension (%zu) with same name\n", dimname.c_str(), dimsize, d.getSize());
-				throw(std::exception(msg.c_str()));
+				std::string msg = strprint("Attempt to add dimension (%s) with size (%zu) unequal to existing dimension (%zu) with same name.", dimname.c_str(), dimsize, d.getSize());
+				glog.errormsg(_SRC_, msg);
 			}
 		}
 		else {
-			NcDim d = NcGroup::addDim(dimname, dimsize);
-			return d;
+			d = NcGroup::addDim(dimname, dimsize);
 		}
+		return d;
 	}
 
 	NcVar getVarByAtt(const std::string& att_name, const std::string& att_value) {
@@ -1321,8 +1318,8 @@ public:
 	bool getDataByPointIndex(const std::string& varname, const size_t& pointindex, std::vector<T>& vals) {
 		GVar var(*this, getVar(varname));
 		if (var.isNull()) {
-			std::string msg = _SRC_ + strprint("\nAttempt to read variable (%s)\n", varname.c_str());
-			throw(std::exception(msg.c_str()));
+			std::string msg = strprint("Attempt to read variable (%s).", varname.c_str());
+			glog.errormsg(_SRC_, msg);
 		}
 
 		size_t record;
@@ -1335,8 +1332,8 @@ public:
 		else if (isSampleVar(var)) record = pointindex;
 		else if (isLineVar(var))   record = getLineIndexByPointIndex((int)pointindex);
 		else {
-			std::string msg = _SRC_ + strprint("\nVariable %s is neither a \"point\" or a \"line\" variable\n", varname.c_str());
-			throw(std::exception(msg.c_str()));
+			std::string msg = strprint("Variable %s is neither a \"point\" or a \"line\" variable.", varname.c_str());
+			glog.errormsg(_SRC_, msg);
 		}
 		return var.getRecord(record, vals);
 	}
@@ -1350,8 +1347,8 @@ public:
 		}
 		else {
 			if (dim.getSize() != dimsize) {
-				std::string msg = _SRC_ + strprint("\nAttempt to add new dimension (%s) with different size to the existing\n", dimname.c_str());
-				throw(std::exception(msg.c_str()));
+				std::string msg = strprint("Attempt to add new dimension (%s) with different size to the existing.", dimname.c_str());
+				glog.errormsg(_SRC_, msg);
 			}
 		}
 
@@ -1361,8 +1358,8 @@ public:
 		}
 		else {
 			if (var.getDim(0).getSize() != dimsize) {
-				std::string msg = _SRC_ + strprint("\nAttempt to add new dimension (%s) with different size to the existing\n", dimname.c_str());
-				throw(std::exception(msg.c_str()));
+				std::string msg = strprint("Attempt to add new dimension (%s) with different size to the existing.", dimname.c_str());
+				glog.errormsg(_SRC_, msg);
 			}
 		}
 		var.putVar(dimvals.data());
@@ -1546,18 +1543,19 @@ public:
 			if(units.size() > 0) v.add_units(units);
 			v.putAll(data);
 		}
+		return status;
 	}
 
 	bool addLineStartEndPointsLL() {
 		if (hasVar("longitude_first")) {
-			std::string msg = _SRC_ + strprint("\nWarning: Variable longitude_first already exists\n");
-			//glog.logmsg(msg);
+			std::string msg = strprint("Variable longitude_first already exists.");
+			glog.warningmsg(_SRC_, msg);
 			return false;
 		}
 
 		if (hasVar("latitude_first")) {
-			std::string msg = _SRC_ + strprint("\nWarning: Variable latitude_first already exists\n");
-			//glog.logmsg(msg);
+			std::string msg = strprint("Variable latitude_first already exists.");
+			glog.warningmsg(_SRC_, msg);
 			return false;
 		}
 
@@ -1579,14 +1577,14 @@ public:
 
 	bool addLineStartEndPointsEN() {
 		if (hasVar("easting_first")) {
-			std::string msg = _SRC_ + strprint("\nWarning: Variable easting_first already exists\n");
-			//glog.logmsg(msg);
+			std::string msg = strprint("Variable easting_first already exists.");
+			glog.warningmsg(_SRC_, msg);
 			return false;
 		}
 
 		if (hasVar("northing_first")) {
-			std::string msg = _SRC_ + strprint("Warning: Variable northing_first already exists\n");
-			//glog.logmsg(msg);
+			std::string msg = strprint("Variable northing_first already exists.");
+			glog.warningmsg(_SRC_, msg);
 			return false;
 		}
 
@@ -1601,8 +1599,7 @@ public:
 			findNonNullLineStartEndPoints("Easting", "Northing", x1, x2, y1, y2);
 		}
 		else {
-			std::string msg = _SRC_ + strprint("\nWarning: Could not find easting/Easting/northin/Northing\n");
-			//glog.logmsg(msg);
+			glog.warningmsg(_SRC_, "Could not find easting/Easting/northin/Northing.");
 			return false;
 		}
 
