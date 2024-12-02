@@ -763,8 +763,8 @@ public:
 	GFile() : NcFile() {} // invoke base class constructor	
 
 	//Open existing file constructor
-	GFile(const std::string& ncpath, const netCDF::NcFile::FileMode& filemode = netCDF::NcFile::FileMode::read)
-		: netCDF::NcFile(ncpath, filemode)
+	GFile(const fs::path& ncpath, const netCDF::NcFile::FileMode& filemode = netCDF::NcFile::FileMode::read)
+		: netCDF::NcFile(ncpath.string(), filemode)
 	{
 		open(ncpath, filemode);
 	};
@@ -796,14 +796,14 @@ public:
 		return index;
 	}
 
-	void open(const std::string& ncpath, const FileMode& filemode = NcFile::FileMode::read)
+	void open(const fs::path& ncpath, const FileMode& filemode = NcFile::FileMode::read)
 	{
 		if (filemode == NcFile::read) {
-			NcFile::open(ncpath, filemode);
+			NcFile::open(ncpath.string(), filemode);
 			InitialiseExisting();
 		}
 		else if (filemode == NcFile::write) {
-			NcFile::open(ncpath, filemode);
+			NcFile::open(ncpath.string(), filemode);
 			InitialiseExisting();
 		}
 		else if (filemode == NcFile::replace) {
