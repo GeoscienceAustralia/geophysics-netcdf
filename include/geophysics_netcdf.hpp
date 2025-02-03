@@ -40,6 +40,8 @@ using namespace netCDF::exceptions;
 
 namespace GeophysicsNetCDF {
 
+using namespace VectorUtils;
+
 constexpr auto DN_POINT = "point";
 constexpr auto DN_LINE = "line";
 
@@ -1804,8 +1806,8 @@ public:
 			mval[vi] = v.missingvalue(double(0));
 			efmt[vi] = v.defaultexportformat();
 
-			int bands = (int)v.nbands();
-			I.addfield(v.getName(), efmt[vi].form, efmt[vi].width, efmt[vi].decimals, bands);
+			int nbands = (int)v.nbands();
+			I.addfield(v.getName(), efmt[vi].form, efmt[vi].width, efmt[vi].decimals, nbands);
 
 			std::string units = v.getUnits();
 			if (units != "1") I.setunits(units);
