@@ -764,7 +764,7 @@ namespace GeophysicsNetCDF {
 		GFile() : NcFile() {} // invoke base class constructor	
 
 		//Open existing file constructor
-		GFile(const fs::path& ncpath, const netCDF::NcFile::FileMode& filemode = netCDF::NcFile::FileMode::read)
+		GFile(const std::filesystem::path& ncpath, const netCDF::NcFile::FileMode& filemode = netCDF::NcFile::FileMode::read)
 			: netCDF::NcFile(ncpath.string(), filemode)
 		{
 			open(ncpath, filemode);
@@ -797,7 +797,7 @@ namespace GeophysicsNetCDF {
 			return index;
 		}
 
-		void open(const fs::path& ncpath, const FileMode& filemode = NcFile::FileMode::read)
+		void open(const std::filesystem::path& ncpath, const FileMode& filemode = NcFile::FileMode::read)
 		{
 			if (filemode == NcFile::read) {
 				NcFile::open(ncpath.string(), filemode);
